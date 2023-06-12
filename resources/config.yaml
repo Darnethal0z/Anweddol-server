@@ -1,0 +1,108 @@
+# Configuration file for Anweddol server
+#
+# This document contains all of the configurations that the server 
+# will be using. Comment or un-comment variables to change their 
+# default values. Refer to the units explanations below, 
+# and the official anweddol server documentation.
+# You can restore this file by deleting it and restarting the CLI.
+
+# ---
+# Paths specifications for nessessary files
+paths:
+
+  # Server log file path 
+  log_file_path: /var/log/anweddol/runtime.txt
+
+  # PID file path for server daemon process
+  pid_file_path: /etc/anweddol/daemon_process.pid
+
+  # Live OS image path that will be used by containers 
+  container_iso_path: /etc/anweddol/iso/anweddol_container.iso
+
+  # Permalink file URL containing the actual container ISO mirror URL
+  # Container ISO mirror URL are likely to change over time,
+  # that's why they are stored in a single file over a permanent link
+  permalink_resource_file_url: https://the-anweddol-project.github.io/resources/mirror.txt
+
+  # In the same manner as permalink_resource_file_url, you can specify a 
+  # permanent container ISO mirror URL. This field can be null or 
+  # an URL leading to the root of a mirror. 
+  container_iso_mirror_url: http://127.0.0.1/
+
+  # RSA keys root path
+  rsa_keys_root_path: /etc/anweddol/rsa_keys
+
+  # Access token database file path
+  access_tokens_database_path: /etc/anweddol/credentials/access_token.db
+
+# ---
+# Contains all nessessary values for container management
+container:
+
+  # Max amount of containers that can run at the same time
+  # Zero is not allowed
+  max_allowed_running_containers: 6
+
+  # Memory allocated to a container, exprimed in MB
+  container_memory: 1024
+
+  # Numbers of virtual CPUs that are allocated to a container
+  container_vcpus: 2
+
+  # NAT interface name that containers will be using to receive
+  # server administration. Default is 'virbr0', which is the default 
+  # interface created by the libvirtd daemon when launched.
+  nat_interface_name: virbr0
+
+  # Bridged interface name that containers will be using to
+  # communicate with clients. Default is 'anwdlbr0', which is 
+  # an universal interface name. 
+  # You can use another interface as long as it permits 
+  # containers and clients to communicate.
+  bridge_interface_name: anwdlbr0
+
+  # Container endpoint username / password 
+  # NOTE : The container endpoint default credentials are public and
+  # normalized, that's why they are stored here unencrypted. 
+  endpoint_username: endpoint
+  endpoint_password: endpoint
+  endpoint_listen_port: 22
+
+# ---
+# Nessessary parameters for server listen interface
+server:
+
+  # Privilege-separated user with which to run the server
+  # It is not recommended to launch the server with root privileges
+  user: anweddol
+
+  # Server listen informations
+  bind_address: 0.0.0.0
+  listen_port: 6150
+  timeout: 10
+
+  # Generate RSA key pair on start and ignore the stored one
+  # May increase startup time
+  enable_onetime_rsa_keys: False
+
+# ---
+# IP filtering parameters
+ip_filter:
+
+  # Enable this feature or not
+  # If this value is set to 'false', all parameters below will be ignored 
+  enabled: False
+
+  # List of allowed / denied IPs
+  # Specify any IPs with 'any'
+  allowed_ip_list:
+    - any
+  denied_ip_list: []
+
+# ---
+# Access token parameters
+access_token:
+
+  # Enable this feature or not
+  # If this value is set to 'false', all parameters below will be ignored 
+  enabled: False

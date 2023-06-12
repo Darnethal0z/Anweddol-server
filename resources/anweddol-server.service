@@ -1,0 +1,15 @@
+[Unit]
+Description=The Anweddol server systemctl service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/anwdlserver start
+ExecReload=/usr/local/bin/anwdlserver restart
+ExecStop=/usr/local/bin/anwdlserver stop
+Restart=no
+User=anweddol
+RemainAfterExit=no
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target 

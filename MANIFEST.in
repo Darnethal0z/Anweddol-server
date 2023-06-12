@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include CONTRIBUTING
+include pyproject.toml
+
+recursive-include resources *
+recursive-include anwdlserver *
