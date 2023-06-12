@@ -12,7 +12,11 @@ Anweddol is a client/server system providing temporary, SSH-controllable virtual
 
 It’s usefulness comes when someone wants to use a fully functional computer while being exposed to less dangers by using it remotely on a dedicated server, and by destroying it after use.
 
-**NOTE** : This is the beta version, some bugs or malfunctions can occur during usage
+## NOTE
+
+This is the beta version, some bugs or malfunctions can occur during usage. 
+
+Note that containers ISO also aren't available yet (see the documentation [ISO management section](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/tools/iso_management.html#official-mirror) to learn more). 
 
 ## Content
 
