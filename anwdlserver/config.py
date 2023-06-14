@@ -53,6 +53,7 @@ class ConfigurationFileManager:
                     },
                     "container_iso_mirror_url": {
                         "type": "string",
+                        "nullable": True,
                         "check_with": __check_valid_url,
                     },
                     "rsa_keys_root_path": {"type": "string"},

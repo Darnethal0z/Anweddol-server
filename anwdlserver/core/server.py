@@ -8,6 +8,7 @@
 """
 import multiprocessing
 import threading
+import traceback
 import socket
 import time
 
@@ -174,6 +175,8 @@ class ServerInterface:
                 listen_port=container_ssh_credentials_tuple[2],
             )
 
+            new_container_shell.closeShell()
+
         else:
             container_ssh_credentials_tuple = (
                 new_container_shell.getStoredContainerSSHCredentials()
@@ -202,11 +205,23 @@ class ServerInterface:
         except Exception as E:
             # If we can't transmit those informations to the client, we must
             # delete them since the container becomes unusable, and the session credentials useless.
+            new_container_instance.stopDomain()
+
             self.database_interface.deleteEntry(created_entry[0])
             self.virtualization_interface.deleteStoredContainer(
                 new_container_instance.getUUID()
             )
-            raise E
+
+            self.recorded_runtime_errors_counter += 1
+
+            if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
+                self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                    client_instance=client_instance,
+                    ex_class=E,
+                    traceback="".join(
+                        traceback.format_exception(None, E, E.__traceback__)
+                    ),
+                )
 
     def __handle_destroy_request(self, client_instance):
         request_container_uuid = client_instance.getStoredRequest()["parameters"].get(
@@ -267,6 +282,7 @@ class ServerInterface:
                     if self.event_handler_dict.get(EVENT_MALFORMED_REQUEST):
                         self.event_handler_dict[EVENT_MALFORMED_REQUEST](
                             client_instance=client_instance,
+                            cerberus_error_dict=recv_request[1],
                         )
 
                         if not client_instance.isClosed():
@@ -334,7 +350,10 @@ class ServerInterface:
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
                     client_instance=client_instance,
-                    traceback=E,
+                    ex_class=E,
+                    traceback="".join(
+                        traceback.format_exception(None, E, E.__traceback__)
+                    ),
                 )
 
             if not client_instance.isClosed():
@@ -388,7 +407,10 @@ class ServerInterface:
 
                 if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                     self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                        traceback=E,
+                        ex_class=E,
+                        traceback="".join(
+                            traceback.format_exception(None, E, E.__traceback__)
+                        ),
                     )
 
     # Detects stopped container domains and update the database in consequence
@@ -413,7 +435,10 @@ class ServerInterface:
 
                 if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                     self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                        traceback=E,
+                        ex_class=E,
+                        traceback="".join(
+                            traceback.format_exception(None, E, E.__traceback__)
+                        ),
                     )
 
     # Event decorators binding for external scripts callback
@@ -565,7 +590,10 @@ class ServerInterface:
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    traceback=E,
+                    ex_class=E,
+                    traceback="".join(
+                        traceback.format_exception(None, E, E.__traceback__)
+                    ),
                 )
 
             return
@@ -599,7 +627,10 @@ class ServerInterface:
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    traceback=E,
+                    ex_class=E,
+                    traceback="".join(
+                        traceback.format_exception(None, E, E.__traceback__)
+                    ),
                 )
 
     def restartServer(self, asynchronous: bool = DEFAULT_ASYCHRONOUS) -> None:
@@ -611,5 +642,8 @@ class ServerInterface:
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    traceback=E,
+                    ex_class=E,
+                    traceback="".join(
+                        traceback.format_exception(None, E, E.__traceback__)
+                    ),
                 )

@@ -20,6 +20,10 @@ def checkUserExistence(username):
     return True
 
 
+def executeCommand(command):
+    Popen(command.split(" "), shell=False, stdout=PIPE, stderr=PIPE)
+
+
 print("[SETUP] Checking operating system ...")
 if os.name == "nt":
     raise EnvironmentError("The Anweddol server is only available on linux systems.")
@@ -46,39 +50,12 @@ if os.geteuid() == 0:
     # on the /etc/anweddol directory
     print("[SETUP (root)] Creating user 'anweddol' ...")
     if checkUserExistence("anweddol"):
-        Popen(["userdel", "-r", "anweddol"], shell=False, stdout=PIPE, stderr=PIPE)
+        executeCommand("userdel -r anweddol")
 
-    Popen(
-        [
-            "useradd",
-            "-s",
-            "/sbin/nologin",
-            "-c",
-            "Anweddol server privilege-separated user",
-            "-M",
-            "anweddol",
-        ],
-        shell=False,
-        stdout=PIPE,
-        stderr=PIPE,
-    )
-    Popen(
-        ["usermod", "-a", "-G", "libvirt", "anweddol"],
-        shell=False,
-        stdout=PIPE,
-        stderr=PIPE,
-    )
-    Popen(
-        [
-            "setfacl",
-            "-m",
-            "u:anweddol:rwx",
-            "/etc/anweddol/",
-            "/var/log/anweddol/runtime.txt",
-        ],
-        shell=False,
-        stdout=PIPE,
-        stderr=PIPE,
+    executeCommand("useradd -s /sbin/nologin -M anweddol")
+    executeCommand("usermod -a -G libvirt anweddol")
+    executeCommand(
+        "setfacl -m u:anweddol:rwx /etc/anweddol /var/log/anweddol/runtime.txt/"
     )
 
     # Create the systemctl service and enable it
@@ -91,27 +68,11 @@ if os.geteuid() == 0:
         + "/resources/anweddol-server.service",
         "/usr/lib/systemd/system/anweddol-server.service",
     )
-    Popen(
-        ["systemctl", "enable", "anweddol-server.service"],
-        shell=False,
-        stdout=PIPE,
-        stderr=PIPE,
-    )
-
-    # Copy the pre-built manpages on man folders
-    print("[SETUP (root)] Installing manpages ...")
-    shutil.copy(
-        os.path.dirname(os.path.realpath(__file__)) + "/docs/build/man/anwdlserver.1",
-        "/usr/local/share/man/man1/anwdlserver.1",
-    )
-    Popen(["mandb"], shell=False, stdout=PIPE, stderr=PIPE)
+    executeCommand("systemctl enable anweddol-server.service")
 
 else:
     print(
         "[SETUP] WARN : Non-root user detected, the installation limits to the 'anwdlserver' python package installation"
-    )
-    print(
-        "[SETUP] NOTE : A non-root server installation can result in broken or invalid environment for the CLI"
     )
 
 print("[SETUP] Installing Anweddol server package ...")
@@ -132,7 +93,7 @@ setup(
     ],
     license="GPL v3",
     url="https://github.com/the-anweddol-project/Anweddol-server",
-    packages=["anwdlserver"],
+    packages=["anwdlserver", "anwdlserver.core", "anwdlserver.tools"],
     install_requires=[
         "cryptography",
         "paramiko",

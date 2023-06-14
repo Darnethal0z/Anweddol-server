@@ -163,7 +163,7 @@ please report it by opening an issue on the repository :
         )
         parser.add_argument(
             "-d",
-            help="execute the server in direct mode (parent terminal)",
+            help="execute the server in direct mode (parent terminal). Server will run as the actual effective user",
             action="store_true",
         )
         parser.add_argument(
@@ -175,6 +175,9 @@ please report it by opening an issue on the repository :
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
+
+        if os.path.exists(self.config_content["paths"].get("pid_file_path")):
+            raise RuntimeError("The server is already running")
 
         if not args.skip_check:
             self.__log(message="Verifying server environment ...", bypass=args.json)

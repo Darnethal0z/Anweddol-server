@@ -4,7 +4,6 @@
 # will be using. Comment or un-comment variables to change their 
 # default values. Refer to the units explanations below, 
 # and the official anweddol server documentation.
-# You can restore this file by deleting it and restarting the CLI.
 
 # ---
 # Paths specifications for nessessary files
@@ -27,7 +26,7 @@ paths:
   # In the same manner as permalink_resource_file_url, you can specify a 
   # permanent container ISO mirror URL. This field can be null or 
   # an URL leading to the root of a mirror. 
-  container_iso_mirror_url: http://127.0.0.1/
+  container_iso_mirror_url: null
 
   # RSA keys root path
   rsa_keys_root_path: /etc/anweddol/rsa_keys

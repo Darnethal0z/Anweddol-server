@@ -15,7 +15,7 @@ Default values :
 | `DEFAULT_SERVER_BIND_ADDRESS` | `""`    | The default server bind address             |
 | `DEFAULT_SERVER_LISTEN_PORT`  | `6150`  | The default server listen port              |
 | `DEFAULT_CLIENT_TIMEOUT`      | `10`    | The default timeout applied on a new client |
-| `DEFAULT_ASYCHRONOUS`         | `False` | Start the server asynchronously by default  |
+| `DEFAULT_ASYCHRONOUS`         | `False` | Start the server synchronously by default   |
 
 Constants definition :
 
@@ -370,6 +370,7 @@ _Affiliated constant_ : `EVENT_DESTROYED_CONTAINER`
 _Provided parameters_ :
 
 - `client_instance` : The `ClientInstance` instance representing the affiliated client
+- `cerberus_error_dict` : The [cerberus error dict](https://docs.python-cerberus.org/en/stable/errors.html#errors-error-handling) depicting the error detected on the request
 
 _Affiliated constant_ : `EVENT_MALFORMED_REQUEST`
 
@@ -397,7 +398,8 @@ _Affiliated constant_ : `EVENT_REQUEST`
 
 _Provided parameters_ :
 
-- `traceback` : The exception traceback
+- `ex_class` : The exception class
+- `traceback` : The full traceback of the exception as a string
 - (optional) `client_instance` : The `ClientInstance` instance representing the affiliated client
 
 _Affiliated constant_ : `EVENT_RUNTIME_ERROR`

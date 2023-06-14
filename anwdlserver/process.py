@@ -231,7 +231,7 @@ def launchServerProcess(config_content):
     @server_interface.on_malformed_request
     def notify_malformed_request(**kwargs):
         logging.error(
-            f"[{kwargs.get('client_instance').getID()}] Received malformed request (traceback : {kwargs.get('traceback')})"
+            f"[{kwargs.get('client_instance').getID()}] Received malformed request"
         )
 
     @server_interface.on_unknown_verb
@@ -248,8 +248,8 @@ def launchServerProcess(config_content):
                 kwargs["client_instance"].getID()
                 if kwargs.get("client_instance")
                 else "unspec",
-                type(kwargs.get("traceback")),
-                kwargs.get("traceback"),
+                type(kwargs.get("ex_class")),
+                kwargs.get("ex_class"),
             )
         )
 
