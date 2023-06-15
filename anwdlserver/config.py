@@ -47,15 +47,6 @@ class ConfigurationFileManager:
                     "log_file_path": {"type": "string"},
                     "pid_file_path": {"type": "string"},
                     "container_iso_path": {"type": "string"},
-                    "permalink_resource_file_url": {
-                        "type": "string",
-                        "check_with": __check_valid_url,
-                    },
-                    "container_iso_mirror_url": {
-                        "type": "string",
-                        "nullable": True,
-                        "check_with": __check_valid_url,
-                    },
                     "rsa_keys_root_path": {"type": "string"},
                     "access_tokens_database_path": {"type": "string"},
                 },

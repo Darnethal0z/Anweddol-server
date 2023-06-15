@@ -70,11 +70,27 @@ The domain XML used for container domain definition is :
 
 ## Container OS
 
-The operating system running on containers is a custom live Debian to ensure as little data remanence as possible on the virtual domain.
+In order to provice a valid service, containers domains needs to run with a specific ISO image.
 
-All basic tools like text editors, network interactions, development environment are already pre-installed to bring comfortable usage for the client.
+The operating system running on containers is a custom live Debian to ensure as little data remanence as possible on the virtual domain : All basic tools like text editors, network interactions, development environment are already pre-installed to bring comfortable usage for the client.
 
-> This ISO image is meant to be replaced at each update announced. You can download it on the actual [permalink officlal mirror](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/tools/iso_management.html#official-mirror) or via the server CLI (See the [Administration guide](https://anweddol-server.readthedocs.io/en/latest/administration_guide/index.html) to learn more).
+See the [ISO factory repository](https://github.com/the-anweddol-project/Anweddol-ISO-factory) to get the script that creates these ISO images.
+You can retrieve a copy of this container ISO on the [official mirror](https://mega.nz/folder/BTFyVCLB#DNC2K8Lmhgbk6QWrVpeznw).
+
+This mirror URL contains this file tree : 
+
+```
+.
+├── anweddol_container.iso
+├── md5sum.txt
+├── sha256sum.txt
+└── version.txt
+```
+
+- `anweddol_container.iso` is the actual container ISO image.
+- `md5sum.txt` contains the MD5 checksum of `anweddol_container.iso`
+- `sha256sum.txt` contains the SHA256 checksum of `anweddol_container.iso`
+- `version.txt` is the version of the ISO. It contains an integer  which is incremented by 1 each updates.
 
 ## Management
 
