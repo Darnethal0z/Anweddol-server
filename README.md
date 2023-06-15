@@ -16,8 +16,6 @@ It’s usefulness comes when someone wants to use a fully functional computer wh
 
 This is the beta version, some bugs or malfunctions can occur during usage. 
 
-Note that containers ISO also aren't available yet (see the documentation [ISO management section](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/tools/iso_management.html#official-mirror) to learn more). 
-
 ## Content
 
 This repository contains : 
