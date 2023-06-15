@@ -62,12 +62,3 @@ includehidden:
 
 tools/access_token
 ```
-
-```{toctree}
----
-maxdepth: 2
-includehidden:
----
-
-tools/iso_management
-```

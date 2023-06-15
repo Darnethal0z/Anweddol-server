@@ -128,7 +128,7 @@ api_references/core/virtualization
 
 ### Tools features
 
-The `tools` features are additional functionnalities (authentication, ISO management, ...) coming with the Anweddol server package.
+The `tools` features are additional functionnalities (authentication utilities, ...) coming with the Anweddol server package.
 
 ```{toctree}
 ---
@@ -137,15 +137,6 @@ includehidden:
 ---
 
 api_references/tools/accesstk
-```
-
-```{toctree}
----
-maxdepth: 3
-includehidden:
----
-
-api_references/tools/iso
 ```
 
 ## CLI references
