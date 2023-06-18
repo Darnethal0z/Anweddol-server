@@ -18,16 +18,6 @@ paths:
   # Live OS image path that will be used by containers 
   container_iso_path: /etc/anweddol/iso/anweddol_container.iso
 
-  # Permalink file URL containing the actual container ISO mirror URL
-  # Container ISO mirror URL are likely to change over time,
-  # that's why they are stored in a single file over a permanent link
-  permalink_resource_file_url: https://the-anweddol-project.github.io/resources/mirror.txt
-
-  # In the same manner as permalink_resource_file_url, you can specify a 
-  # permanent container ISO mirror URL. This field can be null or 
-  # an URL leading to the root of a mirror. 
-  container_iso_mirror_url: null
-
   # RSA keys root path
   rsa_keys_root_path: /etc/anweddol/rsa_keys
 
