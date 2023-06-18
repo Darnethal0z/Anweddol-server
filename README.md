@@ -70,6 +70,13 @@ This software is under the GNU general public license v3, available under any la
 
 This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
 
+## Contact
+
+See the Anweddol community pages : 
+
+- Anweddol [reddit community page](https://www.reddit.com/r/Anweddol)
+- Join the Anweddol [Zulip organization](https://anweddol.zulipchat.com)
+
 ## Developer / Maintainer
 
 - Darnethal0z ([GitHub profile](https://github.com/Darnethal0z))
