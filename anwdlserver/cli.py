@@ -6,7 +6,6 @@
     CLI : Main anwdlserver CLI process
 
 """
-from urllib.parse import urlparse
 from datetime import datetime
 import daemon.pidfile
 import argparse
@@ -26,7 +25,6 @@ from .core.util import (
     isUserExists,
 )
 from .tools.accesstk import AccessTokenManager
-from .tools.iso import RemoteISOManager
 from .config import ConfigurationFileManager
 from .__init__ import __version__
 from .process import (
