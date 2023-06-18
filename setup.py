@@ -68,7 +68,7 @@ if os.geteuid() == 0:
         + "/resources/anweddol-server.service",
         "/usr/lib/systemd/system/anweddol-server.service",
     )
-    executeCommand("systemctl enable anweddol-server.service")
+    # executeCommand("systemctl enable anweddol-server.service")
 
 else:
     print(
@@ -78,7 +78,7 @@ else:
 print("[SETUP] Installing Anweddol server package ...")
 setup(
     name="anwdlserver",
-    version="1.0.0",
+    version="1.0.2",
     description="The Anweddol server implementation",
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",

@@ -3,11 +3,11 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tools.setuptools]
-packages = ["anwdlserver"]
+packages = ["anwdlserver", "anwdlserver.core", "anwdlserver.tools"]
 
 [project]
 name = "anwdlserver"
-version = "1.0.0"
+version = "1.0.2"
 description = "The Anweddol server implementation"
 authors = [
   { name="The Anweddol project", email="the-anweddol-project@proton.me" },
