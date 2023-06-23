@@ -83,10 +83,13 @@ ip_filter:
   enabled: False
 
   # List of allowed / denied IPs
-  # Specify any IPs with 'any'
+  # If 'any' is specified in the denied_ip_list list, the server will search in
+  # the allowed_ip_list list for the IP in question. If specified, the server 
+  # will accept the connection, and will deny it otherwise
+  denied_ip_list: []
+
   allowed_ip_list:
     - any
-  denied_ip_list: []
 
 # ---
 # Access token parameters

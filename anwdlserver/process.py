@@ -90,7 +90,7 @@ def launchServerProcess(config_content):
     )
 
     logging.basicConfig(
-        format=" ** %(asctime)s %(levelname)s : %(message)s",
+        format="%(asctime)s %(levelname)s : %(message)s",
         filename=config_content["paths"].get("log_file_path"),
         level=logging.INFO,
         encoding="utf-8",
@@ -136,24 +136,27 @@ def launchServerProcess(config_content):
         if config_content["ip_filter"].get("enabled"):
             client_socket = kwargs.get("client_socket")
 
-            # First check for denied IPs
+            if "any" in config_content["ip_filter"].get("denied_ip_list"):
+                if client_socket.getpeername()[0] not in config_content[
+                    "ip_filter"
+                ].get("allowed_ip_list") and "any" not in config_content[
+                    "ip_filter"
+                ].get(
+                    "allowed_ip_list"
+                ):
+                    client_socket.shutdown(2)
+                    client_socket.close()
+                    logging.error(
+                        f"[unspec] Denied ip : {client_socket.getpeername()[0]} (IP not allowed)"
+                    )
+
             if client_socket.getpeername()[0] in config_content["ip_filter"].get(
                 "denied_ip_list"
-            ) or "any" in config_content["ip_filter"].get("denied_ip_list"):
+            ):
                 client_socket.shutdown(2)
                 client_socket.close()
                 logging.error(
                     f"[unspec] Denied ip : {client_socket.getpeername()[0]} (Denied IP)"
-                )
-
-            # Then check for allowed IPs
-            if client_socket.getpeername()[0] not in config_content["ip_filter"].get(
-                "allowed_ip_list"
-            ) and "any" not in config_content["ip_filter"].get("allowed_ip_list"):
-                client_socket.shutdown(2)
-                client_socket.close()
-                logging.error(
-                    f"[unspec] Denied ip : {client_socket.getpeername()[0]} (IP not allowed)"
                 )
 
             logging.info("[unspec] IP allowed")
@@ -162,7 +165,7 @@ def launchServerProcess(config_content):
     def handle_new_client(**kwargs):
         client_instance = kwargs.get("client_instance")
 
-        logging.info(f"New client (ID : {client_instance.getID()})")
+        logging.info(f"[{client_instance.getID()}] New client connected")
 
     @server_interface.on_request
     def handle_request(**kwargs):
@@ -212,7 +215,7 @@ def launchServerProcess(config_content):
     @server_interface.on_started
     def notify_started(**kwargs):
         logging.info("Server is started")
-        logging.info(f"Running as : {getpass.getuser()}")
+        logging.info(f"Running as {getpass.getuser()}")
 
     @server_interface.on_created_endpoint_shell
     def notify_endpoint_shell_creation(**kwargs):

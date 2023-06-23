@@ -398,6 +398,7 @@ _Affiliated constant_ : `EVENT_REQUEST`
 
 _Provided parameters_ :
 
+- `name` : The name of the thread where the error occured
 - `ex_class` : The exception class
 - `traceback` : The full traceback of the exception as a string
 - (optional) `client_instance` : The `ClientInstance` instance representing the affiliated client

@@ -78,7 +78,7 @@ else:
 print("[SETUP] Installing Anweddol server package ...")
 setup(
     name="anwdlserver",
-    version="1.0.2",
+    version="1.0.3",
     description="The Anweddol server implementation",
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",

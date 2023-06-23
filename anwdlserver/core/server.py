@@ -216,6 +216,7 @@ class ServerInterface:
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                    name="__handle_create_request",
                     client_instance=client_instance,
                     ex_class=E,
                     traceback="".join(
@@ -349,6 +350,7 @@ class ServerInterface:
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                    name="__handle_new_client",
                     client_instance=client_instance,
                     ex_class=E,
                     traceback="".join(
@@ -373,6 +375,7 @@ class ServerInterface:
         while self.is_running:
             try:
                 new_client_socket = self.server_sock.accept()[0]
+
             except OSError:
                 break
 
@@ -407,6 +410,7 @@ class ServerInterface:
 
                 if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                     self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                        name="__main_server_loop_routine",
                         ex_class=E,
                         traceback="".join(
                             traceback.format_exception(None, E, E.__traceback__)
@@ -435,6 +439,7 @@ class ServerInterface:
 
                 if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                     self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                        name="__update_database_on_domain_shutdown_routine",
                         ex_class=E,
                         traceback="".join(
                             traceback.format_exception(None, E, E.__traceback__)
@@ -590,6 +595,7 @@ class ServerInterface:
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                    name="startServer",
                     ex_class=E,
                     traceback="".join(
                         traceback.format_exception(None, E, E.__traceback__)
@@ -627,6 +633,7 @@ class ServerInterface:
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                    name="stopServer",
                     ex_class=E,
                     traceback="".join(
                         traceback.format_exception(None, E, E.__traceback__)
@@ -637,11 +644,13 @@ class ServerInterface:
         try:
             self.stopServer()
             self.startServer(asynchronous=asynchronous)
+
         except Exception as E:
             self.recorded_runtime_errors_counter += 1
 
             if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
                 self.event_handler_dict[EVENT_RUNTIME_ERROR](
+                    name="restartServer",
                     ex_class=E,
                     traceback="".join(
                         traceback.format_exception(None, E, E.__traceback__)

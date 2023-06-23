@@ -198,3 +198,9 @@ $ sudo pip install .
 The nessessary files and users will be created during the installation.
 
 **NOTE** : If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : setup will be skipped.
+
+If you want the Anweddol server to be started on boot, enable the service by executing : 
+
+```
+$ systemctl enable anweddol-server.service
+```
