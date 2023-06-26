@@ -187,7 +187,13 @@ See the [Container ISO](container_iso.md) section to learn more.
 
 ## Anweddol server installation
 
-Install the Anweddol server by the sources : 
+Install the Anweddol server with pip : 
+
+```
+$ sudo pip install anwdlserver
+```
+
+or by the sources : 
 
 ```
 $ git clone https://github.com/the-anweddol-project/Anweddol-server.git
@@ -203,4 +209,12 @@ If you want the Anweddol server to be started on boot, enable the service by exe
 
 ```
 $ systemctl enable anweddol-server.service
+```
+
+## Anweddol server uninstallation
+
+To uninstall the Anweddol server, execute the `uninstall.sh` script as root : 
+
+```
+$ sudo bash uninstall.sh
 ```
