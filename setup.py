@@ -11,6 +11,8 @@ from subprocess import Popen, PIPE
 import shutil
 import os
 
+ACTUAL_VERSION = "beta-1.0.5"
+
 
 def checkUserExistence(username):
     with open("/etc/passwd", "r") as fd:
@@ -46,6 +48,12 @@ if os.geteuid() == 0:
         "/etc/anweddol/",
     )
 
+    print("[SETUP (root)] Creating uninstallation script ...")
+    shutil.copy(
+        os.path.dirname(os.path.realpath(__file__)) + "/anwdlserver-uninstall",
+        "/usr/local/bin",
+    )
+
     # Add the user anweddol and create ACL entries for rwx 'anweddol' user permission
     # on the /etc/anweddol directory
     print("[SETUP (root)] Creating user 'anweddol' ...")
@@ -54,9 +62,7 @@ if os.geteuid() == 0:
 
     executeCommand("useradd -s /sbin/nologin -M anweddol")
     executeCommand("usermod -a -G libvirt anweddol")
-    executeCommand(
-        "setfacl -m u:anweddol:rwx /etc/anweddol /var/log/anweddol/runtime.txt/"
-    )
+    executeCommand("chown root.anweddol /etc/anweddol")
 
     # Create the systemctl service and enable it
     print("[SETUP (root)] Creating systemctl service ...")
@@ -78,7 +84,7 @@ else:
 print("[SETUP] Installing Anweddol server package ...")
 setup(
     name="anwdlserver",
-    version="1.0.4",
+    version=ACTUAL_VERSION,
     description="The Anweddol server implementation",
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",

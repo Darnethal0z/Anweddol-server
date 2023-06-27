@@ -107,6 +107,7 @@ please report it by opening an issue on the repository :
             exit(0)
 
         except Exception as E:
+            raise E
             if self.json:
                 self.__log_json(
                     LOG_JSON_STATUS_ERROR, "An error occured", data={"error": str(E)}
@@ -134,17 +135,17 @@ please report it by opening an issue on the repository :
     def __log_json(self, status, message, data={}):
         print(json.dumps({"status": status, "message": message, "data": data}))
 
-    def __create_file_recursively(self, file_path, dir_folder_only=False):
+    def __create_file_recursively(self, path, is_folder=False):
         try:
-            os.makedirs(os.path.dirname(file_path))
+            os.makedirs(os.path.dirname(path) if not is_folder else path)
 
         except FileExistsError:
             pass
 
-        if dir_folder_only:
+        if is_folder:
             return
 
-        with open(file_path, "w") as fd:
+        with open(path, "w") as fd:
             fd.close()
 
     def start(self):
@@ -578,8 +579,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         if not os.path.exists(self.config_content["paths"].get("rsa_keys_root_path")):
             self.__create_file_recursively(
-                self.config_content["paths"].get("rsa_keys_root_path"),
-                dir_folder_only=True,
+                self.config_content["paths"].get("rsa_keys_root_path"), is_folder=True
             )
 
         with open(
@@ -598,13 +598,15 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         ) as fd:
             fd.write(new_rsa_wrapper.getPublicKey().decode())
 
-        new_fingerprint = hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()
-
         if args.json:
             self.__log_json(
                 LOG_JSON_STATUS_SUCCESS,
                 "RSA keys re-generated",
-                data={"fingerprint": new_fingerprint},
+                data={
+                    "fingerprint": hashlib.sha256(
+                        new_rsa_wrapper.getPublicKey()
+                    ).hexdigest()
+                },
             )
             return
 
@@ -613,6 +615,6 @@ Sends a SIGINT signal to the server daemon to stop it.""",
             "RSA keys re-generated",
         )
         self.__log(
-            message=f"Fingerprint : {new_fingerprint}",
+            message=f"Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}\n",
             tabulation=True,
         )
