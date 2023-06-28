@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/the-anweddol-project/Anweddol-server"
+"Homepage" = "https://the-anweddol-project.github.io/"
 "Bug Tracker" = "https://github.com/the-anweddol-project/Anweddol-server/issues"
 
 [project.scripts]

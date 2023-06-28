@@ -89,7 +89,7 @@ setup(
         "Topic :: System :: Emulators",
     ],
     license="GPL v3",
-    url="https://github.com/the-anweddol-project/Anweddol-server",
+    url="https://the-anweddol-project.github.io/",
     packages=["anwdlserver", "anwdlserver.core", "anwdlserver.tools"],
     install_requires=[
         "cryptography",
