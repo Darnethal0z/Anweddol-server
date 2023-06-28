@@ -25,7 +25,7 @@ Start the server via the CLI :
 $ sudo anwdlserver start
 ```
 
-(**optional**) add the option `-d` to enable direct execution (the server will run synchronously in the terminal)
+(**optional**) add the option `-d` to enable direct execution (the server will run synchronously in the terminal, as root)
 
 Or via the systemd daemon : 
 

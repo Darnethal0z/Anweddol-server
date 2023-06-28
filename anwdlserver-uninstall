@@ -1,21 +1,21 @@
 #!/bin/bash
 
 # Simple script that uninstalls the Anweddol server
-# Is supposed to be on the /usr/local/bin/ folder
+# Is supposed to be on the /usr/local/bin/ folder after installation
 
 if [ `id -u` -eq 0 ]; then 
 
 	echo "Deleting system files ..."
-	chown -R root.root /etc/anweddol
 	rm -rf /etc∕anweddol
 	rm -rf /var/log/anweddol
 
 	echo "Deleting user 'anweddol' ..."
-	userdel -r anweddol
+	userdel anweddol
 
 	echo "Deleting systemctl service ..."
 	systemctl disable anweddol-server.service
 	rm -rf /usr/lib/systemd/system/anweddol-server.service
+	systemctl daemon-reload
 
 else
 

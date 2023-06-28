@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import daemon
 import signal
+import time
 import json
 import pwd
 import sys
@@ -39,11 +40,6 @@ CONFIG_FILE_PATH = (
     if os.name == "nt"
     else "/etc/anweddol/config.yaml"
 )
-
-LOG_START_ERROR = "x>"
-LOG_START_INFO = "i>"
-LOG_START_WARNING = "!>"
-LOG_START_SUCCESS = "+>"
 
 LOG_JSON_STATUS_SUCCESS = "OK"
 LOG_JSON_STATUS_ERROR = "ERROR"
@@ -96,41 +92,36 @@ please report it by opening an issue on the repository :
 
             self.config_content = self.config_content[1]
 
+        except KeyboardInterrupt:
+            self.__log_stdout("")
+            exit(0)
+
         except Exception as E:
-            self.__log(
-                LOG_START_ERROR, f"Error during configuration file processing : {E}"
-            )
+            self.__log_stdout(f"Error during configuration file processing : {E}\n")
             exit(-1)
 
         try:
             getattr(self, args.command.replace("-", "_"))()
             exit(0)
 
+        except KeyboardInterrupt:
+            self.__log_stdout("")
+            exit(0)
+
         except Exception as E:
-            raise E
             if self.json:
                 self.__log_json(
                     LOG_JSON_STATUS_ERROR, "An error occured", data={"error": str(E)}
                 )
 
             else:
-                self.__log(LOG_START_ERROR, f"Error : {E}")
+                self.__log_stdout(f"An error occured : {E}\n")
 
             exit(-1)
 
-    def __log(self, start=None, message="", tabulation=False, bypass=False):
-        if bypass:
-            return
-
-        print(
-            ("    " if tabulation else "")
-            + (("\n" + start + " ") if start else "")
-            + message
-            + ("\n" if start else ""),
-            file=sys.stderr
-            if (start == LOG_START_ERROR or start == LOG_START_WARNING)
-            else sys.stdout,
-        )
+    def __log_stdout(self, message, bypass=False):
+        if not bypass:
+            print(message)
 
     def __log_json(self, status, message, data={}):
         print(json.dumps({"status": status, "message": message, "data": data}))
@@ -165,6 +156,12 @@ please report it by opening an issue on the repository :
             action="store_true",
         )
         parser.add_argument(
+            "-y", "--assume-yes", help="answer 'y' to any prompts", action="store_true"
+        )
+        parser.add_argument(
+            "-n", "--assume-no", help="answer 'n' to any prompts", action="store_true"
+        )
+        parser.add_argument(
             "--skip-check", help="skip environment validity check", action="store_true"
         )
         parser.add_argument(
@@ -175,18 +172,35 @@ please report it by opening an issue on the repository :
         self.json = args.json
 
         if os.path.exists(self.config_content["paths"].get("pid_file_path")):
-            raise RuntimeError("The server is already running")
+            self.__log_stdout(
+                f"A PID file already exists on {self.config_content['paths'].get('pid_file_path')}",
+                bypass=args.json
+            )
+            choice = (
+                input(" ↳ Kill the affiliated processus (y/n) ? : ")
+                if not args.assume_yes and not args.assume_no
+                else ("y" if args.assume_yes else "n")
+            )
+
+            if choice == "y":
+                with open(self.config_content["paths"].get("pid_file_path"), "r") as fd:
+                    os.kill(int(fd.read()), signal.SIGTERM)
+
+                while 1:
+                    if isPortBindable(self.config_content["server"].get("listen_port")):
+                        break
+
+                    time.sleep(1)
+
+            self.__log_stdout("", bypass=args.json)
 
         if not args.skip_check:
-            self.__log(message="Verifying server environment ...", bypass=args.json)
-
             counter = 0
             errors_list = []
 
             if not isPortBindable(self.config_content["server"].get("listen_port")):
-                self.__log(
-                    message=f"\033[0;31mPort {self.config_content['server'].get('listen_port')} is not bindable\033[0m",
-                    tabulation=True,
+                self.__log_stdout(
+                    f"- Port {self.config_content['server'].get('listen_port')} is not bindable",
                     bypass=args.json,
                 )
 
@@ -198,9 +212,8 @@ please report it by opening an issue on the repository :
             if not isInterfaceExists(
                 self.config_content["container"].get("nat_interface_name")
             ):
-                self.__log(
-                    message=f"\033[0;31mInterface '{self.config_content['container'].get('nat_interface_name')}' does not exists on system\033[0m",
-                    tabulation=True,
+                self.__log_stdout(
+                    f"- Interface '{self.config_content['container'].get('nat_interface_name')}' does not exists on system",
                     bypass=args.json,
                 )
 
@@ -212,9 +225,8 @@ please report it by opening an issue on the repository :
             if not isInterfaceExists(
                 self.config_content["container"].get("bridge_interface_name")
             ):
-                self.__log(
-                    message=f"\033[0;31mInterface '{self.config_content['container'].get('bridge_interface_name')}' does not exists on system\033[0m",
-                    tabulation=True,
+                self.__log_stdout(
+                    f"- Interface '{self.config_content['container'].get('bridge_interface_name')}' does not exists on system",
                     bypass=args.json,
                 )
 
@@ -224,9 +236,8 @@ please report it by opening an issue on the repository :
                 )
 
             if not isUserExists(self.config_content["server"].get("user")):
-                self.__log(
-                    message=f"\033[0;31mUser '{self.config_content['server'].get('user')}' does not exists on system\033[0m",
-                    tabulation=True,
+                self.__log_stdout(
+                    f"- User '{self.config_content['server'].get('user')}' does not exists on system",
                     bypass=args.json,
                 )
 
@@ -238,9 +249,8 @@ please report it by opening an issue on the repository :
             if not os.path.exists(
                 self.config_content["paths"].get("container_iso_path")
             ):
-                self.__log(
-                    message=f"\033[0;31m{self.config_content['paths'].get('container_iso_path')} was not found on system\033[0m",
-                    tabulation=True,
+                self.__log_stdout(
+                    f"- {self.config_content['paths'].get('container_iso_path')} was not found on system",
                     bypass=args.json,
                 )
 
@@ -258,10 +268,7 @@ please report it by opening an issue on the repository :
                     )
 
                 else:
-                    self.__log(
-                        LOG_START_INFO,
-                        f"Check done. {counter} error(s) recorded",
-                    )
+                    self.__log_stdout(f"\nCheck done. {counter} error(s) recorded\n", bypass=args.json)
 
                 return
 
@@ -279,16 +286,20 @@ please report it by opening an issue on the repository :
                         f"{counter} error(s) detected on server environment"
                     )
 
-        self.__log(message="Starting server ...", bypass=args.json)
-
         if args.d:
-            self.__log(
-                message="INFO : Direct execution mode enabled. Use CTRL+C to stop the server.",
+            self.__log_stdout(
+                "Direct execution mode enabled. Use CTRL+C to stop the server.",
                 bypass=args.json,
             )
             launchServerProcess(self.config_content)
 
         else:
+            if args.json:
+                self.__log_json(
+                    LOG_JSON_STATUS_SUCCESS,
+                    "Server is started",
+                )
+
             # https://pypi.org/project/python-daemon/
             with daemon.DaemonContext(
                 uid=pwd.getpwnam(self.config_content["server"].get("user")).pw_uid,
@@ -298,15 +309,6 @@ please report it by opening an issue on the repository :
                 ),
             ):
                 launchServerProcess(self.config_content)
-
-            if args.json:
-                self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is started")
-                return
-
-            self.__log(
-                LOG_START_SUCCESS,
-                "Server is started",
-            )
 
     def stop(self):
         parser = argparse.ArgumentParser(
@@ -323,10 +325,16 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         self.json = args.json
 
-        self.__log(message="Stopping server ...", bypass=args.json)
-
         if not os.path.exists(self.config_content["paths"].get("pid_file_path")):
-            raise RuntimeError("The server is not running")
+            if args.json:
+                self.__log_json(
+                    LOG_JSON_STATUS_SUCCESS,
+                    "Server is already stopped"
+                )
+                return
+
+            self.__log_stdout("Server is already stopped\n")
+            return
 
         with open(self.config_content["paths"].get("pid_file_path"), "r") as fd:
             os.kill(int(fd.read()), signal.SIGTERM)
@@ -334,11 +342,6 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         if args.json:
             self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is stopped")
             return
-
-        self.__log(
-            LOG_START_SUCCESS,
-            "Server is stopped",
-        )
 
     def restart(self):
         parser = argparse.ArgumentParser(
@@ -353,16 +356,29 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         self.json = args.json
 
-        self.__log(
-            message="Restarting server ...",
-            bypass=args.json,
-        )
-
         if not os.path.exists(self.config_content["paths"].get("pid_file_path")):
-            raise RuntimeError("The server is not running")
+            if args.json:
+                self.__log_json(
+                    LOG_JSON_STATUS_SUCCESS,
+                    "Server is already stopped"
+                )
+                return
+
+            self.__log_stdout("Server is already stopped\n")
+            return
 
         with open(self.config_content["paths"].get("pid_file_path"), "r") as fd:
             os.kill(int(fd.read()), signal.SIGTERM)
+
+            while 1:
+                if isPortBindable(self.config_content["server"].get("listen_port")):
+                    break
+
+                time.sleep(1)
+
+        if args.json:
+            self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is started")
+            return
 
         with daemon.DaemonContext(
             uid=pwd.getpwnam(self.config_content["server"].get("user")).pw_uid,
@@ -372,16 +388,6 @@ Sends a SIGINT signal to the server daemon to stop it.""",
             ),
         ):
             launchServerProcess(self.config_content)
-
-        if args.json:
-            self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is started")
-            return
-
-        self.__log(
-            LOG_START_SUCCESS,
-            "Server is started",
-            bypass=args.json,
-        )
 
     def access_tk(self):
         parser = argparse.ArgumentParser(
@@ -436,11 +442,6 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         )
 
         if args.a:
-            self.__log(
-                message="Creating access token ...",
-                bypass=args.json,
-            )
-
             new_entry_tuple = access_token_manager.addEntry(
                 disable=True if args.disabled else False
             )
@@ -454,17 +455,12 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                         "access_token": new_entry_tuple[2],
                     },
                 )
-
                 return
 
-            self.__log(
-                LOG_START_SUCCESS,
-                f"New access token created (Entry ID : {new_entry_tuple[0]})",
+            self.__log_stdout(
+                f"New access token created (Entry ID : {new_entry_tuple[0]})"
             )
-            self.__log(
-                message=f"Token : {new_entry_tuple[2]}\n",
-                tabulation=True,
-            )
+            self.__log_stdout(f" ↳ Token : {new_entry_tuple[2]}\n")
 
         elif args.l:
             if args.json:
@@ -478,63 +474,46 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
                 return
 
-            self.__log(
-                message="Listing recorded entries ID ...",
-            )
-
             for entries in access_token_manager.listEntries():
-                self.__log(
-                    message=f"\n  - Entry ID {entries[0]}",
-                )
-                self.__log(
-                    message=f"     Created : {datetime.fromtimestamp(entries[1])}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"     Enabled : {bool(entries[2])}",
-                    tabulation=True,
-                )
-
-            self.__log(LOG_START_SUCCESS, "Done")
+                self.__log_stdout(f"Entry ID {entries[0]}")
+                self.__log_stdout(f" ↳ Created : {datetime.fromtimestamp(entries[1])}")
+                self.__log_stdout(f" ↳ Enabled : {bool(entries[2])}\n")
 
         else:
-
-            def __check_entry_existence(entry_id):
-                if not access_token_manager.getEntry(entry_id):
-                    access_token_manager.closeDatabase()
-                    raise LookupError(
-                        f"Entry ID {entry_id} does not exists on database"
-                    )
-
             if args.delete_entry:
-                __check_entry_existence(args.delete_entry)
+                if not access_token_manager.getEntry(args.delete_entry):
+                    self.__log_stdout(
+                        f"Entry ID {args.delete_entry} does not exists on database\n"
+                    )
+                    return
+
                 access_token_manager.deleteEntry(args.delete_entry)
 
                 if args.json:
-                    self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
+                    self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted\n")
                     return
 
-                self.__log(
-                    LOG_START_SUCCESS,
-                    f"Entry ID {args.delete_entry} was deleted",
-                )
-
             elif args.enable_entry:
-                __check_entry_existence(args.enable_entry)
+                if not access_token_manager.getEntry(args.enable_entry):
+                    self.__log_stdout(
+                        f"Entry ID {args.enable_entry} does not exists on database\n"
+                    )
+                    return
+
                 access_token_manager.enableEntry(args.enable_entry)
 
                 if args.json:
                     self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
                     return
 
-                self.__log(
-                    LOG_START_SUCCESS,
-                    f"Entry ID {args.enable_entry} was enabled",
-                )
-
             else:
                 if args.disable_entry:
-                    __check_entry_existence(args.disable_entry)
+                    if not access_token_manager.getEntry(args.disable_entry):
+                        self.__log_stdout(
+                            f"Entry ID {args.disable_entry} does not exists on database\n"
+                        )
+                        return
+
                     access_token_manager.disableEntry(args.disable_entry)
 
                     if args.json:
@@ -542,11 +521,6 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                             LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled"
                         )
                         return
-
-                    self.__log(
-                        LOG_START_SUCCESS,
-                        f"Entry ID {args.disable_entry} was disabled",
-                    )
 
         access_token_manager.closeDatabase()
 
@@ -567,11 +541,6 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
-
-        self.__log(
-            message=f"Generating {args.key_size if args.key_size else DEFAULT_RSA_KEY_SIZE} bytes RSA key pair ...",
-            bypass=args.json,
-        )
 
         new_rsa_wrapper = RSAWrapper(
             key_size=args.key_size if args.key_size else DEFAULT_RSA_KEY_SIZE
@@ -610,11 +579,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
             )
             return
 
-        self.__log(
-            LOG_START_SUCCESS,
-            "RSA keys re-generated",
-        )
-        self.__log(
-            message=f"Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}\n",
-            tabulation=True,
+        self.__log_stdout("RSA keys re-generated")
+        self.__log_stdout(
+            f" ↳ Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}\n"
         )

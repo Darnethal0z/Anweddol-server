@@ -11,15 +11,7 @@ from subprocess import Popen, PIPE
 import shutil
 import os
 
-ACTUAL_VERSION = "beta-1.0.5"
-
-
-def checkUserExistence(username):
-    with open("/etc/passwd", "r") as fd:
-        if username not in fd.read():
-            return False
-
-    return True
+ACTUAL_VERSION = "1.1.5"
 
 
 def executeCommand(command):
@@ -54,15 +46,14 @@ if os.geteuid() == 0:
         "/usr/local/bin",
     )
 
-    # Add the user anweddol and create ACL entries for rwx 'anweddol' user permission
-    # on the /etc/anweddol directory
+    # Add the user anweddol and rwx 'anweddol' user permission
+    # on the /etc/anweddol and the /var/log/anweddol directory
     print("[SETUP (root)] Creating user 'anweddol' ...")
-    if checkUserExistence("anweddol"):
-        executeCommand("userdel -r anweddol")
-
     executeCommand("useradd -s /sbin/nologin -M anweddol")
-    executeCommand("usermod -a -G libvirt anweddol")
-    executeCommand("chown root.anweddol /etc/anweddol")
+    executeCommand("usermod -aG libvirt anweddol")
+
+    executeCommand("chown root.anweddol /etc/anweddol /var/log/anweddol")
+    executeCommand("chmod -R g+rwX /etc/anweddol /var/log/anweddol")
 
     # Create the systemctl service and enable it
     print("[SETUP (root)] Creating systemctl service ...")
