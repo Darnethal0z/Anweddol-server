@@ -11,7 +11,7 @@ from subprocess import Popen, PIPE
 import shutil
 import os
 
-ACTUAL_VERSION = "1.1.5"
+ACTUAL_VERSION = "1.1.6"
 
 
 def executeCommand(command):

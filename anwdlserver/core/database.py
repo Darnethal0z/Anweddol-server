@@ -69,28 +69,19 @@ class DatabaseInterface:
             )
         )
 
-        return self.connection.execute(query).fetchone()
+        result = self.connection.execute(query).fetchone()
 
-    # This is kinda dirty, must change it someday
-    # Really useful in a core feature ?
-    def getValueEntryID(self, value: str) -> None | int:
+        return result[0] if result else None
+
+    def getContainerUUIDEntryID(self, container_uuid: str) -> None | int:
         query = select(self.runtime_table.c.EntryID).where(
             self.runtime_table.c.ContainerUUID
-            == hashlib.sha256(value.encode()).hexdigest()
+            == hashlib.sha256(container_uuid.encode()).hexdigest()
         )
+
         result = self.connection.execute(query).fetchone()
 
-        if result:
-            return result
-
-        query = select(self.runtime_table.c.EntryID).where(
-            self.runtime_table.c.ClientToken
-            == hashlib.sha256(value.encode()).hexdigest()
-        )
-        result = self.connection.execute(query).fetchone()
-
-        if result:
-            return result
+        return result[0] if result else None
 
     def getEntry(self, entry_id: int) -> tuple:
         query = self.runtime_table.select().where(

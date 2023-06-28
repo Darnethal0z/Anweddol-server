@@ -174,7 +174,7 @@ please report it by opening an issue on the repository :
         if os.path.exists(self.config_content["paths"].get("pid_file_path")):
             self.__log_stdout(
                 f"A PID file already exists on {self.config_content['paths'].get('pid_file_path')}",
-                bypass=args.json
+                bypass=args.json,
             )
             choice = (
                 input(" ↳ Kill the affiliated processus (y/n) ? : ")
@@ -268,7 +268,9 @@ please report it by opening an issue on the repository :
                     )
 
                 else:
-                    self.__log_stdout(f"\nCheck done. {counter} error(s) recorded\n", bypass=args.json)
+                    self.__log_stdout(
+                        f"\nCheck done. {counter} error(s) recorded\n", bypass=args.json
+                    )
 
                 return
 
@@ -327,10 +329,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         if not os.path.exists(self.config_content["paths"].get("pid_file_path")):
             if args.json:
-                self.__log_json(
-                    LOG_JSON_STATUS_SUCCESS,
-                    "Server is already stopped"
-                )
+                self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
                 return
 
             self.__log_stdout("Server is already stopped\n")
@@ -358,10 +357,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         if not os.path.exists(self.config_content["paths"].get("pid_file_path")):
             if args.json:
-                self.__log_json(
-                    LOG_JSON_STATUS_SUCCESS,
-                    "Server is already stopped"
-                )
+                self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
                 return
 
             self.__log_stdout("Server is already stopped\n")

@@ -377,6 +377,8 @@ class ServerInterface:
                 new_client_socket = self.server_sock.accept()[0]
 
             except OSError:
+                # If the server socket is closed in an external method,
+                # will raise OSError here
                 break
 
             try:
@@ -417,22 +419,31 @@ class ServerInterface:
                         ),
                     )
 
-    # Detects stopped container domains and update the database in consequence
+    # Detects inactive container and delete them of the database in consequence
     def __update_database_on_domain_shutdown_routine(self):
         while self.is_running:
             try:
-                for container in self.virtualization_interface.listStoredContainers():
-                    if not container.isDomainRunning():
-                        container_entry_id = self.database_interface.getValueEntryID(
-                            container.getUUID()
+                # Container UUID to delete are stored in a list and deleted after the
+                # first loop to avoid the "Dictionary changed size during iteration" error
+                delete_container_uuid_list = []
+
+                for (
+                    container_uuid
+                ) in self.virtualization_interface.listStoredContainers():
+                    if not self.virtualization_interface.getStoredContainer(
+                        container_uuid
+                    ).isDomainRunning():
+                        container_entry_id = (
+                            self.database_interface.getContainerUUIDEntryID(
+                                container_uuid
+                            )
                         )
 
                         self.database_interface.deleteEntry(container_entry_id)
-                        self.virtualization_interface.deleteStoredContainer(
-                            container.getUUID()
-                        )
+                        delete_container_uuid_list.append(container_uuid)
 
-                time.sleep(1)
+                for container_uuid in delete_container_uuid_list:
+                    self.virtualization_interface.deleteStoredContainer(container_uuid)
 
             except Exception as E:
                 self.recorded_runtime_errors_counter += 1
@@ -445,6 +456,8 @@ class ServerInterface:
                             traceback.format_exception(None, E, E.__traceback__)
                         ),
                     )
+
+            time.sleep(1)
 
     # Event decorators binding for external scripts callback
     @property
@@ -574,13 +587,13 @@ class ServerInterface:
             self.server_sock.bind((self.bind_address, self.listen_port))
             self.server_sock.listen(5)
 
+            self.is_running = True
+            self.start_timestamp = int(time.time())
+
             # (*)
             threading.Thread(
                 target=self.__update_database_on_domain_shutdown_routine
             ).start()
-
-            self.is_running = True
-            self.start_timestamp = int(time.time())
 
             if self.event_handler_dict.get(EVENT_STARTED):
                 self.event_handler_dict[EVENT_STARTED]()
@@ -616,12 +629,19 @@ class ServerInterface:
             self.server_sock.shutdown(2)
             self.server_sock.close()
 
+            # Container UUID to delete are stored in a list and deleted after the
+            # first loop to avoid the "Dictionary changed size during iteration" error
+            delete_container_uuid_list = []
+
             for container_uuid in self.virtualization_interface.listStoredContainers():
                 self.virtualization_interface.getStoredContainer(
                     container_uuid
                 ).stopDomain()
-                # Do not delete the stored container, else will raise
-                # a RuntimeError("dictionary changed size during iteration")
+
+                delete_container_uuid_list.append(container_uuid)
+
+            for container_uuid in delete_container_uuid_list:
+                self.virtualization_interface.deleteStoredContainer(container_uuid)
 
             self.database_interface.closeDatabase()
 

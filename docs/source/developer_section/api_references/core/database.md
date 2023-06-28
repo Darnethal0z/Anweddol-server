@@ -95,25 +95,25 @@ _Return value_ :
 
 **NOTE** : This method must be used for client credentials verification.
 
-[^1]: Similar to the ROWID in sqlite, identifies the row
+[^1]: Similar to the ROWID in sqlite, an integer that identifies the row
 
 ---
 
 ```
-getValueEntryID(value: str) -> None | int
+getContainerUUIDEntryID(container_uuid: str) -> None | int
 ```
 
-> Get the entry ID[^1] of a specific value
+> Get the entry ID[^1] of a specific container UUID
 
 _Parameters_ :
 
-- `value` : The value to search for. It can be a [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) or a [client token](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
+- `container_uuid` : The container UUID to search for. It can be a [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) or a [client token](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
 
 _Return value_ :
 
-- The hashed value entry ID[^1] if exists, `None` otherwise
+- The container UUID entry ID[^1] if exists, `None` otherwise
 
-**NOTE** : Only the `ContainerUUID` and the `ClientToken` columns values are concerned by this method
+**NOTE** : Only the `ContainerUUID` column value is concerned by this method
 
 ---
 

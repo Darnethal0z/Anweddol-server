@@ -122,6 +122,7 @@ class AnweddolServerCLIProcess:
                 )
 
             logging.info("[INIT] Binding handlers routine ...")
+
             @self.server_interface.on_created_container
             def handle_container_creation(**kwargs):
                 container_instance = kwargs.get("container_instance")
