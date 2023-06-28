@@ -23,3 +23,15 @@ Do not forget to re-enable it when unused :
 ```
 $ sudo setenforce 1
 ```
+
+## [...] `authentication unavailable: no polkit agent available to authenticate action 'org.libvirt.unix.manage'`
+
+*Description* : The user `anweddol` is not on the `libvirt` group.
+
+*Solution* : 
+
+Set the user `anweddol` in the `libvirt` group:
+
+```
+$ sudo usermod -aG libvirt anweddol
+```

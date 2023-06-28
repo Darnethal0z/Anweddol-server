@@ -213,8 +213,8 @@ $ systemctl enable anweddol-server.service
 
 ## Anweddol server uninstallation
 
-To uninstall the Anweddol server, execute the `uninstall.sh` script as root : 
+To uninstall the Anweddol server, execute : 
 
 ```
-$ sudo bash uninstall.sh
+$ sudo anwdlserver-uninstall
 ```

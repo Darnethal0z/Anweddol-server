@@ -12,9 +12,7 @@ Anweddol is a client/server system providing temporary, SSH-controllable virtual
 
 It’s usefulness comes when someone wants to use a fully functional computer while being exposed to less dangers by using it remotely on a dedicated server, and by destroying it after use.
 
-## NOTE
-
-This is the beta version, some bugs or malfunctions can occur during usage. 
+**NOTE** : This is the beta version, some bugs or malfunctions can occur during usage
 
 ## Content
 
@@ -69,13 +67,6 @@ Open a ticket on the [issue page](https://github.com/the-anweddol-project/Anwedd
 This software is under the GNU general public license v3, available under any later version.
 
 This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-
-## Contact
-
-See the Anweddol community pages : 
-
-- Anweddol [reddit community page](https://www.reddit.com/r/Anweddol)
-- Join the Anweddol [Zulip organization](https://anweddol.zulipchat.com)
 
 ## Developer / Maintainer
 

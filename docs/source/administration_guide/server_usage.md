@@ -19,30 +19,34 @@ $ sudo anwdlserver start -c
 
 If some error occured, check the [Troubleshooting](troubleshooting.md) section to fix them.
 
-Start the server via the CLI : 
-
-```
-$ sudo anwdlserver start
-```
-
-(**optional**) add the option `-d` to enable direct execution (the server will run synchronously in the terminal)
-
-Or via the systemd daemon : 
+Start the Anweddol server via systemd : 
 
 ```
 $ sudo systemctl start anweddol-server.service
 ```
 
+Or via the CLI : 
+
+```
+$ sudo anwdlserver start
+```
+
+(**optional**) add the option `-d` to enable direct execution (the server will run synchronously in the terminal, as the actual user)
+
+**NOTE** : It is preferable to use systemd for server lifetime control, mixed usage between CLI and systemd can cause hazardous behaviour.
+
 ## Stop the server
 
-Stop the server via the CLI : 
+Stop the server via the systemd daemon : 
+
+```
+$ sudo systemctl stop anweddol-server.service
+```
+
+Or via the CLI : 
 
 ```
 $ sudo anwdlserver stop
 ```
 
-Or via the systemd daemon : 
-
-```
-$ sudo systemctl stop anweddol-server.service
-```
+**NOTE** : As mentionned in the previous section, it is preferable to use systemd for server lifetime control : mixed usage between CLI and systemd can cause hazardous behaviour.
