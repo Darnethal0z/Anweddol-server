@@ -30,7 +30,7 @@ $ sudo setenforce 1
 
 *Solution* : 
 
-Set the user `anweddol` is the `libvirt` group:
+Set the user `anweddol` in the `libvirt` group:
 
 ```
 $ sudo usermod -aG libvirt anweddol

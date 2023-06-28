@@ -1,7 +1,3 @@
-# Note
-
-This branch is dedicated to the development of the beta-1.0.5. **Do not consider this branch stable**.
-
 # Anweddol-server
 
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-important)](https://www.python.org/)
