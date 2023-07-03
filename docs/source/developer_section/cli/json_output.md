@@ -28,7 +28,7 @@ The `DATA` dictionary content changes according to the command context (see belo
 
 ### Errors
 
-When an error occured during the process with any `--json` parameter set with subcommands, the output JSON will be : 
+When an error is raised during the process with any `--json` parameter set with subcommands, the output JSON will be : 
 
 ```
 {

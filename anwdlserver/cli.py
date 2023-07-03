@@ -467,7 +467,6 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                     "Recorded entries ID",
                     data={"entry_list": entry_list},
                 )
-
                 return
 
             for entries in access_token_manager.listEntries():
@@ -478,6 +477,13 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         else:
             if args.delete_entry:
                 if not access_token_manager.getEntry(args.delete_entry):
+                    if args.json:
+                        self.__log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"Entry ID {args.delete_entry} does not exists on database\n",
+                        )
+                        return
+
                     self.__log_stdout(
                         f"Entry ID {args.delete_entry} does not exists on database\n"
                     )
@@ -491,6 +497,13 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
             elif args.enable_entry:
                 if not access_token_manager.getEntry(args.enable_entry):
+                    if args.json:
+                        self.__log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"Entry ID {args.enable_entry} does not exists on database\n",
+                        )
+                        return
+
                     self.__log_stdout(
                         f"Entry ID {args.enable_entry} does not exists on database\n"
                     )
@@ -505,6 +518,13 @@ Sends a SIGINT signal to the server daemon to stop it.""",
             else:
                 if args.disable_entry:
                     if not access_token_manager.getEntry(args.disable_entry):
+                        if args.json:
+                            self.__log_json(
+                                LOG_JSON_STATUS_ERROR,
+                                f"Entry ID {args.disable_entry} does not exists on database\n",
+                            )
+                            return
+
                         self.__log_stdout(
                             f"Entry ID {args.disable_entry} does not exists on database\n"
                         )

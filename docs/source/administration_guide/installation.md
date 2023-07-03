@@ -187,13 +187,7 @@ See the [Container ISO](container_iso.md) section to learn more.
 
 ## Anweddol server installation
 
-Install the Anweddol server with pip : 
-
-```
-$ sudo pip install anwdlserver
-```
-
-or by the sources : 
+Install the Anweddol server by the sources :
 
 ```
 $ git clone https://github.com/the-anweddol-project/Anweddol-server.git

@@ -11,11 +11,14 @@ from subprocess import Popen, PIPE
 import shutil
 import os
 
-ACTUAL_VERSION = "1.1.6"
-
 
 def executeCommand(command):
     Popen(command.split(" "), shell=False, stdout=PIPE, stderr=PIPE)
+
+
+def getReadmeContent():
+    with open("README.md", "r") as fd:
+        return fd.read()
 
 
 print("[SETUP] Checking operating system ...")
@@ -37,14 +40,16 @@ if os.geteuid() == 0:
 
     shutil.copy(
         os.path.dirname(os.path.realpath(__file__)) + "/resources/config.yaml",
-        "/etc/anweddol/",
+        "/etc/anweddol/config.yaml",
     )
 
     print("[SETUP (root)] Creating uninstallation script ...")
     shutil.copy(
-        os.path.dirname(os.path.realpath(__file__)) + "/anwdlserver-uninstall",
-        "/usr/local/bin",
+        os.path.dirname(os.path.realpath(__file__))
+        + "/resources/anwdlserver-uninstall",
+        "/usr/local/bin/anwdlserver-uninstall",
     )
+    executeCommand("chmod +x /usr/local/bin/anwdlserver-uninstall")
 
     # Add the user anweddol and rwx 'anweddol' user permission
     # on the /etc/anweddol and the /var/log/anweddol directory
@@ -65,7 +70,6 @@ if os.geteuid() == 0:
         + "/resources/anweddol-server.service",
         "/usr/lib/systemd/system/anweddol-server.service",
     )
-    # executeCommand("systemctl enable anweddol-server.service")
 
 else:
     print(
@@ -75,21 +79,23 @@ else:
 print("[SETUP] Installing Anweddol server package ...")
 setup(
     name="anwdlserver",
-    version=ACTUAL_VERSION,
-    description="The Anweddol server implementation",
+    version="1.1.6",
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",
+    url="https://the-anweddol-project.github.io/",
+    description="The Anweddol server implementation",
+    long_description=getReadmeContent(),
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
-        "Intended Audience :: End Users/Desktop",
+        "Intended Audience :: System Administrators",
         "Programming Language :: Python :: 3",
+        "Operating System :: POSIX",
         "Topic :: Internet",
         "Topic :: System :: Emulators",
     ],
     license="GPL v3",
-    url="https://the-anweddol-project.github.io/",
     packages=["anwdlserver", "anwdlserver.core", "anwdlserver.tools"],
     install_requires=[
         "cryptography",
@@ -99,6 +105,7 @@ setup(
         "defusedxml",
         "sqlalchemy",
         "pyyaml",
+        "psutil",
     ],
     include_package_data=True,
     entry_points={
