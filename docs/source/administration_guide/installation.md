@@ -4,9 +4,7 @@
 
 This section covers the prerequisites needed for the system before the Anweddol server installation.
 
-## Prerequisites
-
-### `anwdlserver` package
+## Anweddol server installation
 
 Install the Anweddol server by the sources :
 
@@ -19,6 +17,8 @@ $ sudo pip install .
 The nessessary files and users will be created during the installation.
 
 **NOTE** : If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the full setup will be skipped.
+
+## Environment setup
 
 ### Libvirt
 
