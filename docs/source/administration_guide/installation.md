@@ -6,6 +6,20 @@ This section covers the prerequisites needed for the system before the Anweddol 
 
 ## Prerequisites
 
+### `anwdlserver` package
+
+Install the Anweddol server by the sources :
+
+```
+$ git clone https://github.com/the-anweddol-project/Anweddol-server.git
+$ cd Anweddol-server
+$ sudo pip install .
+```
+
+The nessessary files and users will be created during the installation.
+
+**NOTE** : If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the full setup will be skipped.
+
 ### Libvirt
 
 [Libvirt](https://libvirt.org/) is a toolkit to manage virtualization platforms that the server is using to manage container domains.
@@ -43,19 +57,7 @@ But you need to install build dependencies manually, and this topic is not cover
 
 #### Setup
 
-Install the Anweddol server by the sources :
-
-```
-$ git clone https://github.com/the-anweddol-project/Anweddol-server.git
-$ cd Anweddol-server
-$ sudo pip install .
-```
-
-The nessessary files and users will be created during the installation.
-
-**NOTE** : If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the ull setup will be skipped.
-
-Next, you need to modify the `/etc/libvirt/qemu.conf` file to give libvirt appropriate rights.
+You need to modify the `/etc/libvirt/qemu.conf` file to give libvirt appropriate rights.
 
 Edit the `/etc/libvirt/qemu.conf` file : 
 
