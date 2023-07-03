@@ -43,7 +43,19 @@ But you need to install build dependencies manually, and this topic is not cover
 
 #### Setup
 
-You need to modify the `/etc/libvirt/qemu.conf` file to give libvirt appropriate rights.
+Install the Anweddol server by the sources :
+
+```
+$ git clone https://github.com/the-anweddol-project/Anweddol-server.git
+$ cd Anweddol-server
+$ sudo pip install .
+```
+
+The nessessary files and users will be created during the installation.
+
+**NOTE** : If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the ull setup will be skipped.
+
+Next, you need to modify the `/etc/libvirt/qemu.conf` file to give libvirt appropriate rights.
 
 Edit the `/etc/libvirt/qemu.conf` file : 
 
@@ -90,8 +102,6 @@ Then restart the libvirtd daemon :
 ```
 $ sudo systemctl restart libvirtd.service
 ```
-
-**NOTE** : At this point, the user `anweddol` is not created yet but it should not interfere with libvirt for now.
 
 (source : [ostechnix](https://ostechnix.com/solved-cannot-access-storage-file-permission-denied-error-in-kvm-libvirt/))
 
@@ -185,25 +195,9 @@ Before using the server, you need to download a specific ISO image for the conta
 
 See the [Container ISO](container_iso.md) section to learn more.
 
-## Anweddol server installation
+## Getting started
 
-Install the Anweddol server by the sources :
-
-```
-$ git clone https://github.com/the-anweddol-project/Anweddol-server.git
-$ cd Anweddol-server
-$ sudo pip install .
-```
-
-The nessessary files and users will be created during the installation.
-
-**NOTE** : If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : setup will be skipped.
-
-If you want the Anweddol server to be started on boot, enable the service by executing : 
-
-```
-$ systemctl enable anweddol-server.service
-```
+At this point, you should be able to start the server. See the [Server usage section](server_usage.md) to do so.
 
 ## Anweddol server uninstallation
 
@@ -212,3 +206,5 @@ To uninstall the Anweddol server, execute :
 ```
 $ sudo anwdlserver-uninstall
 ```
+
+The script will delete any files and everything associated with the Anweddol server.
