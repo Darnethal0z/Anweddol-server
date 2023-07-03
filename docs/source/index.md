@@ -4,6 +4,7 @@
 [![build-passing](https://img.shields.io/badge/build-passing-green.svg)](https://shields.io/)
 [![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://shields.io/)
 [![reddit](https://img.shields.io/reddit/subreddit-subscribers/Anweddol?style=social)](https://www.reddit.com/r/Anweddol/)
+[![chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://anweddol.zulipchat.com)
 
 ----
 
