@@ -6,6 +6,7 @@
     CLI : Main anwdlserver CLI process
 
 """
+from subprocess import Popen, PIPE
 from datetime import datetime
 import daemon.pidfile
 import argparse
@@ -101,8 +102,11 @@ please report it by opening an issue on the repository :
             exit(-1)
 
         try:
-            getattr(self, args.command.replace("-", "_"))()
-            exit(0)
+            if getattr(self, args.command.replace("-", "_"))() != -1:
+                exit(0)
+
+            else:
+                exit(-1)
 
         except KeyboardInterrupt:
             self.__log_stdout("")
@@ -125,6 +129,13 @@ please report it by opening an issue on the repository :
 
     def __log_json(self, status, message, data={}):
         print(json.dumps({"status": status, "message": message, "data": data}))
+
+    def __is_libvirt_daemon_running(self):
+        out = Popen(
+            ["/bin/systemctl", "status", "libvirtd.service"], shell=False, stdout=PIPE
+        ).communicate()
+
+        return True if "Active: active (running)" in out[0].decode() else False
 
     def __create_file_recursively(self, path, is_folder=False):
         try:
@@ -171,32 +182,18 @@ please report it by opening an issue on the repository :
 
         self.json = args.json
 
-        if os.path.exists(self.config_content["paths"].get("pid_file_path")):
-            self.__log_stdout(
-                f"A PID file already exists on {self.config_content['paths'].get('pid_file_path')}",
-                bypass=args.json,
-            )
-            choice = (
-                input(" ↳ Kill the affiliated processus (y/n) ? : ")
-                if not args.assume_yes and not args.assume_no
-                else ("y" if args.assume_yes else "n")
-            )
-
-            if choice == "y":
-                with open(self.config_content["paths"].get("pid_file_path"), "r") as fd:
-                    os.kill(int(fd.read()), signal.SIGTERM)
-
-                while 1:
-                    if isPortBindable(self.config_content["server"].get("listen_port")):
-                        break
-
-                    time.sleep(1)
-
-            self.__log_stdout("", bypass=args.json)
-
         if not args.skip_check:
             counter = 0
             errors_list = []
+
+            if not self.__is_libvirt_daemon_running():
+                self.__log_stdout(
+                    "- Libvirt daemon is not running",
+                    bypass=args.json,
+                )
+
+                counter += 1
+                errors_list.append("Libvirt daemon is not running")
 
             if not isPortBindable(self.config_content["server"].get("listen_port")):
                 self.__log_stdout(
@@ -217,9 +214,19 @@ please report it by opening an issue on the repository :
                     bypass=args.json,
                 )
 
+                if (
+                    self.config_content["container"].get("nat_interface_name")
+                    == "virbr0"
+                ):
+                    self.__log_stdout(
+                        "   ↳ Try to start the libvirt daemon to fix this error",
+                        bypass=args.json,
+                    )
+
                 counter += 1
                 errors_list.append(
-                    f"Interface '{self.config_content['container'].get('nat_interface_name')}' does not exists on system"
+                    f"Interface '{self.config_content['container'].get('nat_interface_name')}' does not exists on system",
+                    data={"hint": "Try to start the libvirt daemon to fix this error"},
                 )
 
             if not isInterfaceExists(
@@ -247,16 +254,16 @@ please report it by opening an issue on the repository :
                 )
 
             if not os.path.exists(
-                self.config_content["paths"].get("container_iso_path")
+                self.config_content["container"].get("container_iso_path")
             ):
                 self.__log_stdout(
-                    f"- {self.config_content['paths'].get('container_iso_path')} was not found on system",
+                    f"- {self.config_content['container'].get('container_iso_path')} was not found on system",
                     bypass=args.json,
                 )
 
                 counter += 1
                 errors_list.append(
-                    f"{self.config_content['paths'].get('container_iso_path')} was not found on system"
+                    f"{self.config_content['container'].get('container_iso_path')} was not found on system"
                 )
 
             if args.c:
@@ -272,7 +279,7 @@ please report it by opening an issue on the repository :
                         f"\nCheck done. {counter} error(s) recorded\n", bypass=args.json
                     )
 
-                return
+                return 0
 
             if counter != 0:
                 if args.json:
@@ -281,12 +288,37 @@ please report it by opening an issue on the repository :
                         "Errors detected on server environment",
                         data={"errors_recorded": counter, "errors_list": errors_list},
                     )
-                    return
+                    return -1
 
                 else:
                     raise EnvironmentError(
                         f"{counter} error(s) detected on server environment"
                     )
+
+        if os.path.exists(self.config_content["server"].get("pid_file_path")):
+            self.__log_stdout(
+                f"A PID file already exists on {self.config_content['server'].get('pid_file_path')}",
+                bypass=args.json,
+            )
+            choice = (
+                input(" ↳ Kill the affiliated processus (y/n) ? : ")
+                if not args.assume_yes and not args.assume_no
+                else ("y" if args.assume_yes else "n")
+            )
+
+            if choice == "y":
+                with open(
+                    self.config_content["server"].get("pid_file_path"), "r"
+                ) as fd:
+                    os.kill(int(fd.read()), signal.SIGTERM)
+
+                while 1:
+                    if isPortBindable(self.config_content["server"].get("listen_port")):
+                        break
+
+                    time.sleep(1)
+
+            self.__log_stdout("", bypass=args.json)
 
         if args.d:
             self.__log_stdout(
@@ -307,7 +339,7 @@ please report it by opening an issue on the repository :
                 uid=pwd.getpwnam(self.config_content["server"].get("user")).pw_uid,
                 gid=pwd.getpwnam(self.config_content["server"].get("user")).pw_gid,
                 pidfile=daemon.pidfile.PIDLockFile(
-                    self.config_content["paths"].get("pid_file_path")
+                    self.config_content["server"].get("pid_file_path")
                 ),
             ):
                 launchServerProcess(self.config_content)
@@ -327,20 +359,20 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         self.json = args.json
 
-        if not os.path.exists(self.config_content["paths"].get("pid_file_path")):
+        if not os.path.exists(self.config_content["server"].get("pid_file_path")):
             if args.json:
                 self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
-                return
+                return 0
 
             self.__log_stdout("Server is already stopped\n")
-            return
+            return 0
 
-        with open(self.config_content["paths"].get("pid_file_path"), "r") as fd:
+        with open(self.config_content["server"].get("pid_file_path"), "r") as fd:
             os.kill(int(fd.read()), signal.SIGTERM)
 
         if args.json:
             self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is stopped")
-            return
+            return 0
 
     def restart(self):
         parser = argparse.ArgumentParser(
@@ -355,15 +387,15 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         self.json = args.json
 
-        if not os.path.exists(self.config_content["paths"].get("pid_file_path")):
+        if not os.path.exists(self.config_content["server"].get("pid_file_path")):
             if args.json:
                 self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
-                return
+                return 0
 
             self.__log_stdout("Server is already stopped\n")
-            return
+            return 0
 
-        with open(self.config_content["paths"].get("pid_file_path"), "r") as fd:
+        with open(self.config_content["server"].get("pid_file_path"), "r") as fd:
             os.kill(int(fd.read()), signal.SIGTERM)
 
             while 1:
@@ -374,13 +406,13 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
         if args.json:
             self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is started")
-            return
+            return 0
 
         with daemon.DaemonContext(
             uid=pwd.getpwnam(self.config_content["server"].get("user")).pw_uid,
             gid=pwd.getpwnam(self.config_content["server"].get("user")).pw_gid,
             pidfile=daemon.pidfile.PIDLockFile(
-                self.config_content["paths"].get("pid_file_path")
+                self.config_content["server"].get("pid_file_path")
             ),
         ):
             launchServerProcess(self.config_content)
@@ -427,14 +459,14 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         self.json = args.json
 
         if not os.path.exists(
-            self.config_content["paths"].get("access_tokens_database_path")
+            self.config_content["access_token"].get("access_tokens_database_path")
         ):
             self.__create_file_recursively(
-                self.config_content["paths"].get("access_tokens_database_path")
+                self.config_content["access_token"].get("access_tokens_database_path")
             )
 
         access_token_manager = AccessTokenManager(
-            self.config_content["paths"].get("access_tokens_database_path")
+            self.config_content["access_token"].get("access_tokens_database_path")
         )
 
         if args.a:
@@ -451,7 +483,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                         "access_token": new_entry_tuple[2],
                     },
                 )
-                return
+                return 0
 
             self.__log_stdout(
                 f"New access token created (Entry ID : {new_entry_tuple[0]})"
@@ -467,7 +499,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                     "Recorded entries ID",
                     data={"entry_list": entry_list},
                 )
-                return
+                return 0
 
             for entries in access_token_manager.listEntries():
                 self.__log_stdout(f"Entry ID {entries[0]}")
@@ -482,18 +514,18 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID {args.delete_entry} does not exists on database\n",
                         )
-                        return
+                        return 0
 
                     self.__log_stdout(
                         f"Entry ID {args.delete_entry} does not exists on database\n"
                     )
-                    return
+                    return 0
 
                 access_token_manager.deleteEntry(args.delete_entry)
 
                 if args.json:
                     self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted\n")
-                    return
+                    return 0
 
             elif args.enable_entry:
                 if not access_token_manager.getEntry(args.enable_entry):
@@ -502,18 +534,18 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID {args.enable_entry} does not exists on database\n",
                         )
-                        return
+                        return 0
 
                     self.__log_stdout(
                         f"Entry ID {args.enable_entry} does not exists on database\n"
                     )
-                    return
+                    return 0
 
                 access_token_manager.enableEntry(args.enable_entry)
 
                 if args.json:
                     self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
-                    return
+                    return 0
 
             else:
                 if args.disable_entry:
@@ -523,12 +555,12 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                                 LOG_JSON_STATUS_ERROR,
                                 f"Entry ID {args.disable_entry} does not exists on database\n",
                             )
-                            return
+                            return 0
 
                         self.__log_stdout(
                             f"Entry ID {args.disable_entry} does not exists on database\n"
                         )
-                        return
+                        return 0
 
                     access_token_manager.disableEntry(args.disable_entry)
 
@@ -536,7 +568,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                         self.__log_json(
                             LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled"
                         )
-                        return
+                        return 0
 
         access_token_manager.closeDatabase()
 
@@ -562,13 +594,13 @@ Sends a SIGINT signal to the server daemon to stop it.""",
             key_size=args.key_size if args.key_size else DEFAULT_RSA_KEY_SIZE
         )
 
-        if not os.path.exists(self.config_content["paths"].get("rsa_keys_root_path")):
+        if not os.path.exists(self.config_content["server"].get("rsa_keys_root_path")):
             self.__create_file_recursively(
-                self.config_content["paths"].get("rsa_keys_root_path"), is_folder=True
+                self.config_content["server"].get("rsa_keys_root_path"), is_folder=True
             )
 
         with open(
-            self.config_content["paths"].get("rsa_keys_root_path")
+            self.config_content["server"].get("rsa_keys_root_path")
             + "/"
             + PRIVATE_PEM_KEY_FILENAME,
             "w",
@@ -576,7 +608,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
             fd.write(new_rsa_wrapper.getPrivateKey().decode())
 
         with open(
-            self.config_content["paths"].get("rsa_keys_root_path")
+            self.config_content["server"].get("rsa_keys_root_path")
             + "/"
             + PUBLIC_PEM_KEY_FILENAME,
             "w",
@@ -593,7 +625,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                     ).hexdigest()
                 },
             )
-            return
+            return 0
 
         self.__log_stdout("RSA keys re-generated")
         self.__log_stdout(
