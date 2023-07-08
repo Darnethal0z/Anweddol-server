@@ -11,6 +11,8 @@ from subprocess import Popen, PIPE
 import shutil
 import os
 
+VERSION = "1.2.7"
+
 
 def executeCommand(command):
     Popen(command.split(" "), shell=False, stdout=PIPE, stderr=PIPE)
@@ -79,7 +81,7 @@ else:
 print("[SETUP] Installing Anweddol server package ...")
 setup(
     name="anwdlserver",
-    version="1.1.7",
+    version=VERSION,
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",
     url="https://the-anweddol-project.github.io/",

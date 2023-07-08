@@ -229,12 +229,12 @@ class ServerInterface:
             "container_uuid"
         )
 
-        credentials_entry_tuple = self.database_interface.getEntryID(
+        credentials_entry = self.database_interface.getEntryID(
             request_container_uuid,
             client_instance.getStoredRequest()["parameters"].get("client_token"),
         )
 
-        if not credentials_entry_tuple:
+        if not credentials_entry:
             client_instance.sendResponse(False, RESPONSE_MSG_BAD_AUTH)
             return
 
@@ -243,7 +243,7 @@ class ServerInterface:
         )
         container_instance.stopDomain()
 
-        self.database_interface.deleteEntry(credentials_entry_tuple[0])
+        self.database_interface.deleteEntry(credentials_entry)
         self.virtualization_interface.deleteStoredContainer(request_container_uuid)
 
         if self.event_handler_dict.get(EVENT_DESTROYED_CONTAINER):
@@ -419,7 +419,7 @@ class ServerInterface:
                         ),
                     )
 
-    # Detects inactive container and delete them of the database in consequence
+    # Detects inactive container and delete them in consequence
     def __update_database_on_domain_shutdown_routine(self):
         while self.is_running:
             try:
@@ -626,7 +626,6 @@ class ServerInterface:
 
             self.is_running = False
 
-            self.server_sock.shutdown(2)
             self.server_sock.close()
 
             # Container UUID to delete are stored in a list and deleted after the

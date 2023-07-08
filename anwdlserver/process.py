@@ -6,9 +6,13 @@
     CLI : Main server process functions
 
 """
+from zipfile import ZipFile
+import threading
+import datetime
 import logging
 import getpass
 import signal
+import time
 import os
 
 # Intern importation
@@ -33,12 +37,55 @@ class AnweddolServerCLIProcess:
         self.access_token_manager = None
         self.runtime_rsa_wrapper = None
         self.server_interface = None
+        self.is_running = False
+
+    def __log_rotate_routine(self):
+        while self.is_running:
+            with open(self.config_content["server"].get("log_file_path"), "r") as fd:
+                if len([0 for line in fd.readlines()]) >= self.config_content[
+                    "log_rotation"
+                ].get("max_log_lines_amount"):
+                    if not os.path.exists(
+                        self.config_content["log_rotation"].get(
+                            "log_archive_folder_path"
+                        )
+                    ):
+                        os.mkdir(
+                            self.config_content["log_rotation"].get(
+                                "log_archive_folder_path"
+                            )
+                        )
+
+                    if self.config_content["log_rotation"].get("action") == "archive":
+                        new_archive_name = f"archived_{datetime.datetime.now()}.zip"
+                        ZipFile(
+                            self.config_content["log_rotation"].get(
+                                "log_archive_folder_path"
+                            )
+                            + (
+                                "/"
+                                if self.config_content["log_rotation"].get(
+                                    "log_archive_folder_path"
+                                )[-1]
+                                != "/"
+                                else ""
+                            )
+                            + new_archive_name,
+                            "w",
+                        ).write(self.config_content["server"].get("log_file_path"))
+
+                    with open(
+                        self.config_content["server"].get("log_file_path"), "w"
+                    ) as fd:
+                        fd.close()
+
+            time.sleep(1)
 
     def initializeProcess(self):
         try:
             logging.basicConfig(
                 format="%(asctime)s %(levelname)s : %(message)s",
-                filename=self.config_content["paths"].get("log_file_path"),
+                filename=self.config_content["server"].get("log_file_path"),
                 level=logging.INFO,
                 encoding="utf-8",
                 filemode="a",
@@ -55,19 +102,19 @@ class AnweddolServerCLIProcess:
             logging.info("[INIT] Loading instance RSA key pair ...")
             if not self.config_content["server"].get("enable_onetime_rsa_keys"):
                 if not os.path.exists(
-                    self.config_content["paths"].get("rsa_keys_root_path")
+                    self.config_content["server"].get("rsa_keys_root_path")
                 ):
-                    os.mkdir(self.config_content["paths"].get("rsa_keys_root_path"))
+                    os.mkdir(self.config_content["server"].get("rsa_keys_root_path"))
 
                 if not os.path.exists(
-                    self.config_content["paths"].get("rsa_keys_root_path")
+                    self.config_content["server"].get("rsa_keys_root_path")
                     + "/"
                     + PRIVATE_PEM_KEY_FILENAME
                 ):
                     self.runtime_rsa_wrapper = RSAWrapper()
 
                     with open(
-                        self.config_content["paths"].get("rsa_keys_root_path")
+                        self.config_content["server"].get("rsa_keys_root_path")
                         + "/"
                         + PUBLIC_PEM_KEY_FILENAME,
                         "w",
@@ -75,7 +122,7 @@ class AnweddolServerCLIProcess:
                         fd.write(self.runtime_rsa_wrapper.getPublicKey().decode())
 
                     with open(
-                        self.config_content["paths"].get("rsa_keys_root_path")
+                        self.config_content["server"].get("rsa_keys_root_path")
                         + "/"
                         + PRIVATE_PEM_KEY_FILENAME,
                         "w",
@@ -86,7 +133,7 @@ class AnweddolServerCLIProcess:
                     self.runtime_rsa_wrapper = RSAWrapper(generate_key_pair=False)
 
                     with open(
-                        self.config_content["paths"].get("rsa_keys_root_path")
+                        self.config_content["server"].get("rsa_keys_root_path")
                         + "/"
                         + PUBLIC_PEM_KEY_FILENAME,
                         "r",
@@ -94,7 +141,7 @@ class AnweddolServerCLIProcess:
                         self.runtime_rsa_wrapper.setPublicKey(fd.read().encode())
 
                     with open(
-                        self.config_content["paths"].get("rsa_keys_root_path")
+                        self.config_content["server"].get("rsa_keys_root_path")
                         + "/"
                         + PRIVATE_PEM_KEY_FILENAME,
                         "r",
@@ -107,7 +154,7 @@ class AnweddolServerCLIProcess:
                 listen_port=self.config_content["server"].get("listen_port"),
                 client_timeout=self.config_content["server"].get("timeout"),
                 runtime_virtualization_interface=VirtualizationInterface(
-                    self.config_content["paths"].get("container_iso_path"),
+                    self.config_content["container"].get("container_iso_path"),
                     max_allowed_containers=self.config_content["container"].get(
                         "max_allowed_running_containers"
                     ),
@@ -118,7 +165,7 @@ class AnweddolServerCLIProcess:
             if self.config_content["access_token"].get("enabled"):
                 logging.info("[INIT] Loading access token database ...")
                 self.access_token_manager = AccessTokenManager(
-                    self.config_content["paths"].get("access_tokens_database_path")
+                    self.config_content["container"].get("access_tokens_database_path")
                 )
 
             logging.info("[INIT] Binding handlers routine ...")
@@ -300,6 +347,10 @@ class AnweddolServerCLIProcess:
         signal.signal(signal.SIGTERM, self.stopProcess)
         signal.signal(signal.SIGINT, self.stopProcess)
 
+        if self.config_content["log_rotation"].get("enabled"):
+            self.is_running = True
+            threading.Thread(target=self.__log_rotate_routine).start()
+
         self.server_interface.startServer()
 
     # 2 parameters are given on method call ?
@@ -308,6 +359,9 @@ class AnweddolServerCLIProcess:
         logging.info("Stopping server ...")
         if self.access_token_manager:
             self.access_token_manager.closeDatabase()
+
+        if self.config_content["log_rotation"].get("enabled"):
+            self.is_running = False
 
         self.server_interface.stopServer()
 

@@ -40,21 +40,11 @@ class ConfigurationFileManager:
                 error(field, f"{value} is not a valid URL format")
 
         validator_schema_dict = {
-            "paths": {
-                "type": "dict",
-                "require_all": True,
-                "schema": {
-                    "log_file_path": {"type": "string"},
-                    "pid_file_path": {"type": "string"},
-                    "container_iso_path": {"type": "string"},
-                    "rsa_keys_root_path": {"type": "string"},
-                    "access_tokens_database_path": {"type": "string"},
-                },
-            },
             "container": {
                 "type": "dict",
                 "require_all": True,
                 "schema": {
+                    "container_iso_path": {"type": "string"},
                     "max_allowed_running_containers": {"type": "integer", "min": 1},
                     # Get the available memory in megabytes
                     # (does not consider swap memory)
@@ -79,6 +69,9 @@ class ConfigurationFileManager:
                 "type": "dict",
                 "require_all": True,
                 "schema": {
+                    "rsa_keys_root_path": {"type": "string"},
+                    "log_file_path": {"type": "string"},
+                    "pid_file_path": {"type": "string"},
                     "user": {"type": "string"},
                     "bind_address": {
                         "type": "string",
@@ -92,6 +85,16 @@ class ConfigurationFileManager:
                     },
                     "timeout": {"type": "integer", "min": 0},
                     "enable_onetime_rsa_keys": {"type": "boolean"},
+                },
+            },
+            "log_rotation": {
+                "type": "dict",
+                "require_all": True,
+                "schema": {
+                    "enabled": {"type": "boolean"},
+                    "log_archive_folder_path": {"type": "string"},
+                    "max_log_lines_amount": {"type": "integer", "min": 1},
+                    "action": {"type": "string", "allowed": ["delete", "archive"]},
                 },
             },
             "ip_filter": {
@@ -113,6 +116,7 @@ class ConfigurationFileManager:
                 "type": "dict",
                 "require_all": True,
                 "schema": {
+                    "access_tokens_database_path": {"type": "string"},
                     "enabled": {"type": "boolean"},
                 },
             },

@@ -6,27 +6,11 @@
 # and the official anweddol server documentation.
 
 # ---
-# Paths specifications for nessessary files
-paths:
-
-  # Server log file path 
-  log_file_path: /var/log/anweddol/runtime.txt
-
-  # PID file path for server daemon process
-  pid_file_path: /etc/anweddol/daemon_process.pid
-
-  # Live OS image path that will be used by containers 
-  container_iso_path: /etc/anweddol/iso/anweddol_container.iso
-
-  # RSA keys root path
-  rsa_keys_root_path: /etc/anweddol/rsa_keys
-
-  # Access token database file path
-  access_tokens_database_path: /etc/anweddol/credentials/access_token.db
-
-# ---
 # Contains all nessessary values for container management
 container:
+
+  # Live OS image path that will be used by containers
+  container_iso_path: /etc/anweddol/iso/anweddol_container.iso
 
   # Max amount of containers that can run at the same time
   # Zero is not allowed
@@ -61,6 +45,15 @@ container:
 # Nessessary parameters for server listen interface
 server:
 
+  # RSA keys root path
+  rsa_keys_root_path: /etc/anweddol/rsa_keys
+
+  # Server log file path 
+  log_file_path: /var/log/anweddol/runtime.txt
+
+  # PID file path for server daemon process
+  pid_file_path: /etc/anweddol/daemon_process.pid
+
   # Privilege-separated user with which to run the server
   # It is not recommended to launch the server with root privileges
   user: anweddol
@@ -75,11 +68,29 @@ server:
   enable_onetime_rsa_keys: False
 
 # ---
+# Server log rotation parameters
+log_rotation:
+
+  # Enable this feature or not
+  enabled: True
+
+  # Archived logs folder path
+  log_archive_folder_path: /var/log/anweddol/archives
+
+  # The amount of lines allowed in the log file specified in log_file_path
+  # before archiving it
+  max_log_lines_amount: 4000
+
+  # Specify the action on log rotation
+  # 'delete' to delete the actual log file content
+  # 'archive' to archive log file in a zip format
+  action: archive
+
+# ---
 # IP filtering parameters
 ip_filter:
 
   # Enable this feature or not
-  # If this value is set to 'false', all parameters below will be ignored 
   enabled: False
 
   # List of allowed / denied IPs
@@ -96,5 +107,7 @@ ip_filter:
 access_token:
 
   # Enable this feature or not
-  # If this value is set to 'false', all parameters below will be ignored 
   enabled: False
+
+  # Access token database file path
+  access_tokens_database_path: /etc/anweddol/credentials/access_token.db

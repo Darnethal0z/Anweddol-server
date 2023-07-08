@@ -38,3 +38,15 @@ Here is a sample of logs generated during the development phase of the Anweddol 
 ```
 
 **NOTE** : Clients are represented by their IDs, here "12ca17b" : It is a way of programmatically identifying the client other than with his IP. It is the first 7 characters of the client's IP SHA256.
+
+## Log rotation
+
+You have the possibility to rotate logs by archiving or deleting them.
+
+Archived logs will be stored in a separate folder withing zipped files with the name format : 
+
+```
+archived_<DATE>.zip
+```
+
+where `DATE` is the rotation date. See the `log_rotation` section in the [configuration file](configuration_file.md) for more.
