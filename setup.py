@@ -11,7 +11,7 @@ from subprocess import Popen, PIPE
 import shutil
 import os
 
-VERSION = "1.2.7"
+VERSION = "1.2.8"
 
 
 def executeCommand(command):
@@ -51,16 +51,16 @@ if os.geteuid() == 0:
         + "/resources/anwdlserver-uninstall",
         "/usr/local/bin/anwdlserver-uninstall",
     )
-    executeCommand("chmod +x /usr/local/bin/anwdlserver-uninstall")
+    executeCommand("/bin/chmod +x /usr/local/bin/anwdlserver-uninstall")
 
     # Add the user anweddol and rwx 'anweddol' user permission
     # on the /etc/anweddol and the /var/log/anweddol directory
     print("[SETUP (root)] Creating user 'anweddol' ...")
-    executeCommand("useradd -s /sbin/nologin -M anweddol")
-    executeCommand("usermod -aG libvirt anweddol")
+    executeCommand("/sbin/useradd -s /sbin/nologin -M anweddol")
+    executeCommand("/sbin/usermod -aG libvirt anweddol")
 
-    executeCommand("chown root.anweddol /etc/anweddol /var/log/anweddol")
-    executeCommand("chmod -R g+rwX /etc/anweddol /var/log/anweddol")
+    executeCommand("/bin/chown root.anweddol /etc/anweddol /var/log/anweddol")
+    executeCommand("/bin/chmod -R g+rwX /etc/anweddol /var/log/anweddol")
 
     # Create the systemctl service and enable it
     print("[SETUP (root)] Creating systemctl service ...")
