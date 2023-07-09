@@ -35,3 +35,9 @@ Set the user `anweddol` in the `libvirt` group:
 ```
 $ sudo usermod -aG libvirt anweddol
 ```
+
+## Outdated version of python3
+
+*Description* : Some tracebacks can occur during CLI usage due to an outdated version of python. 
+
+*Solution* : Be sure to run at least python 3.10 to avoid compatibility problems
