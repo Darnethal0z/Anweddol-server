@@ -2,7 +2,6 @@
 
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-important)](https://www.python.org/)
 [![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://shields.io/)
-[![reddit](https://img.shields.io/reddit/subreddit-subscribers/Anweddol?style=social)](https://www.reddit.com/r/Anweddol/)
 [![chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://anweddol.zulipchat.com)
 ---
 
