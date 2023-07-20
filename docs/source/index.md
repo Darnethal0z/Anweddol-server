@@ -71,7 +71,6 @@ Here is the social links of the Anweddol project :
 
 - [https://github.com/the-anweddol-project](https://github.com/the-anweddol-project)
 - [https://anweddol.zulipchat.com](https://anweddol.zulipchat.com)
-- the-anweddol-project@proton.me ([PGP key](https://the-anweddol-project.github.io/contact/A050C2B36F2E80BE6FDE6E0F0D3F21975020EFC0.asc))
 
 You can also mail `the-anweddol-project@proton.me`, consider using the [PGP public key](https://the-anweddol-project.github.io/contact/A050C2B36F2E80BE6FDE6E0F0D3F21975020EFC0.asc)
 
