@@ -6,6 +6,16 @@
 
 ---
 
+## Deprecation notice
+
+After a review of the overall system of the actual version (`1.2.8`), some points were too buggy or simply not functional to be properly implemented, a new update `2.0.0` will correct most of the problems of the current version.
+
+In the meantime, the actual version and its release is not to be considered stable. You are of course invited to let everyone know about your experiences with Anweddol software to date, so that we can improve it to meet your expectations.
+
+Do not hesitate to join the zulip organization to stay up-to-date for any notifications : [https://anweddol.zulipchat.com](https://anweddol.zulipchat.com).
+
+---
+
 ## Introduction
 
 Anweddol is a client/server system providing temporary, SSH-controllable virtual machines to enhance anonymity online.
