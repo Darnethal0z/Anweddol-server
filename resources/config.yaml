@@ -6,20 +6,22 @@
 # and the official anweddol server documentation.
 
 # ---
-# Contains all nessessary values for container management
+# Contains all nessessary values for container management.
 container:
 
-  # Live OS image path that will be used by containers
-  container_iso_path: /etc/anweddol/iso/anweddol_container.iso
+  # Live OS image path that will be used by containers.
+  container_iso_file_path: /etc/anweddol/iso/anweddol_container.iso
 
-  # Max amount of containers that can run at the same time
-  # Zero is not allowed
-  max_allowed_running_containers: 6
+  # Max amount of containers domains that can run at the same time.
+  # Zero is not allowed, but can be set to 'null' to not
+  # provide any restrictions : Make sure your actual system 
+  # can support large amount of running container domains before doing so.
+  max_allowed_running_container_domains: 6
 
-  # Memory allocated to a container, exprimed in MB
+  # Memory allocated to a container, exprimed in MB.
   container_memory: 1024
 
-  # Numbers of virtual CPUs that are allocated to a container
+  # Numbers of virtual CPUs that are allocated to a container.
   container_vcpus: 2
 
   # NAT interface name that containers will be using to receive
@@ -27,14 +29,7 @@ container:
   # interface created by the libvirtd daemon when launched.
   nat_interface_name: virbr0
 
-  # Bridged interface name that containers will be using to
-  # communicate with clients. Default is 'anwdlbr0', which is 
-  # an universal interface name. 
-  # You can use another interface as long as it permits 
-  # containers and clients to communicate.
-  bridge_interface_name: anwdlbr0
-
-  # Container endpoint username / password 
+  # Container endpoint username / password.
   # NOTE : The container endpoint default credentials are public and
   # normalized, that's why they are stored here unencrypted. 
   endpoint_username: endpoint
@@ -42,72 +37,84 @@ container:
   endpoint_listen_port: 22
 
 # ---
-# Nessessary parameters for server listen interface
+# Nessessary parameters for server listen interface.
 server:
 
-  # RSA keys root path
-  rsa_keys_root_path: /etc/anweddol/rsa_keys
+  # RSA keys paths.
+  public_rsa_key_file_path: /etc/anweddol/rsa_keys/public.pem
+  private_rsa_key_file_path: /etc/anweddol/rsa_keys/private.pem
 
-  # Server log file path 
+  # Server log file path.
   log_file_path: /var/log/anweddol/runtime.txt
 
-  # PID file path for server daemon process
+  # PID file path for server daemon process.
   pid_file_path: /etc/anweddol/daemon_process.pid
 
-  # Privilege-separated user with which to run the server
-  # It is not recommended to launch the server with root privileges
+  # Privilege-separated user with which to run the server.
+  # It is not recommended to launch the server with root privileges.
   user: anweddol
 
-  # Server listen informations
+  # Server listen informations.
   bind_address: 0.0.0.0
   listen_port: 6150
   timeout: 10
 
-  # Generate RSA key pair on start and ignore the stored one
-  # May increase startup time
+  # Generate RSA key pair on start and ignore the stored one.
+  # May increase startup time.
   enable_onetime_rsa_keys: False
 
 # ---
-# Server log rotation parameters
+# Port forwarding parameters
+port_forwarding:
+
+  # The forwardable port range to use.
+  # Make sure that the amount of ports specified in the range is
+  # at least equal to the 'max_allowed_running_containers' field
+  # in the 'container' section, else it will be considered as an error.
+  port_range: [10000, 20000]
+
+# ---
+# Server log rotation parameters.
 log_rotation:
 
-  # Enable this feature or not
+  # Enable this feature or not.
   enabled: True
 
-  # Archived logs folder path
-  log_archive_folder_path: /var/log/anweddol/archives
+  # Archived logs folder path.
+  log_archive_folder_path: /var/log/anweddol/archived
 
   # The amount of lines allowed in the log file specified in log_file_path
-  # before archiving it
+  # before archiving it.
   max_log_lines_amount: 4000
 
-  # Specify the action on log rotation
-  # 'delete' to delete the actual log file content
-  # 'archive' to archive log file in a zip format
+  # Specify the action on log rotation :
+  # - 'delete' to delete the actual log file content,
+  # - 'archive' to archive log file in a zip format.
   action: archive
 
 # ---
-# IP filtering parameters
+# IP filtering parameters.
 ip_filter:
 
-  # Enable this feature or not
+  # Enable this feature or not.
   enabled: False
 
-  # List of allowed / denied IPs
+  # List of allowed / denied IPs.
   # If 'any' is specified in the denied_ip_list list, the server will search in
   # the allowed_ip_list list for the IP in question. If specified, the server 
-  # will accept the connection, and will deny it otherwise
+  # will accept the connection, and will deny it otherwise.
   denied_ip_list: []
 
   allowed_ip_list:
     - any
 
 # ---
-# Access token parameters
+# Access token parameters.
 access_token:
 
-  # Enable this feature or not
+  # Enable this feature or not.
   enabled: False
 
-  # Access token database file path
-  access_tokens_database_path: /etc/anweddol/credentials/access_token.db
+  # Access token database file path.
+  access_tokens_database_file_path: /etc/anweddol/credentials/access_token.db
+
