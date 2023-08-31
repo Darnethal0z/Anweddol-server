@@ -6,7 +6,6 @@
 	Server features
 
 """
-import multiprocessing
 import threading
 import traceback
 import socket
@@ -15,19 +14,19 @@ import time
 
 # Intern importation
 from .virtualization import VirtualizationInterface
+from .port_forwarding import PortForwardingInterface
 from .database import DatabaseInterface
 from .client import ClientInstance
-from .util import isSocketClosed
+from .utilities import isSocketClosed
 from .crypto import RSAWrapper
 
+# Version indicator importation
+from ..__init__ import __version__
 
 # Default parameters
 DEFAULT_SERVER_BIND_ADDRESS = ""
 DEFAULT_SERVER_LISTEN_PORT = 6150
 DEFAULT_CLIENT_TIMEOUT = 10
-
-DEFAULT_ASYCHRONOUS = False
-
 
 # Constants definition
 REQUEST_VERB_CREATE = "CREATE"
@@ -39,34 +38,46 @@ RESPONSE_MSG_BAD_AUTH = "Bad authentication"
 RESPONSE_MSG_BAD_REQ = "Bad request"
 RESPONSE_MSG_REFUSED_REQ = "Refused request"
 RESPONSE_MSG_UNAVAILABLE = "Unavailable"
+RESPONSE_MSG_UNSPECIFIED = "Unspecified"
 RESPONSE_MSG_INTERNAL_ERROR = "Internal error"
 
-EVENT_CLIENT = 1
-EVENT_CLIENT_CLOSED = 2
-EVENT_CONNECTION = 3
-EVENT_CREATED_CONTAINER = 4
-EVENT_CREATED_ENDPOINT_SHELL = 5
-EVENT_DESTROYED_CONTAINER = 6
-EVENT_MALFORMED_REQUEST = 7
-EVENT_REQUEST = 8
-EVENT_RUNTIME_ERROR = 9
-EVENT_STARTED = 10
-EVENT_STOPPED = 11
-EVENT_UNKNOWN_VERB = 12
+EVENT_CONTAINER_CREATED = "on_container_created"
+EVENT_CONTAINER_DOMAIN_STARTED = "on_container_domain_started"
+EVENT_CONTAINER_DOMAIN_STOPPED = "on_container_domain_stopped"
+EVENT_FORWARDER_CREATED = "on_forwarder_created"
+EVENT_FORWARDER_STARTED = "on_forwarder_started"
+EVENT_FORWARDER_STOPPED = "on_forwarder_stopped"
+EVENT_ENDPOINT_SHELL_CREATED = "on_endpoint_shell_created"
+EVENT_ENDPOINT_SHELL_OPENED = "on_endpoint_shell_opened"
+EVENT_ENDPOINT_SHELL_CLOSED = "on_endpoint_shell_closed"
+EVENT_SERVER_STARTED = "on_server_started"
+EVENT_SERVER_STOPPED = "on_server_stopped"
+EVENT_CLIENT_INITIALIZED = "on_client_initialized"
+EVENT_CLIENT_CLOSED = "on_client_closed"
+EVENT_CONNECTION_ACCEPTED = "on_connection_accepted"
+EVENT_REQUEST = "on_request"
+EVENT_AUTHENTICATION_ERROR = "on_authentication_error"
+EVENT_RUNTIME_ERROR = "on_runtime_error"
+EVENT_MALFORMED_REQUEST = "on_malformed_request"
+EVENT_UNHANDLED_VERB = "on_unhandled_verb"
+
+CONTEXT_NORMAL_PROCESS = 20
+CONTEXT_HANDLE_END = 21
+CONTEXT_ERROR = 22
 
 
 class ServerInterface:
     def __init__(
         self,
-        container_iso_path: str = None,
+        runtime_container_iso_file_path: str,
         bind_address: str = DEFAULT_SERVER_BIND_ADDRESS,
         listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
         client_timeout: int = DEFAULT_CLIENT_TIMEOUT,
         runtime_virtualization_interface: VirtualizationInterface = None,
         runtime_database_interface: DatabaseInterface = None,
+        runtime_port_forwarding_interface: PortForwardingInterface = None,
         runtime_rsa_wrapper: RSAWrapper = None,
     ):
-        # Intern variables
         self.request_handler_dict = {
             REQUEST_VERB_CREATE: self.__handle_create_request,
             REQUEST_VERB_DESTROY: self.__handle_destroy_request,
@@ -74,186 +85,479 @@ class ServerInterface:
         }
 
         self.event_handler_dict = {
-            EVENT_CLIENT: None,
+            EVENT_CONTAINER_CREATED: None,
+            EVENT_CONTAINER_DOMAIN_STARTED: None,
+            EVENT_CONTAINER_DOMAIN_STOPPED: None,
+            EVENT_FORWARDER_CREATED: None,
+            EVENT_FORWARDER_STARTED: None,
+            EVENT_FORWARDER_STOPPED: None,
+            EVENT_ENDPOINT_SHELL_CREATED: None,
+            EVENT_ENDPOINT_SHELL_OPENED: None,
+            EVENT_ENDPOINT_SHELL_CLOSED: None,
+            EVENT_SERVER_STARTED: None,
+            EVENT_SERVER_STOPPED: None,
+            EVENT_CLIENT_INITIALIZED: None,
             EVENT_CLIENT_CLOSED: None,
-            EVENT_CONNECTION: None,
-            EVENT_CREATED_CONTAINER: None,
-            EVENT_CREATED_ENDPOINT_SHELL: None,
-            EVENT_DESTROYED_CONTAINER: None,
-            EVENT_MALFORMED_REQUEST: None,
+            EVENT_CONNECTION_ACCEPTED: None,
             EVENT_REQUEST: None,
+            EVENT_AUTHENTICATION_ERROR: None,
             EVENT_RUNTIME_ERROR: None,
-            EVENT_STARTED: None,
-            EVENT_STOPPED: None,
-            EVENT_UNKNOWN_VERB: None,
+            EVENT_MALFORMED_REQUEST: None,
+            EVENT_UNHANDLED_VERB: None,
         }
 
         self.bind_address = bind_address
         self.listen_port = listen_port
         self.client_timeout = client_timeout
+        self.server_sock = None
+        self.container_iso_file_path = runtime_container_iso_file_path
 
         self.recorded_runtime_errors_counter = 0
-        self.main_process_handler = None
         self.start_timestamp = None
-        self.server_sock = None
         self.is_running = False
 
         self.virtualization_interface = (
             runtime_virtualization_interface
             if runtime_virtualization_interface
-            else VirtualizationInterface(container_iso_path)
+            else VirtualizationInterface()
         )
         self.database_interface = (
             runtime_database_interface
             if runtime_database_interface
             else DatabaseInterface()
         )
-        self.runtime_rsa_wrapper = (
-            runtime_rsa_wrapper if runtime_rsa_wrapper else RSAWrapper()
+        self.port_forwarding_interface = (
+            runtime_port_forwarding_interface
+            if runtime_port_forwarding_interface
+            else PortForwardingInterface()
         )
+        self.rsa_wrapper = runtime_rsa_wrapper if runtime_rsa_wrapper else RSAWrapper()
 
     def __del__(self):
         if self.is_running:
-            self.stopServer()
+            self.__stop_server()
 
-    # Intern methods for normal processes
-    def __handle_create_request(self, client_instance):
-        if self.virtualization_interface.getAvailableContainersAmount() <= 0:
-            client_instance.sendResponse(
-                False,
-                RESPONSE_MSG_UNAVAILABLE,
-                reason="Running containers maximum amount was reached",
+    def __format_traceback(self, exception):
+        return "".join(
+            traceback.format_exception(
+                type(exception), exception, exception.__traceback__
             )
-            client_instance.closeConnection()
-            if self.event_handler_dict.get(EVENT_CLIENT_CLOSED):
-                self.event_handler_dict[EVENT_CLIENT_CLOSED](
-                    client_instance=client_instance
+        )
+
+    def __execute_event_handler(self, event, context, data={}):
+        if event == EVENT_RUNTIME_ERROR:
+            self.recorded_runtime_errors_counter += 1
+
+        if self.event_handler_dict.get(event):
+            self.event_handler_dict[event](context=context, data=data)
+
+        if data.get("client_instance") and data.get("client_instance").isClosed():
+            return -1
+
+    def __store_container(self, container_instance, forwarder_instance):
+        _, _, new_client_token = self.database_interface.addEntry(
+            container_instance.getUUID()
+        )
+        self.virtualization_interface.storeContainer(container_instance)
+        self.port_forwarding_interface.storeForwarder(forwarder_instance)
+
+        return new_client_token
+
+    def __delete_container(self, container_instance):
+        self.database_interface.deleteEntry(
+            self.database_interface.getContainerUUIDEntryID(
+                container_instance.getUUID()
+            )
+        )
+        self.virtualization_interface.deleteStoredContainer(container_instance)
+        self.port_forwarding_interface.deleteStoredForwarder(container_instance.getIP())
+
+    # This routine detects inactive container and destroy them in consequence
+    def __delete_container_on_domain_shutdown_routine(self):
+        while self.is_running:
+            try:
+                # Container UUID to delete are stored in a list and deleted after the
+                # first loop to avoid the "Dictionary changed size during iteration" error
+                container_instance_list = []
+
+                for (
+                    container_uuid
+                ) in self.virtualization_interface.listStoredContainers():
+                    container_instance = (
+                        self.virtualization_interface.getStoredContainer(container_uuid)
+                    )
+
+                    if not container_instance.isDomainRunning():
+                        container_instance_list.append(container_instance)
+
+                for container_instance in container_instance_list:
+                    forwarder_instance = (
+                        self.port_forwarding_interface.getStoredForwarder(
+                            container_instance.getIP()
+                        )
+                    )
+
+                    if forwarder_instance and forwarder_instance.isForwarding():
+                        forwarder_instance.stopForward()
+
+                        self.__execute_event_handler(
+                            EVENT_FORWARDER_STOPPED,
+                            CONTEXT_NORMAL_PROCESS,
+                            data={"forwarder_instance": forwarder_instance},
+                        )
+
+                    self.__delete_container(container_instance)
+
+            except Exception as E:
+                self.__execute_event_handler(
+                    EVENT_RUNTIME_ERROR,
+                    CONTEXT_ERROR,
+                    data={
+                        "exception_object": E,
+                        "traceback": self.__format_traceback(E),
+                    },
                 )
-            return
 
-        # We do not store immediatly the container since errors
-        # can occur during setup, leaving the container instance in an
-        # unstable state.
-        new_container_instance = self.virtualization_interface.createContainer(
-            store=False
-        )
+            time.sleep(1)
 
-        if self.event_handler_dict.get(EVENT_CREATED_CONTAINER):
-            self.event_handler_dict[EVENT_CREATED_CONTAINER](
-                client_instance=client_instance,
-                container_instance=new_container_instance,
-            )
+    def __start_server(self):
+        self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_sock.bind((self.bind_address, self.listen_port))
+        self.server_sock.listen(5)
 
-            if client_instance.isClosed():
-                return
+        self.start_timestamp = int(time.time())
+        self.is_running = True
 
-        if not new_container_instance.isDomainRunning():
-            new_container_instance.startDomain()
+        threading.Thread(
+            target=self.__delete_container_on_domain_shutdown_routine
+        ).start()
 
-        new_container_shell = new_container_instance.createEndpointShell()
+        self.__execute_event_handler(EVENT_SERVER_STARTED, CONTEXT_NORMAL_PROCESS)
 
-        if self.event_handler_dict.get(EVENT_CREATED_ENDPOINT_SHELL):
-            self.event_handler_dict[EVENT_CREATED_ENDPOINT_SHELL](
-                endpoint_shell_instance=new_container_shell,
-                container_instance=new_container_instance,
-                client_instance=client_instance,
-            )
+        self.__main_server_loop_routine()
 
-            if client_instance.isClosed():
-                new_container_shell.closeShell()
-                return
-
-        if not new_container_shell.isClosed():
-            container_ssh_credentials_tuple = (
-                new_container_shell.generateContainerSSHCredentials()
-            )
-
-            # close_on_done is set to True, the shell will be automatically closed within the method
-            new_container_shell.setContainerSSHCredentials(
-                username=container_ssh_credentials_tuple[0],
-                password=container_ssh_credentials_tuple[1],
-                listen_port=container_ssh_credentials_tuple[2],
-            )
-
-            new_container_shell.closeShell()
-
-        else:
-            container_ssh_credentials_tuple = (
-                new_container_shell.getStoredContainerSSHCredentials()
-            )
-
-        # Once everything is done without errors, we can store it.
-        created_entry = self.database_interface.addEntry(
-            new_container_instance.getUUID()
-        )
-        self.virtualization_interface.addStoredContainer(new_container_instance)
-
+    def __stop_server(self, raise_errors=False):
         try:
-            client_instance.sendResponse(
-                True,
-                RESPONSE_MSG_OK,
+            # Container UUID to delete are stored in a list and deleted after the
+            # first loop to avoid the "Dictionary changed size during iteration" error
+            container_instance_list = []
+
+            for container_uuid in self.virtualization_interface.listStoredContainers():
+                container_instance_list.append(
+                    self.virtualization_interface.getStoredContainer(container_uuid)
+                )
+
+            for container_instance in container_instance_list:
+                container_instance.stopDomain()
+
+                self.__execute_event_handler(
+                    EVENT_CONTAINER_DOMAIN_STOPPED,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={"container_instance": container_instance},
+                )
+
+                self.__delete_container(container_instance)
+
+            self.database_interface.closeDatabase()
+            self.server_sock.close()
+
+            self.is_running = False
+
+            self.__execute_event_handler(EVENT_SERVER_STOPPED, CONTEXT_NORMAL_PROCESS)
+
+        except Exception as E:
+            if raise_errors:
+                raise E
+
+            self.__execute_event_handler(
+                EVENT_RUNTIME_ERROR,
+                CONTEXT_ERROR,
                 data={
-                    "container_uuid": new_container_instance.getUUID(),
-                    "client_token": created_entry[2],
-                    "container_iso_sha256": new_container_instance.makeISOChecksum(),
-                    "container_username": container_ssh_credentials_tuple[0],
-                    "container_password": container_ssh_credentials_tuple[1],
-                    "container_listen_port": container_ssh_credentials_tuple[2],
+                    "exception_object": E,
+                    "traceback": self.__format_traceback(E),
                 },
             )
 
-        except Exception as E:
-            # If we can't transmit those informations to the client, we must
-            # delete them since the container becomes unusable, and the session credentials useless.
-            new_container_instance.stopDomain()
+    # Intern methods for normal processes
+    def __handle_create_request(self, client_instance):
+        new_endpoint_shell_instance = None
+        new_container_instance = None
+        new_forwarder_instance = None
 
-            self.database_interface.deleteEntry(created_entry[0])
-            self.virtualization_interface.deleteStoredContainer(
-                new_container_instance.getUUID()
+        try:
+            # Create and start the container domain
+            new_container_instance = self.virtualization_interface.createContainer(
+                store=False
+            )
+            new_container_instance.setISOFilePath(self.container_iso_file_path)
+
+            if (
+                self.__execute_event_handler(
+                    EVENT_CONTAINER_CREATED,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={
+                        "client_instance": client_instance,
+                        "container_instance": new_container_instance,
+                    },
+                )
+                == -1
+            ):
+                return
+
+            if not new_container_instance.isDomainRunning():
+                new_container_instance.startDomain()
+
+                if (
+                    self.__execute_event_handler(
+                        EVENT_CONTAINER_DOMAIN_STARTED,
+                        CONTEXT_NORMAL_PROCESS,
+                        data={
+                            "client_instance": client_instance,
+                            "container_instance": new_container_instance,
+                        },
+                    )
+                    == -1
+                ):
+                    return
+
+            # Create an endpoint shell on the container and administrate it
+            new_endpoint_shell_instance = new_container_instance.createEndpointShell()
+
+            if (
+                self.__execute_event_handler(
+                    EVENT_ENDPOINT_SHELL_CREATED,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={
+                        "client_instance": client_instance,
+                        "endpoint_shell_instance": new_endpoint_shell_instance,
+                    },
+                )
+                == -1
+            ):
+                return
+
+            new_container_username, new_container_password = (
+                new_endpoint_shell_instance.generateClientSSHCredentials()
+                if not all(
+                    list(new_endpoint_shell_instance.getStoredClientSSHCredentials())
+                )
+                else new_endpoint_shell_instance.getStoredClientSSHCredentials()
             )
 
-            self.recorded_runtime_errors_counter += 1
+            if new_endpoint_shell_instance.isClosed():
+                new_endpoint_shell_instance.openShell()
 
-            if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
-                self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    name="__handle_create_request",
-                    client_instance=client_instance,
-                    ex_class=E,
-                    traceback="".join(
-                        traceback.format_exception(None, E, E.__traceback__)
-                    ),
+                if (
+                    self.__execute_event_handler(
+                        EVENT_ENDPOINT_SHELL_OPENED,
+                        CONTEXT_NORMAL_PROCESS,
+                        data={
+                            "client_instance": client_instance,
+                            "endpoint_shell_instance": new_endpoint_shell_instance,
+                        },
+                    )
+                    == -1
+                ):
+                    return
+
+            new_endpoint_shell_instance.administrateContainer()
+            new_endpoint_shell_instance.closeShell()
+
+            if (
+                self.__execute_event_handler(
+                    EVENT_ENDPOINT_SHELL_CLOSED,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={
+                        "client_instance": client_instance,
+                        "endpoint_shell_instance": new_endpoint_shell_instance,
+                    },
+                )
+                == -1
+            ):
+                return
+
+            # Create a new forwarder and start it
+            new_forwarder_instance = self.port_forwarding_interface.createForwarder(
+                new_container_instance.getIP(), 22, record=False
+            )
+
+            if (
+                self.__execute_event_handler(
+                    EVENT_FORWARDER_CREATED,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={
+                        "client_instance": client_instance,
+                        "forwarder_instance": new_forwarder_instance,
+                    },
+                )
+                == -1
+            ):
+                return
+
+            if not new_forwarder_instance.isForwarding():
+                new_forwarder_instance.startForward()
+
+                if (
+                    self.__execute_event_handler(
+                        EVENT_FORWARDER_STARTED,
+                        CONTEXT_NORMAL_PROCESS,
+                        data={
+                            "client_instance": client_instance,
+                            "forwarder_instance": new_forwarder_instance,
+                        },
+                    )
+                    == -1
+                ):
+                    return
+
+            # Store new container environment informations
+            new_client_token = self.__store_container(
+                new_container_instance, new_forwarder_instance
+            )
+
+            if not client_instance.isClosed():
+                client_instance.sendResponse(
+                    True,
+                    RESPONSE_MSG_OK,
+                    data={
+                        "container_uuid": new_container_instance.getUUID(),
+                        "client_token": new_client_token,
+                        "container_iso_sha256": new_container_instance.makeISOFileChecksum(),
+                        "container_username": new_container_username,
+                        "container_password": new_container_password,
+                        "container_listen_port": new_forwarder_instance.getServerOriginPort(),
+                    },
                 )
 
+        except Exception as E:
+            if (
+                self.__execute_event_handler(
+                    EVENT_RUNTIME_ERROR,
+                    CONTEXT_ERROR,
+                    data={
+                        "exception_object": E,
+                        "traceback": self.__format_traceback(E),
+                        "client_instance": client_instance,
+                    },
+                )
+                == -1
+            ):
+                return
+
+            if not client_instance.isClosed():
+                client_instance.sendResponse(False, RESPONSE_MSG_INTERNAL_ERROR)
+
+            if new_forwarder_instance and new_forwarder_instance.isForwarding():
+                new_forwarder_instance.stopForward()
+
+                if (
+                    self.__execute_event_handler(
+                        EVENT_FORWARDER_STOPPED,
+                        CONTEXT_ERROR,
+                        data={
+                            "client_instance": client_instance,
+                            "forwarder_instance": new_forwarder_instance,
+                        },
+                    )
+                    == -1
+                ):
+                    return
+
+            if new_endpoint_shell_instance and new_endpoint_shell_instance.isClosed():
+                new_endpoint_shell_instance.closeShell()
+
+                if (
+                    self.__execute_event_handler(
+                        EVENT_ENDPOINT_SHELL_CLOSED,
+                        CONTEXT_ERROR,
+                        data={
+                            "client_instance": client_instance,
+                            "endpoint_shell_instance": new_endpoint_shell_instance,
+                        },
+                    )
+                    == -1
+                ):
+                    return
+
+            if new_container_instance and new_container_instance.isDomainRunning():
+                new_container_instance.stopDomain()
+
+                if (
+                    self.__execute_event_handler(
+                        EVENT_CONTAINER_DOMAIN_STOPPED,
+                        CONTEXT_ERROR,
+                        data={
+                            "client_instance": client_instance,
+                            "container_instance": new_container_instance,
+                        },
+                    )
+                    == -1
+                ):
+                    return
+
+            if new_container_instance:
+                self.__delete_container(new_container_instance)
+
     def __handle_destroy_request(self, client_instance):
-        request_container_uuid = client_instance.getStoredRequest()["parameters"].get(
-            "container_uuid"
-        )
+        stored_request = client_instance.getStoredRequest()
 
-        credentials_entry = self.database_interface.getEntryID(
-            request_container_uuid,
-            client_instance.getStoredRequest()["parameters"].get("client_token"),
-        )
+        if not self.database_interface.getEntryID(
+            stored_request["parameters"].get("container_uuid"),
+            stored_request["parameters"].get("client_token"),
+        ):
+            self.__execute_event_handler(
+                EVENT_AUTHENTICATION_ERROR,
+                CONTEXT_ERROR,
+                data={"client_instance": client_instance},
+            )
 
-        if not credentials_entry:
-            client_instance.sendResponse(False, RESPONSE_MSG_BAD_AUTH)
+            if not client_instance.isClosed():
+                client_instance.sendResponse(False, RESPONSE_MSG_BAD_AUTH)
+
             return
 
         container_instance = self.virtualization_interface.getStoredContainer(
-            request_container_uuid
+            stored_request["parameters"].get("container_uuid")
         )
-        container_instance.stopDomain()
 
-        self.database_interface.deleteEntry(credentials_entry)
-        self.virtualization_interface.deleteStoredContainer(request_container_uuid)
+        if container_instance.isDomainRunning():
+            container_instance.stopDomain()
 
-        if self.event_handler_dict.get(EVENT_DESTROYED_CONTAINER):
-            self.event_handler_dict[EVENT_DESTROYED_CONTAINER](
-                client_instance=client_instance,
-                container_instance=container_instance,
-            )
-
-            if client_instance.isClosed():
+            if (
+                self.__execute_event_handler(
+                    EVENT_CONTAINER_DOMAIN_STOPPED,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={
+                        "client_instance": client_instance,
+                        "container_instance": container_instance,
+                    },
+                )
+                == -1
+            ):
                 return
+
+        forwarder_instance = self.port_forwarding_interface.getStoredForwarder(
+            container_instance.getIP()
+        )
+
+        if forwarder_instance and forwarder_instance.isForwarding():
+            forwarder_instance.stopForward()
+
+            if (
+                self.__execute_event_handler(
+                    EVENT_FORWARDER_STOPPED,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={
+                        "client_instance": client_instance,
+                        "forwarder_instance": forwarder_instance,
+                    },
+                )
+                == -1
+            ):
+                return
+
+        self.__delete_container(container_instance)
 
         client_instance.sendResponse(True, RESPONSE_MSG_OK)
 
@@ -262,101 +566,103 @@ class ServerInterface:
             True,
             RESPONSE_MSG_OK,
             data={
+                "version": __version__,
                 "uptime": int(time.time()) - self.start_timestamp,
-                "available": self.virtualization_interface.getAvailableContainersAmount(),
             },
         )
 
     def __handle_new_client(self, client_instance):
         try:
-            if self.event_handler_dict.get(EVENT_CLIENT):
-                self.event_handler_dict[EVENT_CLIENT](client_instance=client_instance)
+            (
+                is_recv_request_conform,
+                recv_request_content,
+            ) = client_instance.recvRequest()
 
-                if client_instance.isClosed():
-                    return
+            if not is_recv_request_conform:
+                self.__execute_event_handler(
+                    EVENT_MALFORMED_REQUEST,
+                    CONTEXT_ERROR,
+                    data={"client_instance": client_instance},
+                )
 
-            if not client_instance.getStoredRequest():
-                recv_request = client_instance.recvRequest()
-                if not recv_request[0]:
-                    # Since the request is malformed, exit the procedure
-
-                    if self.event_handler_dict.get(EVENT_MALFORMED_REQUEST):
-                        self.event_handler_dict[EVENT_MALFORMED_REQUEST](
-                            client_instance=client_instance,
-                            cerberus_error_dict=recv_request[1],
-                        )
-
-                        if not client_instance.isClosed():
-                            client_instance.sendResponse(
-                                False,
-                                RESPONSE_MSG_BAD_REQ,
-                                reason=f"Malformed request : {recv_request[1]}",
-                            )
-
-                            client_instance.closeConnection()
-
-                            if self.event_handler_dict.get(EVENT_CLIENT_CLOSED):
-                                self.event_handler_dict[EVENT_CLIENT_CLOSED](
-                                    client_instance=client_instance
-                                )
-
-                        return
-
-                if self.event_handler_dict.get(EVENT_REQUEST):
-                    self.event_handler_dict[EVENT_REQUEST](
-                        client_instance=client_instance
+                if not client_instance.isClosed():
+                    client_instance.sendResponse(
+                        False,
+                        RESPONSE_MSG_BAD_REQ,
+                        reason="Malformed request",
                     )
 
-                    if client_instance.isClosed():
-                        return
+                    client_instance.closeConnection()
 
-            if not self.request_handler_dict.get(recv_request[1]["verb"]):
-                # Since the verb is unknown, exit the procedure
-
-                if self.event_handler_dict.get(EVENT_UNKNOWN_VERB):
-                    self.event_handler_dict[EVENT_UNKNOWN_VERB](
-                        client_instance=client_instance
+                    self.__execute_event_handler(
+                        EVENT_CLIENT_CLOSED,
+                        CONTEXT_HANDLE_END,
+                        data={"client_instance": client_instance},
                     )
 
-                    if not client_instance.isClosed():
-                        client_instance.sendResponse(
-                            False,
-                            RESPONSE_MSG_BAD_REQ,
-                            reason="Unknown verb",
-                        )
-                        client_instance.closeConnection()
+                return
 
-                        if self.event_handler_dict.get(EVENT_CLIENT_CLOSED):
-                            self.event_handler_dict[EVENT_CLIENT_CLOSED](
-                                client_instance=client_instance
-                            )
+            if not self.request_handler_dict.get(recv_request_content["verb"]):
+                self.__execute_event_handler(
+                    EVENT_UNHANDLED_VERB,
+                    CONTEXT_ERROR,
+                    data={"client_instance": client_instance},
+                )
 
-                    return
+                if not client_instance.isClosed():
+                    client_instance.sendResponse(
+                        False,
+                        RESPONSE_MSG_BAD_REQ,
+                        reason="Unhandled verb",
+                    )
 
-            self.request_handler_dict[recv_request[1]["verb"]](
+                    client_instance.closeConnection()
+
+                    self.__execute_event_handler(
+                        EVENT_CLIENT_CLOSED,
+                        CONTEXT_HANDLE_END,
+                        data={"client_instance": client_instance},
+                    )
+
+                return
+
+            if (
+                self.__execute_event_handler(
+                    EVENT_REQUEST,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={"client_instance": client_instance},
+                )
+                == -1
+            ):
+                return
+
+            if client_instance.isClosed():
+                return
+
+            # Request handler execution
+            self.request_handler_dict[recv_request_content["verb"]](
                 client_instance=client_instance
             )
 
             if not client_instance.isClosed():
                 client_instance.closeConnection()
 
-                if self.event_handler_dict.get(EVENT_CLIENT_CLOSED):
-                    self.event_handler_dict[EVENT_CLIENT_CLOSED](
-                        client_instance=client_instance
-                    )
+                self.__execute_event_handler(
+                    EVENT_CLIENT_CLOSED,
+                    CONTEXT_HANDLE_END,
+                    data={"client_instance": client_instance},
+                )
 
         except Exception as E:
-            self.recorded_runtime_errors_counter += 1
-
-            if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
-                self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    name="__handle_new_client",
-                    client_instance=client_instance,
-                    ex_class=E,
-                    traceback="".join(
-                        traceback.format_exception(None, E, E.__traceback__)
-                    ),
-                )
+            self.__execute_event_handler(
+                EVENT_RUNTIME_ERROR,
+                CONTEXT_ERROR,
+                data={
+                    "exception_object": E,
+                    "traceback": self.__format_traceback(E),
+                    "client_instance": client_instance,
+                },
+            )
 
             if not client_instance.isClosed():
                 client_instance.sendResponse(
@@ -366,104 +672,187 @@ class ServerInterface:
 
                 client_instance.closeConnection()
 
-                if self.event_handler_dict.get(EVENT_CLIENT_CLOSED):
-                    self.event_handler_dict[EVENT_CLIENT_CLOSED](
-                        client_instance=client_instance
-                    )
+                self.__execute_event_handler(
+                    EVENT_CLIENT_CLOSED,
+                    CONTEXT_HANDLE_END,
+                    data={"client_instance": client_instance},
+                )
 
     def __main_server_loop_routine(self):
         while self.is_running:
-            try:
-                new_client_socket = self.server_sock.accept()[0]
-
-            except OSError:
-                # If the server socket is closed in an external method,
-                # will raise OSError here
-                break
+            new_client_instance = None
 
             try:
+                try:
+                    new_client_socket, _ = self.server_sock.accept()
+
+                except OSError:
+                    # If the server socket is closed in an external method,
+                    # will raise OSError here
+                    break
+
+                if (
+                    self.__execute_event_handler(
+                        EVENT_CONNECTION_ACCEPTED,
+                        CONTEXT_NORMAL_PROCESS,
+                        data={"client_socket": new_client_socket},
+                    )
+                    == -1
+                ):
+                    return
+
+                if isSocketClosed(new_client_socket):
+                    continue
+
                 new_client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
                 if self.client_timeout:
                     new_client_socket.settimeout(self.client_timeout)
 
-                if self.event_handler_dict.get(EVENT_CONNECTION):
-                    self.event_handler_dict[EVENT_CONNECTION](
-                        client_socket=new_client_socket
-                    )
-
-                    if isSocketClosed(new_client_socket):
-                        pass
-
                 new_client_instance = ClientInstance(
                     new_client_socket,
                     timeout=self.client_timeout,
-                    rsa_wrapper=self.runtime_rsa_wrapper,
+                    rsa_wrapper=self.rsa_wrapper,
                 )
+
+                if (
+                    self.__execute_event_handler(
+                        EVENT_CLIENT_INITIALIZED,
+                        CONTEXT_NORMAL_PROCESS,
+                        data={"client_instance": new_client_instance},
+                    )
+                    == -1
+                ):
+                    return
+
+                if new_client_instance.isClosed():
+                    continue
 
                 threading.Thread(
                     target=self.__handle_new_client, args=[new_client_instance]
                 ).start()
 
             except Exception as E:
-                new_client_socket.close()
+                data = {
+                    "exception_object": E,
+                    "traceback": self.__format_traceback(E),
+                    "client_socket": new_client_socket,
+                }
 
-                self.recorded_runtime_errors_counter += 1
+                if new_client_instance:
+                    data.update({"client_instance": new_client_instance})
 
-                if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
-                    self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                        name="__main_server_loop_routine",
-                        ex_class=E,
-                        traceback="".join(
-                            traceback.format_exception(None, E, E.__traceback__)
-                        ),
+                self.__execute_event_handler(
+                    EVENT_RUNTIME_ERROR, CONTEXT_ERROR, data=data
+                )
+
+                if new_client_instance and not new_client_instance.isClosed():
+                    new_client_instance.sendResponse(False, RESPONSE_MSG_INTERNAL_ERROR)
+
+                    new_client_instance.closeConnection()
+
+                    self.__execute_event_handler(
+                        EVENT_CLIENT_CLOSED,
+                        CONTEXT_HANDLE_END,
+                        data={"client_instance": new_client_instance},
                     )
 
-    # Detects inactive container and delete them in consequence
-    def __update_database_on_domain_shutdown_routine(self):
-        while self.is_running:
-            try:
-                # Container UUID to delete are stored in a list and deleted after the
-                # first loop to avoid the "Dictionary changed size during iteration" error
-                delete_container_uuid_list = []
+                if not isSocketClosed(new_client_socket):
+                    new_client_socket.close()
 
-                for (
-                    container_uuid
-                ) in self.virtualization_interface.listStoredContainers():
-                    if not self.virtualization_interface.getStoredContainer(
-                        container_uuid
-                    ).isDomainRunning():
-                        container_entry_id = (
-                            self.database_interface.getContainerUUIDEntryID(
-                                container_uuid
-                            )
-                        )
-
-                        self.database_interface.deleteEntry(container_entry_id)
-                        delete_container_uuid_list.append(container_uuid)
-
-                for container_uuid in delete_container_uuid_list:
-                    self.virtualization_interface.deleteStoredContainer(container_uuid)
-
-            except Exception as E:
-                self.recorded_runtime_errors_counter += 1
-
-                if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
-                    self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                        name="__update_database_on_domain_shutdown_routine",
-                        ex_class=E,
-                        traceback="".join(
-                            traceback.format_exception(None, E, E.__traceback__)
-                        ),
-                    )
-
-            time.sleep(1)
-
-    # Event decorators binding for external scripts callback
+    # Event decorators binding for event callback
     @property
-    def on_client(self):
+    def on_container_created(self):
         def wrapper(routine):
-            self.event_handler_dict.update({EVENT_CLIENT: routine})
+            self.event_handler_dict.update({EVENT_CONTAINER_CREATED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_container_domain_started(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_CONTAINER_DOMAIN_STARTED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_container_domain_stopped(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_CONTAINER_DOMAIN_STOPPED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_forwarder_created(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_FORWARDER_CREATED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_forwarder_started(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_FORWARDER_STARTED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_forwarder_stopped(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_FORWARDER_STOPPED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_endpoint_shell_created(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_ENDPOINT_SHELL_CREATED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_endpoint_shell_opened(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_ENDPOINT_SHELL_OPENED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_endpoint_shell_closed(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_ENDPOINT_SHELL_CLOSED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_server_started(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_SERVER_STARTED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_server_stopped(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_SERVER_STOPPED: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
+    def on_client_initialized(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_CLIENT_INITIALIZED: routine})
             return wrapper
 
         return wrapper
@@ -477,41 +866,9 @@ class ServerInterface:
         return wrapper
 
     @property
-    def on_connection(self):
+    def on_connection_accepted(self):
         def wrapper(routine):
-            self.event_handler_dict.update({EVENT_CONNECTION: routine})
-            return wrapper
-
-        return wrapper
-
-    @property
-    def on_created_container(self):
-        def wrapper(routine):
-            self.event_handler_dict.update({EVENT_CREATED_CONTAINER: routine})
-            return wrapper
-
-        return wrapper
-
-    @property
-    def on_created_endpoint_shell(self):
-        def wrapper(routine):
-            self.event_handler_dict.update({EVENT_CREATED_ENDPOINT_SHELL: routine})
-            return wrapper
-
-        return wrapper
-
-    @property
-    def on_destroyed_container(self):
-        def wrapper(routine):
-            self.event_handler_dict.update({EVENT_DESTROYED_CONTAINER: routine})
-            return wrapper
-
-        return wrapper
-
-    @property
-    def on_malformed_request(self):
-        def wrapper(routine):
-            self.event_handler_dict.update({EVENT_MALFORMED_REQUEST: routine})
+            self.event_handler_dict.update({EVENT_CONNECTION_ACCEPTED: routine})
             return wrapper
 
         return wrapper
@@ -525,6 +882,14 @@ class ServerInterface:
         return wrapper
 
     @property
+    def on_authentication_error(self):
+        def wrapper(routine):
+            self.event_handler_dict.update({EVENT_AUTHENTICATION_ERROR: routine})
+            return wrapper
+
+        return wrapper
+
+    @property
     def on_runtime_error(self):
         def wrapper(routine):
             self.event_handler_dict.update({EVENT_RUNTIME_ERROR: routine})
@@ -533,25 +898,17 @@ class ServerInterface:
         return wrapper
 
     @property
-    def on_started(self):
+    def on_malformed_request(self):
         def wrapper(routine):
-            self.event_handler_dict.update({EVENT_STARTED: routine})
+            self.event_handler_dict.update({EVENT_MALFORMED_REQUEST: routine})
             return wrapper
 
         return wrapper
 
     @property
-    def on_stopped(self):
+    def on_unhandled_verb(self):
         def wrapper(routine):
-            self.event_handler_dict.update({EVENT_STOPPED: routine})
-            return wrapper
-
-        return wrapper
-
-    @property
-    def on_unknown_verb(self):
-        def wrapper(routine):
-            self.event_handler_dict.update({EVENT_UNKNOWN_VERB: routine})
+            self.event_handler_dict.update({EVENT_UNHANDLED_VERB: routine})
             return wrapper
 
         return wrapper
@@ -561,18 +918,38 @@ class ServerInterface:
         return self.database_interface
 
     def getRuntimeVirtualizationInterface(self) -> VirtualizationInterface:
-        return self.runtime_virtualization_interface
+        return self.virtualization_interface
 
     def getRuntimeRSAWrapper(self) -> RSAWrapper:
-        return self.runtime_rsa_wrapper
+        return self.rsa_wrapper
+
+    def getRuntimePortForwardingInterface(self) -> PortForwardingInterface:
+        return self.port_forwarding_interface
 
     def getRuntimeStatistics(self) -> tuple:
         return (
             self.is_running,
             self.recorded_runtime_errors_counter,
             int(time.time()) - self.start_timestamp,
-            self.virtualization_interface.getAvailableContainersAmount(),
         )
+
+    def setRuntimeDatabaseInterface(
+        self, database_interface: DatabaseInterface
+    ) -> None:
+        self.database_interface = database_interface
+
+    def setRuntimeVirtualizationInterface(
+        self, virtualization_interface: VirtualizationInterface
+    ) -> None:
+        self.virtualization_interface = virtualization_interface
+
+    def setRuntimeRSAWrapper(self, rsa_wrapper: RSAWrapper) -> None:
+        self.runtime_rsa_wrapper = rsa_wrapper
+
+    def setRuntimePortForwardingInterface(
+        self, port_forwarding_interface: PortForwardingInterface
+    ) -> None:
+        self.port_forwarding_interface = port_forwarding_interface
 
     def setRequestHandler(self, verb: str, routine: callable) -> None:
         self.request_handler_dict.update({verb: routine})
@@ -580,98 +957,14 @@ class ServerInterface:
     def setEventHandler(self, event: int, routine: callable) -> None:
         self.event_handler_dict.update({event: routine})
 
-    def startServer(self, asynchronous: bool = DEFAULT_ASYCHRONOUS) -> None:
-        try:
-            self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.server_sock.bind((self.bind_address, self.listen_port))
-            self.server_sock.listen(5)
+    def startServer(self) -> None:
+        if self.is_running:
+            raise RuntimeError("Server is already running")
 
-            self.is_running = True
-            self.start_timestamp = int(time.time())
-
-            # (*)
-            threading.Thread(
-                target=self.__update_database_on_domain_shutdown_routine
-            ).start()
-
-            if self.event_handler_dict.get(EVENT_STARTED):
-                self.event_handler_dict[EVENT_STARTED]()
-
-            if asynchronous:
-                self.main_process_handler = multiprocessing.Process(
-                    target=self.__main_server_loop_routine
-                ).start()
-
-        except Exception as E:
-            self.recorded_runtime_errors_counter += 1
-
-            if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
-                self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    name="startServer",
-                    ex_class=E,
-                    traceback="".join(
-                        traceback.format_exception(None, E, E.__traceback__)
-                    ),
-                )
-
-            return
-
-        self.__main_server_loop_routine()
+        self.__start_server()
 
     def stopServer(self) -> None:
-        try:
-            if self.main_process_handler:
-                self.main_process_handler.terminate()
+        if not self.is_running:
+            raise RuntimeError("Server is already stopped")
 
-            self.is_running = False
-
-            self.server_sock.close()
-
-            # Container UUID to delete are stored in a list and deleted after the
-            # first loop to avoid the "Dictionary changed size during iteration" error
-            delete_container_uuid_list = []
-
-            for container_uuid in self.virtualization_interface.listStoredContainers():
-                self.virtualization_interface.getStoredContainer(
-                    container_uuid
-                ).stopDomain()
-
-                delete_container_uuid_list.append(container_uuid)
-
-            for container_uuid in delete_container_uuid_list:
-                self.virtualization_interface.deleteStoredContainer(container_uuid)
-
-            self.database_interface.closeDatabase()
-
-            if self.event_handler_dict.get(EVENT_STOPPED):
-                self.event_handler_dict[EVENT_STOPPED]()
-
-        except Exception as E:
-            self.recorded_runtime_errors_counter += 1
-
-            if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
-                self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    name="stopServer",
-                    ex_class=E,
-                    traceback="".join(
-                        traceback.format_exception(None, E, E.__traceback__)
-                    ),
-                )
-
-    def restartServer(self, asynchronous: bool = DEFAULT_ASYCHRONOUS) -> None:
-        try:
-            self.stopServer()
-            self.startServer(asynchronous=asynchronous)
-
-        except Exception as E:
-            self.recorded_runtime_errors_counter += 1
-
-            if self.event_handler_dict.get(EVENT_RUNTIME_ERROR):
-                self.event_handler_dict[EVENT_RUNTIME_ERROR](
-                    name="restartServer",
-                    ex_class=E,
-                    traceback="".join(
-                        traceback.format_exception(None, E, E.__traceback__)
-                    ),
-                )
+        self.__stop_server(raise_errors=True)

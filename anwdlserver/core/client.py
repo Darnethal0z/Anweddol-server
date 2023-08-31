@@ -13,11 +13,12 @@ import time
 
 # Intern importation
 from .crypto import RSAWrapper, AESWrapper
-from .sanitize import makeResponse, verifyRequestContent
+from .sanitization import makeResponse, verifyRequestContent
+from .utilities import isSocketClosed
 
 # Default parameters
 DEFAULT_STORE_REQUEST = True
-DEFAULT_AUTO_EXCHANGE_KEYS = True
+DEFAULT_EXCHANGE_KEYS = True
 DEFAULT_RECEIVE_FIRST = True
 
 # Constants definition
@@ -33,31 +34,30 @@ class ClientInstance:
         timeout: int = None,
         rsa_wrapper: RSAWrapper = None,
         aes_wrapper: AESWrapper = None,
-        auto_exchange_key: bool = DEFAULT_AUTO_EXCHANGE_KEYS,
+        exchange_keys: bool = DEFAULT_EXCHANGE_KEYS,
     ):
         self.rsa_wrapper = rsa_wrapper if rsa_wrapper else RSAWrapper()
         self.aes_wrapper = aes_wrapper if aes_wrapper else AESWrapper()
         self.stored_request = None
-        self.is_closed = False
         self.socket = socket
 
         self.id = hashlib.sha256(
             self.getIP().encode(), usedforsecurity=False
         ).hexdigest()[:7]
-        self.timestamp = int(time.time())
+        self.creation_timestamp = int(time.time())
 
         if timeout:
             self.socket.settimeout(timeout)
 
-        if auto_exchange_key:
+        if exchange_keys:
             self.exchangeKeys()
 
     def __del__(self):
-        if not self.is_closed:
+        if not self.isClosed():
             self.closeConnection()
 
     def isClosed(self) -> bool:
-        return self.is_closed
+        return isSocketClosed(self.socket)
 
     def getSocketDescriptor(self) -> socket.socket:
         return self.socket
@@ -68,8 +68,8 @@ class ClientInstance:
     def getID(self) -> str:
         return self.id
 
-    def getTimestamp(self) -> int:
-        return self.timestamp
+    def getCreationTimestamp(self) -> int:
+        return self.creation_timestamp
 
     def getStoredRequest(self) -> None | dict:
         return self.stored_request
@@ -87,7 +87,7 @@ class ClientInstance:
         self.aes_wrapper = aes_wrapper
 
     def sendPublicRSAKey(self) -> None:
-        if self.is_closed:
+        if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
         rsa_public_key = self.rsa_wrapper.getPublicKey()
@@ -107,7 +107,7 @@ class ClientInstance:
             raise RuntimeError("Peer refused the RSA key")
 
     def recvPublicRSAKey(self) -> None:
-        if self.is_closed:
+        if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
         try:
@@ -128,25 +128,22 @@ class ClientInstance:
             raise E
 
     def sendAESKey(self) -> None:
-        if self.is_closed:
+        if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
         if not self.rsa_wrapper:
             raise ValueError("RSA cipher is not set")
 
         aes_key = self.aes_wrapper.getKey()
-        aes_iv = self.aes_wrapper.getIv()
 
-        self.socket.sendall(
-            self.rsa_wrapper.encryptData(aes_key + aes_iv, encode=False)
-        )
+        self.socket.sendall(self.rsa_wrapper.encryptData(aes_key[0] + aes_key[1]))
 
         if self.socket.recv(1).decode() is not MESSAGE_OK:
             raise RuntimeError("Peer refused the AES key")
 
     def recvAESKey(self) -> None:
         try:
-            if self.is_closed:
+            if self.isClosed():
                 raise RuntimeError("Client must be connected to the server")
 
             if not self.rsa_wrapper:
@@ -167,7 +164,7 @@ class ClientInstance:
             raise E
 
     def exchangeKeys(self, receive_first: bool = DEFAULT_RECEIVE_FIRST) -> None:
-        if self.is_closed:
+        if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
         if receive_first:
@@ -185,7 +182,7 @@ class ClientInstance:
     def sendResponse(
         self, success: bool, message: str, data: dict = {}, reason: str = None
     ) -> None:
-        if self.is_closed:
+        if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
         if not self.aes_wrapper:
@@ -207,7 +204,7 @@ class ClientInstance:
         self.socket.sendall(encrypted_packet)
 
     def recvRequest(self, store_request: bool = DEFAULT_STORE_REQUEST) -> tuple:
-        if self.is_closed:
+        if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
         if not self.aes_wrapper:
@@ -235,4 +232,3 @@ class ClientInstance:
 
     def closeConnection(self) -> None:
         self.socket.close()
-        self.is_closed = True
