@@ -6,23 +6,11 @@
 
 ---
 
-## Deprecation notice
-
-After a review of the overall system of the actual version (`1.2.8`), some points were too buggy or simply not functional to be properly implemented, a new update `2.0.0` will correct most of the problems of the current version.
-
-In the meantime, the actual version and its release is not to be considered stable. You are of course invited to let everyone know about your experiences with Anweddol software to date, so that we can improve it to meet your expectations.
-
-Do not hesitate to join the zulip organization to stay up-to-date for any notifications : [https://anweddol.zulipchat.com](https://anweddol.zulipchat.com).
-
----
-
 ## Introduction
 
 Anweddol is a client/server system providing temporary, SSH-controllable virtual machines to enhance anonymity online.
 
 It’s usefulness comes when someone wants to use a fully functional computer while being exposed to less dangers by using it remotely on a dedicated server, and by destroying it after use.
-
-**NOTE** : This is the beta version, some bugs or malfunctions can occur during usage
 
 ## Content
 
@@ -77,15 +65,6 @@ Open a ticket on the [issue page](https://github.com/the-anweddol-project/Anwedd
 This software is under the GNU general public license v3, available under any later version.
 
 This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-
-## Links
-
-Here is the social links of the Anweddol project : 
-
-- [https://github.com/the-anweddol-project](https://github.com/the-anweddol-project)
-- [https://anweddol.zulipchat.com](https://anweddol.zulipchat.com)
-
-You can also mail `the-anweddol-project@proton.me`, consider using the [PGP public key](https://the-anweddol-project.github.io/contact/A050C2B36F2E80BE6FDE6E0F0D3F21975020EFC0.asc)
 
 ## Developer / Maintainer
 

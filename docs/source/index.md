@@ -1,27 +1,18 @@
 # The Anweddol server
 
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-important)](https://www.python.org/)
-[![build-passing](https://img.shields.io/badge/build-passing-green.svg)](https://shields.io/)
 [![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://shields.io/)
+[![chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://anweddol.zulipchat.com)
 
 ----
+
+Welcome to the Anweddol server documentation pages.
 
 ## Global overview
 
 Anweddol is a client/server system providing temporary, SSH-controllable virtual machines to enhance anonymity online.
 
 It’s usefulness comes when someone wants to use a fully functional computer while being exposed to less dangers by using it remotely on a dedicated server, and by destroying it after use.
-
-## Effective scenario
-
-*terminology :*
-
-- **Container** : A temporary virtual machine hosted on a server that can be controlled from the client side. 
-
-1. Alice wants to have access to a container. She will first send a request asking it to create a new container.
-2. The server will start a new container, administer it and send the SSH credentials to Alice for her to be able to securely interact with the container.
-3. Once that Alice is done, she will send another request with previously received container identification and credentials to the server.
-4. The server identifies the affiliated running container, and destroys it.
 
 ## Contents
 

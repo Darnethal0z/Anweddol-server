@@ -20,6 +20,7 @@ import os
 
 
 # Default parameters
+DEFAULT_RSA_EXPONENT = 65537
 DEFAULT_RSA_KEY_SIZE = 4096
 DEFAULT_AES_KEY_SIZE = 256
 
@@ -31,66 +32,71 @@ DEFAULT_DERIVATE_PUBLIC_KEY = False
 class RSAWrapper:
     def __init__(
         self,
+        public_exponent: int = DEFAULT_RSA_EXPONENT,
         key_size: int = DEFAULT_RSA_KEY_SIZE,
         generate_key_pair: bool = DEFAULT_GENERATE_KEY_PAIR,
     ):
         self.remote_public_key = None
-        self.key_size = key_size
         self.private_key = None
         self.public_key = None
 
         if generate_key_pair:
-            self.generateKeyPair()
+            self.generateKeyPair(public_exponent, key_size)
 
-    def generateKeyPair(self) -> None:
+    def generateKeyPair(
+        self,
+        public_exponent: int = DEFAULT_RSA_EXPONENT,
+        key_size: int = DEFAULT_RSA_KEY_SIZE,
+    ) -> None:
         self.private_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=self.key_size
+            public_exponent=public_exponent, key_size=key_size
         )
         self.public_key = self.private_key.public_key()
 
-    def getKeySize(self) -> int:
-        return self.key_size
+    def getKeySize(self) -> None | int:
+        return self.public_key.key_size if self.public_key else None
 
-    def getPublicKey(self, pem_format: bool = DEFAULT_PEM_FORMAT) -> str | bytes:
-        if pem_format:
-            return self.public_key.public_bytes(
+    def getPublicKey(self, pem_format: bool = DEFAULT_PEM_FORMAT) -> None | str | bytes:
+        return (
+            self.public_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
+            if pem_format and self.public_key
+            else self.public_key
+        )
 
-        return self.public_key
-
-    def getPrivateKey(self, pem_format: bool = DEFAULT_PEM_FORMAT) -> str | bytes:
-        if pem_format:
-            return self.private_key.private_bytes(
+    def getPrivateKey(
+        self, pem_format: bool = DEFAULT_PEM_FORMAT
+    ) -> None | str | bytes:
+        return (
+            self.private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption(),
             )
-
-        return self.private_key
+            if pem_format and self.private_key
+            else self.private_key
+        )
 
     def getRemotePublicKey(
         self, pem_format: bool = DEFAULT_PEM_FORMAT
     ) -> None | str | bytes:
-        if pem_format:
-            return self.remote_public_key.public_bytes(
+        return (
+            self.remote_public_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
-
-        return self.remote_public_key
+            if pem_format and self.remote_public_key
+            else self.remote_public_key
+        )
 
     def setPublicKey(
         self, public_key: str | bytes, pem_format: bool = DEFAULT_PEM_FORMAT
     ) -> None:
-        if pem_format:
-            self.public_key = serialization.load_pem_public_key(public_key)
-
-        else:
-            self.public_key = public_key
-
-        self.private_key = None
+        self.public_key = (
+            serialization.load_pem_public_key(public_key) if pem_format else public_key
+        )
 
     def setPrivateKey(
         self,
@@ -98,44 +104,43 @@ class RSAWrapper:
         pem_format: bool = DEFAULT_PEM_FORMAT,
         derivate_public_key: bool = DEFAULT_DERIVATE_PUBLIC_KEY,
     ) -> None:
-        if pem_format:
-            self.private_key = serialization.load_pem_private_key(
-                private_key, password=None
-            )
-
-            if derivate_public_key:
-                self.public_key = self.private_key.public_key()
-
-        else:
-            self.private_key = private_key.private_bytes(
+        self.private_key = (
+            serialization.load_pem_private_key(private_key, password=None)
+            if pem_format
+            else private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption(),
             )
+        )
 
-            if derivate_public_key:
-                self.public_key = self.private_key.public_key()
+        if derivate_public_key:
+            self.public_key = self.private_key.public_key()
 
     def setRemotePublicKey(
         self, remote_public_key: str | bytes, pem_format: bool = DEFAULT_PEM_FORMAT
     ) -> None:
-        if pem_format:
-            self.remote_public_key = serialization.load_pem_public_key(
-                remote_public_key
-            )
-
-        else:
-            self.remote_public_key = remote_public_key
+        self.remote_public_key = (
+            serialization.load_pem_public_key(remote_public_key)
+            if pem_format
+            else remote_public_key
+        )
 
     def encryptData(
-        self, data: str | bytes, encode: bool = True, use_local_public_key: bool = False
+        self, data: str | bytes, use_local_public_key: bool = False
     ) -> bytes:
         if not self.remote_public_key and not use_local_public_key:
-            raise RuntimeError("Remote public key must be set")
+            raise ValueError("Remote public key is not set")
+
+        else:
+            if not self.public_key:
+                raise ValueError("Local public key is not set")
+
+        encoded_data = data.encode() if type(data) is str else data
 
         return (
             self.remote_public_key.encrypt(
-                data.encode() if encode else data,
+                encoded_data,
                 padding.OAEP(
                     mgf=padding.MGF1(algorithm=hashes.SHA256()),
                     algorithm=hashes.SHA256(),
@@ -144,7 +149,7 @@ class RSAWrapper:
             )
             if not use_local_public_key
             else self.public_key.encrypt(
-                data.encode() if encode else data,
+                encoded_data,
                 padding.OAEP(
                     mgf=padding.MGF1(algorithm=hashes.SHA256()),
                     algorithm=hashes.SHA256(),
@@ -154,6 +159,9 @@ class RSAWrapper:
         )
 
     def decryptData(self, cipher: bytes, decode: bool = True) -> str | bytes:
+        if not self.private_key:
+            raise ValueError("Local private key is not set")
+
         decrypted_data = self.private_key.decrypt(
             cipher,
             padding.OAEP(
@@ -165,9 +173,14 @@ class RSAWrapper:
 
         return decrypted_data.decode() if decode else decrypted_data
 
-    def signData(self, data: str | bytes, encode: bool = True) -> bytes:
+    def signData(self, data: str | bytes) -> bytes:
+        if not self.private_key:
+            raise ValueError("Local private key is not set")
+
+        encoded_data = data.encode() if type(data) is str else data
+
         return self.private_key.sign(
-            data.encode() if encode else data,
+            encoded_data,
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
             ),
@@ -175,13 +188,16 @@ class RSAWrapper:
         )
 
     # `signature` is the signed data, `data` is the data itself
-    def verifyDataSignature(
-        self, signature: bytes, data: str | bytes, encode: bool = True
-    ) -> bool:
+    def verifyDataSignature(self, signature: bytes, data: str | bytes) -> bool:
+        if not self.public_key:
+            raise ValueError("Local public key is not set")
+
+        encoded_data = data.encode() if type(data) is str else data
+
         try:
             self.public_key.verify(
                 signature,
-                data.encode() if encode else data,
+                encoded_data,
                 padding.PSS(
                     mgf=padding.MGF1(hashes.SHA256()),
                     salt_length=padding.PSS.MAX_LENGTH,
@@ -201,16 +217,12 @@ class AESWrapper:
         self.iv = os.urandom(16)
 
         self.cipher = Cipher(algorithms.AES(self.key), modes.CBC(self.iv))
-        self.key_size = key_size
 
     def getKeySize(self) -> int:
-        return self.key_size
+        return len(self.key) * 8
 
     def getKey(self) -> bytes:
-        return self.key
-
-    def getIv(self) -> bytes:
-        return self.iv
+        return (self.key, self.iv)
 
     def setKey(self, key: bytes, iv: bytes = None) -> None:
         self.key = key
@@ -218,13 +230,11 @@ class AESWrapper:
 
         self.cipher = Cipher(algorithms.AES(self.key), modes.CBC(self.iv))
 
-    def encryptData(self, data: str | bytes, encode: bool = True) -> bytes:
+    def encryptData(self, data: str | bytes) -> bytes:
         encryptor = self.cipher.encryptor()
+        encoded_data = data.encode() if type(data) is str else data
 
-        return (
-            encryptor.update(self.__pad_data(data.encode() if encode else data))
-            + encryptor.finalize()
-        )
+        return encryptor.update(self.__pad_data(encoded_data)) + encryptor.finalize()
 
     def decryptData(self, cipher: bytes, decode: bool = True) -> str | bytes:
         decryptor = self.cipher.decryptor()

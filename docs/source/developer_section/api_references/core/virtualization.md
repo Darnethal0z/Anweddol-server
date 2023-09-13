@@ -2,824 +2,954 @@
 
 ---
 
-> Virtualization management and utilities, using libvirt API
+## class *VirtualizationInterface*
 
-> Package `anwdlserver.core.virtualization`
+### Definition
 
-## Constants
-
-Default parameters :
-
-| Name                                     | Value                 | Description                                                                              |
-| ---------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------- |
-| `DEFAULT_LIBVIRT_DRIVER_URI`             | `"qemu:///system"`    | The default server bind address                                                          |
-| `DEFAULT_CONTAINER_ENDPOINT_USERNAME`    | `"endpoint"`          | The default server listen port                                                           |
-| `DEFAULT_CONTAINER_ENDPOINT_PASSWORD`    | `"endpoint"`          | The default timeout applied on a new client                                              |
-| `DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT` | `22`                  | Start the server asynchronously by default                                               |
-| `DEFAULT_BRIDGE_INTERFACE_NAME`          | `"anwdlbr0"`          | The default bridge interface name that container domains will use                        |
-| `DEFAULT_NAT_INTERFACE_NAME`             | `"virbr0"`            | The default NAT interface name that container domains will use                           |
-| `DEFAULT_CONTAINER_MAX_TRYOUT`           | `20`                  | The maximum attemps to check the network availability of a container domain before error |
-| `DEFAULT_MAX_ALLOWED_CONTAINERS`         | `6`                   | The maximum allowed amount of active containers on an instance                           |
-| `DEFAULT_CONTAINER_MEMORY`               | `2048`                | The memory, in Mb, allocated to container domains                                        |
-| `DEFAULT_CONTAINER_VCPUS`                | `2`                   | The amount of VCPUs allocated to container domains                                       |
-| `DEFAULT_CONTAINER_PORT_RANGE`           | `range(10000, 15000)` | The port range that will be assigned to container domains SSH servers                    |
-| `DEFAULT_CONTAINER_WAIT_AVAILABLE`       | `True`                | Wait for the network to be available on a container domain before continuing by default  |
-| `DEFAULT_CONTAINER_DESTROY_DOMAIN`       | `True`                | Destroy the domain rather than shutting it down by default                               |
-| `DEFAULT_STORE_CONTAINER`                | `True`                | Store the container instance on the virtualization interface or not by default           |
-
-## Classes
-
-### `EndpointShellInstance`
-
-#### Definition
-
-```
-class EndpointShellInstance(
-	ssh_client: paramiko.client.SSHClient
-)
+```{class} anwdlserver.core.virtualization.VirtualizationInterface()
 ```
 
-> Represents a opened SSH shell to a container endpoint
+Provides `ContainerInstance` management features.
 
-_Parameters_ :
+**Parameters** : 
 
-- `ssh_client`: The [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/client.html) instance representing the SSH connection.
+> None.
 
-**NOTE** : The endpoint SSH shell will be automatically closed on `__del__` method.
+### General usage
 
-#### Methods
-
-```
-isClosed() -> bool
+```{classmethod} getStoredContainersAmount()
 ```
 
-> Check if the connection is closed
+Get the stored containers amount.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- A boolean value. `True` if the connection is closed, `False` otherwise
+> The amount of stored containers amount on the instance.
 
 ---
 
-```
-getSSHClient() -> paramiko.client.SSHClient
-```
-
-> Get the [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/client.html) connection object
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- The [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/client.html) object of the instance
-
----
-
-```
-getStoredContainerSSHCredentials() -> tuple
+```{classmethod} listStoredContainers()
 ```
 
-> Get the stored container SSH credentials
+List stored containers.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- A tuple representing the stored container SSH credentials : 
+> A list containing the stored container UUIDs as strings.
 
-```
-(
-	username,
-	password,
-	listen_port
-)
+### Containers management
+
+```{classmethod} createContainer(iso_path: str, store: bool) -> ContainerInstance
 ```
 
-- `username` : The SSH username
-- `password` : The SSH password
-- `listen_port` : The SSH server listen port
+Create a container.
 
-**NOTE** : Container SSH credentials are stored on the instance within the `setContainerSSHCredentials` method. For these credentials to be sent to the client in the server process, you need to call this method if you want to set specific credentials.
+**Parameters** :
+
+> ```{attribute} iso_path
+> > Type : str
+> 
+> The ISO file path that will be used for the container domain.
+> ```
+
+> ```{attribute} store
+> > Type : bool
+> 
+> `True` to store the created container instance, `False` otherwise. Default is `True`.
+> ```
+
+**Return value** : 
+
+> The `ContainerInstance` object of the created container.
 
 ---
 
-```
-executeCommand(command: str) -> tuple
-```
-
-> Execute a command on the remote container
-
-_Parameters_ :
-
-- `command` : The command to execute
-
-_Return value_ :
-
-- A tuple representing the stdout and the stderr of the command output :
-
-```
-(
-	stdout,
-	stderr
-)
+```{classmethod} getStoredContainer(container_uuid)
 ```
 
-- `stdout` : The standard output stream of the result
-- `stderr` : The standard error stream of the result
+Get a stored container.
+
+**Parameters** :
+
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The container [UUID](../../../technical_specifications/core/client_authentication.md) to search for.
+> ```
+
+**Return value** : 
+
+> The `ContainerInstance` object of the stored container if exists, `None` otherwise.
 
 ---
 
-```
-generateContainerSSHCredentials(
-	port_range: range = DEFAULT_CONTAINER_PORT_RANGE,
-) -> tuple
+```{classmethod} addStoredContainer(container_instance)
 ```
 
-> Generate new container SSH credentials
+Add a container on storage.
 
-_Parameters_ :
+**Parameters** :
 
-- `port_range` : The port range which a random new listen port is chosen
+> ```{attribute} container_instance
+> > Type : `ContainerInstance`
+> 
+> The `ContainerInstance` object to store.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- A tuple representing the generated container SSH credentials :
+> `None`.
 
-```
-(
-	username,
-	password,
-	listen_port
-)
-```
+**Possible raise classes** : 
 
-- `username` : The SSH username
-- `password` : The SSH password
-- `listen_port` : The SSH server listen port
+> ```{exception} ValueError
+> An error occured due to an invalid value set before or during the method call.
+> 
+> Raised in this method if the specified container instance already exists on storage.
+> ```
 
 ---
 
-```
-setContainerSSHCredentials(
-	username: str,
-    password: str,
-    listen_port: int,
-) -> None
+```{classmethod} deleteStoredContainer(container_uuid)
 ```
 
-> Set the container SSH credentials on the remote container
+Delete a stored container.
 
-_Parameters_ :
+**Parameters** :
 
-- `username` : The SSH username to set
-- `password` : The SSH password to set
-- `listen_port` : The SSH server listen port to set
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The [UUID](../../../technical_specifications/core/client_authentication.md) of the container to delete.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
+> `None`.
 
-**NOTE** : This method uses the `anweddol_container_setup.sh` script on the container to set the SSH credentials on ot, thus calling the `closeShell` method after completion (see the technical specifications [Virtualization section](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/virtualization.html#administration)) to learn more).
+## class *ContainerInstance*
 
----
+### Definition
 
-```
-closeShell() -> None
-```
-
-> Close the SSH connection
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- None
-
-**NOTE** : This method is automatically called within the `__del__` method and the `setContainerSSHCredentials` method when called, but it is programatically better to call it naturally
-
-### `ContainerInstance`
-
-#### Definition
-
-```
-class ContainerInstance(
-	uuid: str,
-	iso_path: str,
-	memory: int = DEFAULT_CONTAINER_MEMORY,
-	vcpus: int = DEFAULT_CONTAINER_VCPUS,
-	nat_interface_name: str = DEFAULT_NAT_INTERFACE_NAME,
-	bridge_interface_name: str = DEFAULT_BRIDGE_INTERFACE_NAME,
-	endpoint_username: str = DEFAULT_CONTAINER_ENDPOINT_USERNAME,
-	endpoint_password: str = DEFAULT_CONTAINER_ENDPOINT_PASSWORD,
-	endpoint_listen_port: int = DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT
-)
+```{class} anwdlserver.core.virtualization.ContainerInstance(iso_path, container_uuid, memory, vcpus, nat_interface_name)
 ```
 
-> Represents a container instance
+Represents a container instance.
 
-_Parameters_ :
+**Parameters** :
 
-- `uuid` : The new [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
-- `iso_path` : The ISO path that will be used for the container domain
-- `memory` : The memory amount to allocate on the container, exprimed in Mb
-- `vcpus` : The VCPUs amount to allocate on the container
-- `nat_interface_name` : The [NAT interface name](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/networking.html#container) that will be used by the container
-- `bridge_interface_name` : [The bridge interface](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/networking.html#container) name that will be used by the container
-- `endpoint_username` : The [endpoint username](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/virtualization.html#administration) that will be used for container administration
-- `endpoint_password` : The [endpoint password](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/virtualization.html#administration) that will be used for container administration
-- `endpoint_listen_port` : The [endpoint listen port](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/virtualization.html#administration) that will be used for container administration
+> ```{attribute} iso_path
+> > Type : str
+> 
+> The ISO file path that will be used for the container domain.
+> ```
 
-#### Methods
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The new [container UUID](../../../technical_specifications/core/client_authentication.md). Default is `None`.
+> ```
 
+> ```{attribute} memory
+> > Type : int
+> 
+> The memory amount to set on the container domain, exprimed in Mb. Default is `2048`.
+> ```
+
+> ```{attribute} vcpus
+> > Type : int
+> 
+> The Virtual CPUs amount to set on the container domain. Default is `2`.
+> ```
+
+> ```{attribute} nat_interface_name
+> > Type : str
+> 
+> The [NAT interface name](../../../technical_specifications/core/networking.md) that will be used by the container domain. Default is `virbr0`.
+> ```
+
+```{note}
+If used, the parameter `iso_path` is already taken care by the `ServerInterface()` class in order to facilitate its usage.
 ```
-isDomainRunning() -> bool
+
+### General usage
+
+```{classmethod} isDomainRunning()
 ```
 
-> Check if the container domain is running
+Check if the container domain is running.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- A boolean value. `True` if the domain is running, `False` otherwise
+> `True` if the domain is running, `False` otherwise.
 
 ---
 
-```
-getNATInterfaceName() -> str
-```
-
-> Get the NAT interface name of the instance
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- The NAT interface name of the instance
-
----
-
-```
-getBridgeInterfaceName() -> str
+```{classmethod} getNATInterfaceName()
 ```
 
-> Get the bridge interface name of the instance
+Get the NAT interface name of the instance.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The bridge interface name of the instance
+> The NAT interface name of the instance.
 
 ---
 
+```{classmethod} getDomainDescriptor()
 ```
-getDomainDescriptor() -> None | libvirt.virDomain
-```
 
-> Get the `libvirt.virDomain` object of the instance
+Get the `libvirt.virDomain` object of the instance.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The `libvirt.virDomain` object of the instance, or `None` is unavailable
+> The `libvirt.virDomain` object of the instance, or `None` is unavailable.
 
 ---
 
+```{classmethod} getUUID()
 ```
-getUUID() -> str
-```
 
-> Get the instance [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
+Get the instance [container UUID](../../../technical_specifications/core/client_authentication.md).
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) of the instance
+> The [container UUID](../../../technical_specifications/core/client_authentication.md) of the instance.
 
 ---
 
+```{classmethod} getISOFilePath()
 ```
-getISOPath() -> str
-```
 
-> Get the instance ISO path
+Get the instance ISO file path.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The instance ISO path on local storage
+> The instance ISO file path on local storage.
 
 ---
 
+```{classmethod} getMAC()
 ```
-getMAC() -> str
-```
 
-> Get the container MAC address
+Get the container domain MAC address.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The instance container MAC address
+> The instance container domain MAC address, or `None` if unavailable.
 
-_Possible raise classes_ :
+**Possible raise classes** :
 
-- `RuntimeError`
-
-**NOTE** : The container domain must be started and ready in order to get its MAC address.
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the container domain is not created.
+> ```
 
 ---
 
+```{classmethod} getIP()
 ```
-getIP() -> None | str
+
+Get the container domain IP address.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> The container domain IP address, or `None` if the domain is not started or not ready yet.
+
+**Possible raise classes** :
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the container domain is not created.
+> ```
+
+```{warning}
+The container domain must be started and ready in order to get its IP, since the method will fetch it from the dnsmasq interface status file located in `/var/lib/libvirt/dnsmasq/` with its MAC address.
 ```
-
-> Get the container IP address
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- The instance container IP address, or `None` if the domain is not started or not ready yet
-
-_Possible raise classes_ :
-
-- `RuntimeError`
-
-**NOTE** : The container domain must be started and ready in order to get its IP, since the method will fetch it from the dnsmasq interface status file located in `/var/lib/libvirt/dnsmasq/` with its MAC address.
 
 ---
 
+```{classmethod} getMemory()
 ```
-getMemory() -> int
-```
 
-> Get the allocated container memory amount
+Get the allocated container domain memory amount.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The memory amount allocated to the container
+> The memory amount allocated to the container domain, exprimed in Mb.
 
 ---
 
+```{classmethod} getVCPUs()
 ```
-getVCPUs() -> int
-```
 
-> Get the allocated container Virtual CPUs amount
+Get the allocated container domain virtual CPUs amount.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The VCPUs amount allocated to the container 
+> The virtual CPUs amount allocated to the container domain.
 
 ---
 
+```{classmethod} setDomainDescriptor(domain_descriptor)
 ```
-setDomainDescriptor(domain_descriptor: libvirt.virDomain) -> None
-```
 
-> Set the `libvirt.virDomain` object of the instance
+Set the `libvirt.virDomain` object.
 
-_Parameters_ :
+**Parameters** :
 
-- `domain_descriptor` : The `libvirt.virDomain` object to set on the instance
+> ```{attribute} domain_descriptor
+> > Type : `libvirt.virDomain`
+> 
+> The `libvirt.virDomain` object to set on the instance.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
+> `None`.
 
 ---
 
+```{classmethod} makeISOFileChecksum()
 ```
-setISOPath(iso_path: str) -> None
+
+Make the SHA256 digest of the container ISO file.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> The SHA256 digest of the container ISO file.
+
+**Possible raise classes** : 
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the ISO file path is not set.
+> ```
+
+### Container domain capacity setup
+
+```{classmethod} setISOFilePath(iso_path)
 ```
 
-> Set the container ISO path of the instance
+Set the container ISO file path.
 
-_Parameters_ :
+**Parameters** :
 
-- `iso_path` : The ISO path to set on the instance
+> ```{attribute} iso_path
+> > Type : str
+> 
+> The ISO file path to set.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
+> `None`.
 
 ---
 
+```{classmethod} setMemory(memory)
 ```
-setMemory(memory: int) -> None
-```
 
-> Set the memory amount to allocate on the container
+Set the memory amount to allocate on the container domain.
 
-_Parameters_ :
+**Parameters** :
 
-- `memory` : The memory to allocate on the container, exprimed in Mb
+> ```{attribute} memory
+> > Type : int
+> 
+> The memory to set, exprimed in Mb. Must be a non-zero value, minimum should be `512`.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
-
-**NOTE** : The parameter `memory` must be a value greater than 0
+> `None`.
 
 ---
 
+```{classmethod} setVCPUs(vcpus)
 ```
-setVCPUs(vcpus: int) -> None
-```
 
-> Set the Virtual CPUs amount to allocate on the container
+Set the virtual CPUs amount to allocate on the container domain.
 
-_Parameters_ :
+**Parameters** :
 
-- `vcpus` : The amount of VCPUs to allocate on the container
+> ```{attribute} memory
+> > Type : int
+> 
+> The amount of virtual CPUs to set. Must be a non-zero value, minimum allowed is `1`.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
-
-**NOTE** : The parameter `vcpus` must be a value greater than 0
+> `None`.
 
 ---
 
+```{classmethod} setNATInterfaceName(nat_interface_name: str) -> None
 ```
-setNATInterfaceName(nat_interface_name: str) -> None
+
+Set the NAT interface name that will be used on the container domain.
+
+**Parameters** :
+
+> ```{attribute} nat_interface_name
+> > Type : str
+> 
+> The NAT interface name that will be used on the container domain.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+### Container domain administration
+
+```{classmethod} createEndpointShell(endpoint_username, endpoint_password, endpoint_listen_port, open_shell)
 ```
 
-> Set the NAT interface name of the container
+Create an `EndpointShell` instance on the container domain.
 
-_Parameters_ :
+**Parameters** :
 
-- `nat_interface_name` : The NAT interface name that will be used on the container domain
+> ```{attribute} endpoint_username
+> > Type : str
+> 
+> The endpoint SSH username to set on the instance. Default is `endpoint`.
+> ```
 
-_Return value_ :
+> ```{attribute} endpoint_password
+> > Type : str
+> 
+> The endpoint SSH password to set on the instance. Default is `endpoint`.
+> ```
 
-- None
+> ```{attribute} endpoint_listen_port
+> > Type : int
+> 
+> The endpoint SSH listen port to set on the instance. Default is `22`.
+> ```
+
+> ```{attribute} open_shell
+> > Type : bool
+> 
+> `True` to open the shell on the container instance on initialization, `False` otherwise. Default is `True`.
+> ```
+
+**Return value** : 
+
+> The `EndpointShellInstance` object representing the created endpoint shell instance.
+
+### Container domain lifetime control
+
+```{classmethod} startDomain(wait_available: bool, wait_max_tryout: int, driver_uri: str) -> None
+```
+
+Start the [container domain](../../../technical_specifications/core/virtualization.md).
+
+**Parameters** :
+
+> ```{attribute} wait_available
+> > Type : bool
+> 
+> `True` to wait for the network to be available on the domain or not. Default is `True`.
+> ```
+
+> ```{attribute} wait_max_tryout
+> > Type : int
+> 
+> The amount of attemps to check if the network is available on the domain before raising `TimeoutError`. Default is `20`.
+> ```
+
+> ```{attribute} driver_uri
+> > Type : str
+> 
+> The hypervisor [driver URI](https://libvirt.org/uri.html) to use. Default is `qemu:///system`.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+**Possible raise classes** :
+
+> ```{exception} TimeoutError
+> An error occured due to a timed-out operation on system level.
+> 
+> Raised in this method if the parameter `wait_available` is set to `True` and that the container domain network is not available after `wait_max_tryout` attemps.
+> ```
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+>
+> Raised in this method if the container domain is already running.
+> ```
 
 ---
 
+```{classmethod} stopDomain(destroy)
 ```
-setBridgeInterfaceName(bridge_interface_name: str) -> None
+
+Stop the container domain.
+
+**Parameters** :
+
+> ```{attribute} destroy
+> > Type : bool
+> 
+> Destroy the container domain rather than shutting it down or not. Default is `True`.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+**Possible raise classes** :
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+>
+> Raised in this method if the container domain is not running.
+> ```
+
+## class *EndpointShellInstance*
+
+### Definition
+
+```{class} anwdlserver.core.virtualization.EndpointShellInstance(container_ip, endpoint_username, endpoint_password, endpoint_listen_port, open_shell)
 ```
 
-> Set the bridge interface name of the container
+Represents a opened SSH shell to a container endpoint.
 
-_Parameters_ :
+```{tip}
+This class can be used in a 'with' statement.
+```
 
-- `bridge_interface_name` : The bridge interface name that will be used on the container domain
+**Parameters** :
 
-_Return value_ :
+> ```{attribute} container_ip
+> > Type : str
+> 
+> The remote container domain IP to connect via SSH to. Default is `None`.
+> ```
 
-- None
+> ```{attribute} endpoint_username
+> > Type : str
+> 
+> The [endpoint username](../../../technical_specifications/core/virtualization.md) that will be used for container domain administration. Default is `endpoint`.
+> ```
+
+> ```{attribute} endpoint_password
+> > Type : str
+> 
+> The [endpoint password](../../../technical_specifications/core/virtualization.md) that will be used for container domain administration. Default is `endpoint`.
+> ```
+
+> ```{attribute} endpoint_listen_port
+> > Type : int
+> 
+> The [endpoint listen port](../../../technical_specifications/core/virtualization.md) that will be used for container domain administration. Default is `22`.
+> ```
+
+> ```{attribute} open_shell
+> > Type : bool
+> 
+> `True` to open the shell on the container instance on initialization, `False` otherwise. Default is `True`.
+> ```
+
+```{note}
+The endpoint SSH shell will be clowed with the `closeShell()` method on the `__del__` method.
+```
+
+```{warning}
+If the parameter `open_shell` is set to `True` and no value is passed on the parameter `container_ip`, no connection will be made on initialization.
+```
+
+### General usage
+
+```{classmethod} isClosed()
+```
+
+Check if the connection is closed.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> `True` if the connection is closed, `False` otherwise.
 
 ---
 
-```
-setEndpointSSHAuthenticationCredentials(
-	endpoint_username: str = DEFAULT_CONTAINER_ENDPOINT_USERNAME, 
-    endpoint_password: str = DEFAULT_CONTAINER_ENDPOINT_PASSWORD, 
-    endpoint_listen_port: str = DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT
-) -> None
+```{classmethod} getSSHClient()
 ```
 
-> Set the container [endpoint SSH credentials](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/virtualization.html#administration) for SSH authentication
+Get the [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/client.html) connection object.
 
-_Parameters_ :
+**Parameters** : 
 
-- `endpoint_username` : The endpoint username to set
-- `endpoint_password` : The endpoint password to set
-- `endpoint_listen_port` : The endpoint listen port to set
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- None
+> The [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/client.html) object of the instance.
 
 ---
 
+```{classmethod} getContainerIP()
 ```
-makeISOChecksum() -> str
-```
 
-> Get the SHA256 digest of the instance container ISO
+Get the remote container domain IP.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The SHA256 digest of the container ISO
+> The remote container domain IP.
 
 ---
 
+```{classmethod} getEndpointCredentials()
 ```
-createEndpointShell() -> EndpointShellInstance
-```
 
-> Create a `EndpointShellInstance` object on the running container
+Get the endpoint credentials.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The `EndpointShellInstance` object representing the SSH shell on the container domain endpoint
+> A tuple representing the endpoint credentials of the instance :
+
+> ```
+> {
+>   endpoint_username,
+>   endpoint_password,
+>   endpoint_listen_port
+> }
+> ``` 
+
+> - *endpoint_username* (Type : str)
+> 
+>   The endpoint SSH username
+> 
+> - *endpoint_password* (Type : str)
+> 
+>   The endpoint SSH password
+> 
+> - *endpoint_listen_port* (Type : int)
+> 
+>   The endpoint SSH listen port
 
 ---
 
-```
-startDomain(
-	wait_available: bool = DEFAULT_CONTAINER_WAIT_AVAILABLE,
-    wait_max_tryout: int = DEFAULT_CONTAINER_MAX_TRYOUT,
-    driver_uri: str = DEFAULT_LIBVIRT_DRIVER_URI
-) -> None
+```{classmethod} getStoredClientSSHCredentials()
 ```
 
-> Start the [container domain](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/virtualization.html#api)
+Get the stored client SSH client credentials.
 
-_Parameters_ :
+**Parameters** : 
 
-- `wait_available` : Wait for the network to be available on the domain or not
-- `wait_max_tryout` : The amount of attemps to check if the network is available on the domain before raising `TimeoutError`
-- `driver_uri` : The hypervisor [driver URI](https://libvirt.org/uri.html) to use.
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- None
+> A tuple representing the stored client SSH credentials : 
 
-_Possible raise classes_ :
+> ```
+> (
+>   username,
+>   password,
+>   listen_port
+> )
+> ```
 
-- `RuntimeError`
-- `TimeoutError`
+> - *username* (Type : int)
+> 
+>   The client SSH username.
+> 
+> - *password* (Type : int)
+> 
+>   The client SSH password.
+> 
+> - *listen_port* (Type : int)
+> 
+>   The client SSH server listen port.
 
-**NOTE** : By default, the qemu hypervisor URI `qemu:///system` is used. The container domain must be stopped before being started.
+> Or `None` if the credentials are not set.
 
 ---
 
-```
-stopDomain(destroy: bool = DEFAULT_CONTAINER_DESTROY_DOMAIN) -> None
-```
-
-> Stop the container domain
-
-_Parameters_ :
-
-- `destroy` : Destroy the container domain rather than shutting it down or not
-
-_Return value_ :
-
-- None
-
-_Possible raise classes_ :
-
-- `RuntimeError`
-
-**NOTE** : The container domain must be running before being stopped.
-
-### `VirtualizationInterface`
-
-#### Definition
-
-```
-class VirtualizationInterface(
-	container_iso_path: str,
-    max_allowed_containers: int = DEFAULT_MAX_ALLOWED_CONTAINERS,
-)
+```{classmethod} setContainerIP(ip)
 ```
 
-> Provides container management functionality
+Set the remote container domain IP.
 
-_Parameters_ :
+**Parameters** : 
 
-- `container_iso_path` : The container ISO path to set on created containers
-- `max_allowed_containers` : The maximum allowed active containers amount on the instance, must be greater than 0
+> ```{attribute} ip
+> > Type : str
+> 
+> The remote container domain IP to set.
+> ```
 
-#### Methods
+**Return value** : 
 
-```
-getIsoPath() -> str
-```
-
-> Get the instance ISO path
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- The instance ISO path
+> `None`.
 
 ---
 
+```{classmethod} setEndpointCredentials(username, password, listen_port)
 ```
-getMaxAllowedContainersAmount() -> int
-```
 
-> Get the maximum allowed active containers amount on the instance
+Set the remote container domain endpoint SSH credentials.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> ```{attribute} username
+> > Type : str
+> 
+> The endpoint SSH username to set.
+> ```
 
-_Return value_ :
+> ```{attribute} password
+> > Type : str
+> 
+> The endpoint SSH password to set.
+> ```
 
-- The maximum allowed active containers amount on the instance, is greater than 0
+> ```{attribute} listen_port
+> > Type : str
+> 
+> The endpoint SSH listen port to set.
+> ```
+
+**Return value** : 
+
+> `None`.
 
 ---
 
+```{classmethod} storeClientSSHCredentials(client_ssh_username, client_ssh_password)
 ```
-getContainersAmount() -> int
+
+Set the stored client SSH client credentials.
+
+**Parameters** :
+
+> ```{attribute} client_ssh_username
+> > Type : str
+> 
+> The client SSH username to store.
+> ```
+
+> ```{attribute} client_ssh_password
+> > Type : str
+> 
+> The client SSH password to store.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+```{warning}
+In a server context provided with `ServerInterface()`, if you want to set custom client SSH credentials with custom commands executed with the `executeCommand()` method, you must call this method to store those credentials before returning to the server process (see the [Server API page](server.md), events section).
 ```
-
-> Get the active containers amount on the instance
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- The amount of active containers on the instance
 
 ---
 
+```{classmethod} openShell()
 ```
-getAvailableContainersAmount() -> int
-```
 
-> Get the amount of available containers left
+Open an SSH shell on the remote container domain.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The amount of available containers left
+> `None`.
 
-**NOTE** : This method justs substract the maximum allowed active containers amount on the instance with the actual active containers amount.
+**Possible raise classes** : 
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the shell is already opened on the remote container domain.
+> ```
 
 ---
 
+```{classmethod} generateClientSSHCredentials(password_length, store)
 ```
-listStoredContainers() -> list
-```
 
-> List stored containers
+Generate new client SSH credentials.
 
-_Parameters_ :
+**Parameters** :
 
-- None
+> ```{attribute} password_length
+> > Type : int
+> 
+> The password length. Default is `120`.
+> ```
 
-_Return value_ :
+> ```{attribute} store
+> > Type : bool
+> 
+> `True` to store the generated credentials on the instance, `False` otherwise.
+> ```
 
-- A list enumerating the stored container UUIDs
+**Return value** : 
+
+> A tuple representing the generated client SSH credentials :
+
+> ```
+> (
+>   username,
+>   password
+> )
+> ```
+
+> - *username* (Type : str)
+> 
+>   The client SSH username.
+> 
+> - *password* (Type : str)
+> 
+>   The client SSH password.
 
 ---
 
+```{classmathod} closeShell()
 ```
-getStoredContainer(container_uuid: str) -> None | ContainerInstance
+
+Close the SSH connection.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> `None`.
+
+```{note}
+**Additional note** : This method is automatically called within the `__del__` method and the `setContainerSSHCredentials` method when called.
 ```
 
-> Get a stored container
+### Container domain SSH administration
 
-_Parameters_ :
+```{classmethod} executeCommand(command)
+```
 
-- `container_uuid` : The container UUID to search for
+Execute a command on the remote container domain.
 
-_Return value_ :
+**Parameters** :
 
-- The `ContainerInstance` object of the crated container if exists, `None` otherwise
+> ```{attribute} command
+> > Type : str
+> 
+> The BASH command to execute on the container domain.
+> ```
+
+**Return value** : 
+
+> A tuple representing the stdout and the stderr of the command output :
+
+> ```
+> (
+>   stdout,
+>   stderr
+> )
+> ```
+
+> - `stdout` (Type : str)
+> 
+>   The standard output stream of the result.
+> 
+> - `stderr` (Type : str)
+> 
+>   The standard error stream of the result.
 
 ---
 
-```
-setIsoPath(iso_path: str) -> None
-```
-
-> Set the instance ISO path
-
-_Parameters_ :
-
-- `iso_path` : The instance ISO path to set. Must point to a valid ISO image
-
-_Return value_ :
-
-- None
-
----
-
-```
-setMaxAllowedContainers(max_allowed_containers: int) -> None
+```{classmethod} administrateContainer()
 ```
 
-> Set the maximum allowed active container amount on the instance
+Set the container SSH client credentials on the remote container.
 
-_Parameters_ :
+**Parameters** :
 
-- `max_allowed_containers` : The maximum allowed active containers amount on the instance, must be greater than 0
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- None
+> `None`.
 
----
+**Possible raise classes** :
 
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the endpoint credentials was not set or the shell is not opened on the remote container domain, or that the method failed to set client SSH credentials on the remote container domain.
+> ```
+
+```{note}
+This method uses the `anweddol_container_setup.sh` script on the container to set the stored SSH credentials.
 ```
-addStoredContainer(container_instance: ContainerInstance) -> None
-```
-
-> Add a container on the instance
-
-_Parameters_ :
-
-- `container_instance` : The `ContainerInstance` object to add
-
-_Return value_ :
-
-- None
-
-_Possible raise classes_ : 
-
-- `RuntimeError`
-
-**NOTE** : If the stored container amount become equal to the `max_allowed_containers` value from the class initialization, a `RuntimeError` will be raised.
-
----
-
-```
-deleteStoredContainer(container_uuid: str) -> None
-```
-
-> Delete a stored container
-
-_Parameters_ :
-
-- `container_instance` : The [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) to delete
-
-_Return value_ :
-
-- None
-
----
-
-```
-createContainer(store: bool = DEFAULT_STORE_CONTAINER) -> ContainerInstance
-```
-
-> Create a container
-
-_Parameters_ :
-
-- `store` : `True` to store the created container, `False` otherwise
-
-_Return value_ :
-
-- The `ContainerInstance` object of the created container
-
-_Possible raise classes_ : 
-
-- `RuntimeError`
-
-**NOTE** : If the stored container amount become equal to the `max_allowed_containers` value from the class initialization, a `RuntimeError` will be raised.

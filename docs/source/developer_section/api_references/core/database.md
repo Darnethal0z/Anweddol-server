@@ -2,259 +2,317 @@
 
 ---
 
-> Database features with SQLite memory database
+## class *DatabaseInterface*
 
-> Package `anwdlserver.core.database`
+### Definition
 
-## Constants
-
-None
-
-## Classes
-
-### `DatabaseInterface`
-
-#### Definition
-
-```
-class DatabaseInterface()
+```{classmethod} anwdlserver.core.database.DatabaseInterface()
 ```
 
-> Provides an [SQLAlchemy](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/database.html) memory database instance
+Provides an [SQLAlchemy](../../../technical_specifications/core/database.md) memory database instance.
 
-_Parameters_ :
+**Parameters**
 
-- None
+> None.
 
-**NOTE** : The database and its engine will be automatically closed on `__del__` method. Also, queries implying modifications on the database are automatically committed, and rollbacks are called if an error occured.
-
-#### Methods
-
-```
-getEngine() -> sqlalchemy.engine.Engine
+```{note}
+The database and its engine will be closed with the `closeDatabase()` method on `__del__` method. Also, queries implying modifications on the database are automatically committed, and rollbacks are called if an error occured.
 ```
 
-> Get the SQLAlchemy [`sqlalchemy.engine.Engine`](https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine) object instance
+### General usage
 
-_Parameters_ :
+```{classmethod} getEngine()
+```
 
-- None
+Get the SQLAlchemy [`sqlalchemy.engine.Engine`](https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine) object instance.
 
-_Return value_ :
+**Parameters** : 
 
-- The `sqlalchemy.engine.Engine` object of the instance
+> None.
+
+**Return value** : 
+
+> The `sqlalchemy.engine.Engine` object of the instance.
 
 ---
 
+```{classmethod} getEngineConnection()
 ```
-getEngineConnection() -> sqlalchemy.engine.Connection
-```
 
-> Get the SQLAlchemy [`sqlalchemy.engine.Connection`](https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection) object instance
+Get the SQLAlchemy [`sqlalchemy.engine.Connection`](https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection) object instance.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The `sqlalchemy.engine.Connection` object of the instance
+> The `sqlalchemy.engine.Connection` object of the instance.
 
 ---
 
+```{classmethod} getTableObject()
 ```
-getRuntimeTableObject() -> sqlalchemy.schema.Table
-```
 
-> Get the SQLAlchemy [`sqlalchemy.schema.Table`](https://docs.sqlalchemy.org/en/20/core/metadata.html#sqlalchemy.schema.Table) object instance
+Get the SQLAlchemy [`sqlalchemy.schema.Table`](https://docs.sqlalchemy.org/en/20/core/metadata.html#sqlalchemy.schema.Table) object instance.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The `sqlalchemy.schema.Table` object of the instance
+> The `sqlalchemy.schema.Table` object of the instance.
 
 ---
 
+```{classmethod} closeDatabase()
 ```
-getEntryID(container_uuid: str, client_token: str) -> None | int
+
+Close the database instance.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> `None`.
+
+```{note}
+This method is automatically called within the `__del__` method.
+``` 
+
+### CRUD operations
+
+```{classmethod} getEntryID(container_uuid, client_token)
 ```
 
-> Get the credentials pair entry ID[^1]
+Get the credentials pair entry ID (see Additional note).
 
-_Parameters_ :
+**Parameters** :
 
-- `container_uuid` : The clear [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
-- `client_token` : The clear [client token](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The clear [container UUID](../../../technical_specifications/core/client_authentication.md).
+> ```
 
-_Return value_ :
+> ```{attribute} client_token
+> > Type : str
+> 
+> The clear [client token](../../../technical_specifications/core/client_authentication.md).
+> ```
 
-- The credentials entry ID[^1] if exists, `None` otherwise
+**Return value** : 
 
-**NOTE** : This method must be used for client credentials verification.
+> The credentials entry ID if the credentials exists, `None` otherwise.
 
-[^1]: Similar to the ROWID in sqlite, an integer that identifies the row
+```{note}
+The entry ID is similar to the ROWID in sqlite, an integer that identifies the row. This method must be used for client credentials verification.
+```
 
 ---
 
+```{classmethod} getContainerUUIDEntryID(container_uuid)
 ```
-getContainerUUIDEntryID(container_uuid: str) -> None | int
+
+Get the entry ID of a specific container UUID.
+
+**Parameters** :
+
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The container UUID to search for. It can be a [container UUID](../../../technical_specifications/core/client_authentication.md) or a [client token](../../../technical_specifications/core/client_authentication.md).
+> ```
+
+**Return value** : 
+
+> The container UUID entry ID if exists, `None` otherwise.
+
+```{note}
+Only the `ContainerUUID` column value is concerned by this method.
 ```
-
-> Get the entry ID[^1] of a specific container UUID
-
-_Parameters_ :
-
-- `container_uuid` : The container UUID to search for. It can be a [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) or a [client token](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
-
-_Return value_ :
-
-- The container UUID entry ID[^1] if exists, `None` otherwise
-
-**NOTE** : Only the `ContainerUUID` column value is concerned by this method
 
 ---
 
-```
-getEntry(entry_id: int) -> tuple
-```
-
-> Get an entry content
-
-_Parameters_ :
-
-- `entry_id` : The entry ID[^1] to get the credentials from
-
-_Return value_ :
-
-- A tuple representing the entry content :
-
-```
-(
-	entry_id,
-	creation_timestamp,
-	container_uuid,
-	client_token
-)
+```{classmethod} getEntry(entry_id)
 ```
 
-- `entry_id` : The entry ID[^1]
-- `creation_timestamp` : The entry creation timestamp
-- `container_uuid` : The hashed [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
-- `client_token` : The hashed [client token](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials)
+Get an entry content.
 
-**NOTE** : The `container_uuid` and the `client_token` values are hashed with SHA256 as described in the [Technical specifications](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/database.html#security).
+**Parameters** :
+
+> ```{attribute} entry_id
+> > Type : str
+> 
+> The entry ID to get the credentials from.
+> ```
+
+**Return value** : 
+
+> A tuple representing the entry content :
+
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp,
+> 	container_uuid,
+> 	client_token
+> )
+> ```
+
+> - *entry_id* (Type : int)
+> 
+>   The entry ID.
+> 
+> - *creation_timestamp* (Type : int)
+> 
+>   The entry creation timestamp.
+> 
+> - *container_uuid* (Type : str)
+> 
+>   The hashed [container UUID](../../../technical_specifications/core/client_authentication.md).
+> 
+> - *client_token* (Type : str)
+> 
+>   The hashed [client token](../../../technical_specifications/core/client_authentication.md).
+
+```{note}
+The `container_uuid` and the `client_token` values are hashed with SHA256 as described in the [Technical specifications](../../../technical_specifications/core/database.md).
+``` 
 
 ---
 
-```
-addEntry(container_uuid: str) -> tuple
-```
-
-> Add an entry
-
-_Parameters_ :
-
-- `container_uuid` : The [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) to add
-
-_Return value_ :
-
-- A tuple representing the infomations of the created entry :
-
-```
-(
-	entry_id,
-	creation_timestamp,
-	client_token
-)
+```{classmethod} addEntry(container_uuid)
 ```
 
-- `entry_id` : The new entry ID[^1]
-- `creation_timestamp` : The entry creation timestamp
-- `client_token` : The [client token]https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials), in plain text
+Add an entry.
 
-_Possible raise classes_ :
+**Parameters** :
 
-- `LookupError`
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The [container UUID](../../../technical_specifications/core/client_authentication.md) to add.
+> ```
 
-**NOTE** : If the `container_uuid` is already specified on the database, `LookupError` is raised. Since the [client tokens](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) are hashed in the database (see the technical specifications [Database section](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/database.html) to learn more), there's no way to see them again in plain text : Store this clear created token somewhere safe in order to use it for further operations.
+**Return value** : 
+
+> A tuple representing the infomations of the created entry :
+
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp,
+> 	client_token
+> )
+> ```
+
+> - *entry_id* (Type : int)
+> 
+>   The new entry ID.
+> 
+> - *creation_timestamp* (Type : int)
+> 
+>   The entry creation timestamp.
+> 
+> - *client_token* (Type : str)
+> 
+>   The [client token](../../../technical_specifications/core/client_authentication.md), in plain text.
+
+**Possible raise classes** :
+
+> ```{exception} LookupError
+> An error occured due to an invalid key or index used on a mapping or a sequence.
+> 
+> Raised in this method if the local public key is not set.
+> ```
+
+```{note}
+Since the [client tokens](../../../technical_specifications/core/client_authentication.md) are hashed in the database (see the technical specifications [Database section](../../../technical_specifications/core/database.md) to learn more), there's no way to see them again in plain text : Store this clear created token somewhere safe in order to use it for further operations.
+```
 
 ---
 
-```
-listEntries() -> list
-```
-
-> List entries
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- A list of tuples representing the entries partial informations :
-
-```
-(
-	entry_id,
-	creation_timestamp
-)
+```{classmethod} listEntries()
 ```
 
-- `entry_id` : The created entry ID[^1]
-- `creation_timestamp` : The entry creation timestamp
+List entries.
+
+**Parameters** :
+
+> None.
+
+**Return value** : 
+
+> A list of tuples representing the entries partial informations :
+
+> ```
+> [
+> 	(
+> 		entry_id,
+> 		creation_timestamp
+> 	)
+> 	...
+> ]
+> ```
+
+> - *entry_id* (Type : int)
+> 
+>   The created entry ID.
+> 
+> - *creation_timestamp* (Type : int)
+> 
+>   The entry creation timestamp.
 
 ---
 
+```{classmethod} updateEntry(entry_id, container_uuid, client_token)
 ```
-updateEntry(entry_id: int, container_uuid: str, client_token: str)
-```
 
-> Update an entry
+Update an entry.
 
-_Parameters_ :
+**Parameters** :
 
-- `entry_id` : The entry ID[^1] to update
-- `container_uuid` : The [container UUID](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) to set
-- `client_token` : THe [client token](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html#session-credentials) to set
+> ```{attribute} entry_id
+> > Type : int
+> 
+> The entry ID to update.
+> ```
 
-_Return value_ :
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The [container UUID](../../../technical_specifications/core/client_authentication.md) to set.
+> ```
 
-- None
+> ```{attribute} client_token
+> > Type : str
+> 
+> The [client token](../../../technical_specifications/core/client_authentication.md) to set.
+> ```
+
+**Return value** : 
+
+> `None`.
 
 ---
 
-```
-deleteEntry(entry_id: str) -> None
-```
-
-> Delete an entry
-
-_Parameters_ :
-
-- `entry_id` : The entry ID[^1] to delete
-
-_Return value_ :
-
-- None
-
----
-
-```
-closeDatabase() -> None
+```{classmethod} deleteEntry(entry_id)
 ```
 
-> Close the database instance
+Delete an entry.
 
-_Parameters_ :
+**Parameters** :
 
-- None
+> ```{attribute} entry_id
+> > Type : int
+> 
+> The entry ID to delete.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
-
-**NOTE** : This method is automatically called within the `__del__` method, but it is programatically better to call it naturally
+> `None`.

@@ -3,29 +3,15 @@
     See the LICENSE file for licensing informations
     ---
 
-    Normalized request / response values and formats
+    Normalized request / response values and formats verification
 
 """
 import cerberus
-import re
 
 
 def verifyRequestContent(request_dict: dict) -> tuple:
     validator = cerberus.Validator()
     validator.allow_unknown = True
-
-    def __check_container_uuid(field, value, error):
-        if not re.search(
-            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", value
-        ):
-            error(
-                field,
-                "value does not match regex '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'",
-            )
-
-    def __check_client_token(field, value, error):
-        if not re.search(r"^[0-9a-zA-Z-_]{255}$", value):
-            error(field, "value does not match regex '^[0-9a-zA-Z-_]{255}$'")
 
     request_verification_scheme = {
         "verb": {
@@ -39,24 +25,25 @@ def verifyRequestContent(request_dict: dict) -> tuple:
             "schema": {
                 "container_uuid": {
                     "type": "string",
+                    "regex": r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
                     "required": False,
-                    "check_with": __check_container_uuid,
                     "dependencies": ["client_token"],
                 },
                 "client_token": {
                     "type": "string",
+                    "regex": r"^[0-9a-zA-Z-_]{255}$",
                     "required": False,
-                    "check_with": __check_client_token,
                     "dependencies": ["container_uuid"],
                 },
             },
         },
     }
 
-    if not validator.validate(request_dict, request_verification_scheme):
-        return (False, validator.errors)
-
-    return (True, validator.document)
+    return (
+        validator.validate(request_dict, request_verification_scheme),
+        validator.document if validator.document else None,
+        validator.errors if validator.errors else None,
+    )
 
 
 def makeResponse(
@@ -159,20 +146,20 @@ def makeResponse(
                 "uptime": {
                     "type": "integer",
                     "required": False,
+                    "dependencies": ["version"],
                     "min": 0,
-                    "dependencies": ["available"],
                 },
-                "available": {
-                    "type": "integer",
+                "version": {
+                    "type": "string",
                     "required": False,
-                    "min": 0,
                     "dependencies": ["uptime"],
                 },
             },
         },
     }
 
-    if not validator.validate(response_dict, response_verification_scheme):
-        return (False, validator.errors)
-
-    return (True, validator.document)
+    return (
+        validator.validate(response_dict, response_verification_scheme),
+        validator.document if validator.document else None,
+        validator.errors if validator.errors else None,
+    )

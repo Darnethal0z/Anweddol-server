@@ -2,7 +2,7 @@
 
 ----
 
-Hello and welcome to the Anweddol server administration guide.
+Welcome to the Anweddol server administration guide.
 
 The following sections will explain how to administrate and configure the Anweddol server implementation in an optimal way.
 

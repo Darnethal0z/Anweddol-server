@@ -2,377 +2,772 @@
 
 ---
 
-> Server management features
+## class *ServerInterface*
 
-> Package `anwdlserver.core.server`
+### Definition
 
-## Constants
-
-Default values :
-
-| Name                          | Value   | Description                                 |
-| ----------------------------- | ------- | ------------------------------------------- |
-| `DEFAULT_SERVER_BIND_ADDRESS` | `""`    | The default server bind address             |
-| `DEFAULT_SERVER_LISTEN_PORT`  | `6150`  | The default server listen port              |
-| `DEFAULT_CLIENT_TIMEOUT`      | `10`    | The default timeout applied on a new client |
-| `DEFAULT_ASYCHRONOUS`         | `False` | Start the server synchronously by default   |
-
-Constants definition :
-
-| Name                           | Value                  | Description                                                             |
-| ------------------------------ | ---------------------- | ----------------------------------------------------------------------- |
-| `REQUEST_VERB_CREATE`          | `"CREATE"`             | The verb indicating the intent to create a new container                |
-| `REQUEST_VERB_DESTROY`         | `"DESTROY"`            | The verb indicating the intent to destroy a container                   |
-| `REQUEST_VERB_STAT`            | `"STAT"`               | The verb indicating the intent to get the server runtime statistics     |
-| `RESPONSE_MSG_OK`              | `"OK"`                 | Message specifying that the request was correctly handled by the server |
-| `RESPONSE_MSG_BAD_AUTH`        | `"Bad authentication"` | Message specifying that invalid credentials were given to the server    |
-| `RESPONSE_MSG_BAD_REQ`         | `"Bad request"`        | Message specifying that the received request is malformed               |
-| `RESPONSE_MSG_REFUSED_REQ`     | `"Refused request"`    | Message specifying that the received request was refused                |
-| `RESPONSE_MSG_UNAVAILABLE`     | `"Unavailable"`        | Message specifying that the server is currently unavailable             |
-| `RESPONSE_MSG_INTERNAL_ERROR`  | `"Internal error"`     | Message specifying that the server experienced an internal error        |
-| `EVENT_CLIENT`                 | `1`                    | Identifies the `on_client` callback method                              |
-| `EVENT_CLIENT_CLOSED`          | `2`                    | Identifies the `on_client_closed` callback method                       |
-| `EVENT_CONNECTION`             | `3`                    | Identifies the `on_connection` callback method                          |
-| `EVENT_CREATED_CONTAINER`      | `4`                    | Identifies the `on_created_container` callback method                   |
-| `EVENT_CREATED_ENDPOINT_SHELL` | `5`                    | Identifies the `on_created_endpoint_shell` callback method              |
-| `EVENT_DESTROYED_CONTAINER`    | `6`                    | Identifies the `on_destroyed_container` callback method                 |
-| `EVENT_MALFORMED_REQUEST`      | `7`                    | Identifies the `on_malformed_request` callback method                   |
-| `EVENT_REQUEST`                | `8`                    | Identifies the `on_request` callback method                             |
-| `EVENT_RUNTIME_ERROR`          | `9`                    | Identifies the `on_runtime_error` callback method                       |
-| `EVENT_STARTED`                | `10`                   | Identifies the `on_started` callback method                             |
-| `EVENT_STOPPED`                | `11`                   | Identifies the `on_stopped` callback method                             |
-| `EVENT_UNKNOWN_VERB`           | `12`                   | Identifies the `on_unknown_verb` callback method                        |
-
-## Classes
-
-### `ServerInterface`
-
-#### Definition
-
-```
-class ServerInterface(
-	container_iso_path: str = None,
-	bind_address: str = DEFAULT_SERVER_BIND_ADDRESS,
-	listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
-	client_timeout: int = DEFAULT_CLIENT_TIMEOUT,
-	runtime_virtualization_interface: VirtualizationInterface = None,
-	runtime_database_interface: DatabaseInterface = None,
-	runtime_rsa_wrapper: RSAWrapper = None
-)
+```{class} anwdlserver.core.server.ServerInterface (runtime_container_iso_file_path, bind_address, listen_port, client_timeout, runtime_virtualization_interface, runtime_database_interface, runtime_port_forwarding_interface, runtime_rsa_wrapper)
 ```
 
-> Main server utility class
+This class is the main Anweddol server class, it contains every basic features that a server must provide in order to be functional.
 
-_Parameters_ :
+**Parameters** :
 
-- `container_iso_path` : The container ISO path that will be used for containers
-- `bind_address` : The bind address that the server will be using
-- `listen_port` : The listen port that the server will be using
-- `client_timeout` : The timeout that will be applied to clients
-- `runtime_virtualization_interface` : The `VirtualizationInterface` instance that will be used by the server
-- `runtime_database_interface` : The `DatabaseInterface` instance that will be used by the server
-- `runtime_rsa_wrapper` : The `RSAWrapper` instance that will be used by the server
+> ```{attribute} runtime_container_iso_file_path
+> > Type : str
+> 
+> The container ISO file path that will be used for containers.
+> ```
 
-**NOTE** : The container ISO path must point to a valid [ISO image](https://anweddol-server.readthedocs.io/en/latest/administration_guide/container_iso.html). The server is automatically stopped when the `__del__` method is called.
+> ```{note} 
+> The container ISO path must point to a valid [ISO image](../../../administration_guide/container_iso.md).
+> ```
 
-#### Methods
+> ```{attribute} bind_address
+> > Type : str
+> 
+> The bind address that the server will be using. Default is `0.0.0.0`.
+> ```
 
+> ```{attribute} listen_port
+> > Type : int
+> 
+> The listen port that the server will be using. Default is `6150`.
+> ```
+
+> ```{attribute} client_timeout
+> > Type : int
+> 
+> The timeout that will be applied to clients, exprimed in seconds. Default is `10`.
+> ```
+
+> ```{attribute} runtime_virtualization_interface
+> > Type : `VirtualizationInterface`
+> 
+> The `VirtualizationInterface` object that will be used by the server, or `None` to let > the server generate one. Default is `None`.
+> ```
+
+> ```{attribute} runtime_database_interface
+> > Type : `DatabaseInterface`
+> 
+> The `DatabaseInterface` object that will be used by the server, or `None` to let the server generate one. Default is `None`.
+> ```
+
+> ```{attribute} runtime_port_forwarding_interface
+> > Type : `PortForwardingInterface`
+> 
+> The `PortForwardingInterface` object that will be used by the server, or `None` to let the server generate one. Default is `None`.
+> ```
+
+> ```{attribute} runtime_rsa_wrapper
+> > Type : `RSAWrapper`
+> 
+> The `RSAWrapper` object that will be used by the server, or `None` to let the server generate one. Default is `None`.
+> ```
+
+```{note}
+The method `stopServer()` will be called on `__del__` method if the server is running.
 ```
-getRuntimeDatabaseInterface() -> DatabaseInterface
+
+### General usage
+
+```{classmethod} getRuntimeContainerISOFilePath()
 ```
 
-> Returns the runtime `DatabaseInterface` instance
+Get the runtime container ISO file path.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The `DatabaseInterface` instance used by the server
+> The runtime ISO file path used by the server.
 
 ---
 
+```{classmethod} getRuntimeDatabaseInterface()
 ```
-getRuntimeVirtualizationInterface() -> VirtualizationInterface
-```
 
-> Returns the runtime `VirtualizationInterface` instance
+Get the runtime `DatabaseInterface` object.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The `VirtualizationInterface` instance used by the server
+> The `DatabaseInterface` object used by the server.
 
 ---
 
+```{classmethod} getRuntimeVirtualizationInterface()
 ```
-getRuntimeRSAWrapper() -> RSAWrapper
-```
 
-> Returns the runtime `RSAWrapper` instance
+Get the runtime `VirtualizationInterface` object.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- The `RSAWrapper` instance used by the server
+> The `VirtualizationInterface` object used by the server.
 
 ---
 
-```
-getRuntimeStatistics() -> tuple
-```
-
-> Returns the server's actual runtime statistics
-
-_Parameters_ :
-
-- None
-
-_Return value_:
-
-- A tuple containing the server runtime statistics :
-
-```
-(
-	is_running,
-	recorded_runtime_errors_amount,
-	uptime,
-	available_containers_amount
-)
+```{classmethod} getRuntimeRSAWrapper()
 ```
 
-- `is_running` : Boolean value set to `True` if the server is currently running, `False` otherwise
-- `recorded_runtime_errors_amount` : The amount of errors recorded during the runtime
-- `uptime` : The server uptime, exprimed in seconds
-- `available_containers_amount` : The available containers amount
+Get the runtime `RSAWrapper` object.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> The `RSAWrapper` object used by the server.
 
 ---
 
+```{classmethod} getRuntimePortForwardingInterface()
 ```
-setRequestHandler(verb: str, routine: callable) -> None
-```
 
-> Set a request handler
+Get the runtime `PortForwardingInterface` object.
 
-_Parameters_ :
+**Parameters** : 
 
-- `verb` : The request verb to handle. It can be a custom one or a normalized one :
-  - `REQUEST_VERB_CREATE`
-  - `REQUEST_VERB_STAT`
-  - `REQUEST_VERB_DESTROY`
-- `routine` : A callable object that will be called when a received request verb is equal to `verb` value
+> None.
 
-_Return value_ :
+**Return value** : 
 
-- None
+> The `PortForwardingInterface` object used by the server.
 
 ---
 
+```{classmethod} getRuntimeStatistics()
 ```
-setEventHandler(event: int, routine: callable) -> None
-```
 
-> Set an event handler
+Return the actual runtime statistics.
 
-_Parameters_ :
+**Parameters** : 
 
-- `event` : The event to handle. It can be :
+> None.
 
-  - `EVENT_MALFORMED_REQUEST`
-  - `EVENT_UNKNOWN_VERB`
-  - `EVENT_RUNTIME_ERROR`
-  - `EVENT_REQUEST`
-  - `EVENT_CONNECTION`
-  - `EVENT_CREATED_CONTAINER`
-  - `EVENT_CREATED_ENDPOINT_SHELL`
-  - `EVENT_CLIENT`
-  - `EVENT_STARTED`
-  - `EVENT_STOPPED`
-  - `EVENT_CLIENT_CLOSED`
-  - `EVENT_DESTROYED_CONTAINER`
+**Return value** : 
 
-- `routine` : A callable object that will be called when the `event` event is triggered.
+> A tuple containing the server runtime statistics :
 
-**NOTE** : This is the alternative of callback event decorators. Refer to the [Callback events](https://anweddol-server.readthedocs.io/en/latest/developer_section/api_references/core/server.html#callback-events) section below to know their roles and effects.
+> ```
+> (
+> 	is_running,
+> 	recorded_runtime_errors_amount,
+> 	uptime
+> )
+> ```
+> 
+> - *is_running* (Type : bool)
+> 
+>   Boolean value set to `True` if the server is currently running, `False` otherwise.
+> 
+> - *recorded_runtime_errors_amount* (Type : int)
+> 
+>   The amount of errors recorded during the runtime.
+> 
+> - *uptime* (Type : int)
+> 
+>   The server uptime, exprimed in seconds.
 
 ---
 
+```{classmethod} getRequestHandler(verb)
 ```
-startServer(asynchronous: bool = DEFAULT_ASYCHRONOUS) -> None
-```
 
-> Start the server
+Get a request handler.
 
-_Parameters_ :
+**Parameters** : 
 
-- `asynchronous` : Start the server asynchronously. Default is `False`, executing it synchronously
+> ```{attribute} verb
+> > Type : str
+> 
+> The verb to get the corresponding handler from.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
-
-**NOTE** : The execution is blocked when set to synchronous mode (by default)
+> The request handler object, or `None` if there is none.
 
 ---
 
+```{classmethod} getEventHandler(event)
 ```
-stopServer() -> None
-```
 
-> Stop the server
+Get an event handler.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> ```{attribute} event
+> > Type : str
+> 
+> The event to get the corresponding handler from.
+> ```
 
-_Return value_:
+**Return value** : 
 
-- None
-
-**NOTE** : This method is automatically called within the `__del__` method, but it is programatically better to call it naturally
+> The event handler object, or `None` if there is none.
 
 ---
 
+```{classmethod} setRuntimeContainerISOFilePath(iso_file_path)
 ```
-restartServer(asynchronous: bool = DEFAULT_ASYCHRONOUS) -> None
+
+Set the runtime container ISO file path.
+
+**Parameters** :
+
+> ```{attribute} iso_file_path
+> > Type : str
+> 
+> The container ISO file path to set.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+---
+
+```{classmethod} setRuntimeDatabaseInterface(database_interface)
 ```
 
-> Restart the server
+Set the runtime `DatabaseInterface` object.
 
-_Parameters_ :
+**Parameters** :
 
-- `asynchronous` : Start the server asynchronously. Default is `False`, executing it synchronously
+> ```{attribute} database_interface
+> > Type : `DatabaseInterface`
+> 
+> The `DatabaseInterface` object to set.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- None
+> `None`.
 
-#### Callback events
+---
 
-Callback events are decorators used to bind a routine or a callable object to an intern event.
+```{classmethod} setRuntimeVirtualizationInterface(virtualization_interface)
+```
+
+Set the runtime `VirtualizationInterface` object.
+
+**Parameters** :
+
+> ```{attribute} virtualization_interface
+> > Type : `VirtualizationInterface`
+> 
+> The `VirtualizationInterface` object to set.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+---
+
+```{classmethod} setRuntimeRSAWrapper(rsa_wrapper)
+```
+
+Set the runtime `RSAWrapper` object.
+
+**Parameters** :
+
+> ```{attribute} rsa_wrapper
+> > Type : `RSAWrapper`
+> 
+> The `RSAWrapper` object to set.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+---
+
+```{classmethod} setRuntimePortForwardingInterface(port_forwarding_interface)
+```
+
+Set the runtime `PortForwardingInterface` object.
+
+**Parameters** :
+
+> ```{attribute} port_forwarding_interface
+> > Type : `PortForwardingInterface`
+> 
+> The `PortForwardingInterface` object to set.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+### Request handling
+
+```{classmethod} setRequestHandler(verb, routine)
+```
+
+Set a request handler.
+
+**Parameters** :
+
+> ```{attribute} verb
+> > Type : str
+> 
+> The request verb to handle. It can be a custom one or a pre-defined normalized one :
+> ```
+
+>> ```{attribute} REQUEST_VERB_CREATE
+>> Handle a CREATE request.
+>> ```
+>> 
+>> ```{attribute} REQUEST_VERB_STAT
+>> Handle a STAT request.
+>> ```
+>> 
+>> ```{attribute} REQUEST_VERB_DESTROY
+>> Handle a DESTROY request.
+>> ```
+
+> ```{attribute} routine
+> > Type : [callable](https://docs.python.org/3/glossary.html#term-callable)
+> 
+> A callable object that will be called when a received request verb is equal to `verb` value.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+### Server lifecycle control
+
+```{classmethod} startServer(asynchronous)
+```
+
+Start the server.
+
+**Parameters** :
+
+> None.
+
+**Return value** : 
+
+> `None`.
+
+```{note} 
+The parent thread execution will be deadlocked if called.
+```
+
+---
+
+```{classmethod} stopServer(die_on_error)
+```
+
+Stop the server.
+
+**Parameters** :
+
+> ```{attribute} die_on_error
+> > Type : bool
+> 
+> `True` to exit the process if an error occured during the server termination routine, `False` otherwise. Default is `False`.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+```{note}
+This method is automatically called within the `__del__` method, but it is programatically better to call it naturally.
+```
+
+### Events handling
+
+You can interact with the server process via events. Those events can be bind to callable objects via 2 techniques : 
+
+#### Set custom event handler via the method
+
+```{classmethod} setEventHandler(event, routine)
+```
+
+Set an event handler. This is the method alternative of event decorators (see below).
+
+**Parameters** :
+
+> ```{attribute} event
+> > Type : str
+> 
+> The event to handle. See the section below to get the constant names.
+> ```
+
+> ```{attribute} routine
+> > Type : [callable](https://docs.python.org/3/glossary.html#term-callable)
+> 
+> A callable object that will be called when the `event` event is triggered.
+> ```
+
+#### Set custom event handler via decorators
 
 ```
-# The decorator depicting the event. Here EVENT_CREATED_CONTAINER
-@ServerInterface.on_created_container
-def routine(**kwargs):
+# The decorator depicting the event. Here EVENT_CONTAINER_CREATED
+@ServerInterface.on_container_created
+def routine(context: int, data: dict):
 	# The routine that will be executed when the event will be triggered
 	...
 ```
 
-Arguments provided to routines are different depending of the callback used.
-That's why it is recommended to use `**kwargs` and to refer to the documentation to know the names of the passed parameters.
+The server will execute the given routine function passing 2 parameters : 
 
-**NOTE** : When a client instance or raw socket is closed during a callback routine, the main server process will detect it, automatically terminating the session as a result. It is the same for container shell instances.
+> ```{attribute} context
+> > Type : str
+> 
+> The context in which the routine is called. It can be 4 possible values : 
+> ```
 
-To have a proper example on how to use these decorators, see the _Basic server_ on the examples section.
+>> ```{attribute} CONTEXT_NORMAL_PROCESS
+>> The routine have been called in a normal process execution.
+>> ```
+
+>> ```{attribute} CONTEXT_HANDLE_END
+>> The routine have been called after the end of a client handling, there is no future operations after the call.
+>> ```
+
+>> ```{attribute} CONTEXT_ERROR
+>> The routine have been called because an error occured in the normal process.
+>> ```
+
+> ```{attribute} data
+> > Type : str
+> 
+> The dictionary containing additional values related to the context. See below to know the keys and values set in each cases (in **Provided values** sections).
+> ```
+
+```{note}
+Routine execution is integrated with the server process itself, passing its own values and objects in its parameters so that execution can be as transparent as possible. 
+```
+
+```{warning}
+If the parameter `client_instance` representing a client is detected as closed after the routine execution, the server will instantly terminate its process since it will interpret it as a handle termination notice.
+```
+
+##### Decorators references
+
+```{function} @ServerInterface.on_container_created
+```
+
+Called when a new container was created.
+
+**Affiliated event constant** : `EVENT_CONTAINER_CREATED`
+
+**Provided values** :
 
 ```
-@ServerInterface.on_client
+{
+	"client_instance": CLIENT_INSTANCE,
+	"container_instance": CONTAINER_INSTANCE,
+}
 ```
 
-> Triggered when a new client is connected and the keys are exchanged
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
 
-_Provided parameters_ :
+  The `ClientInstance` object representing the handled client.
 
-- `client_instance` : The `ClientInstance` instance representing the client
-
-_Affiliated constant_ : `EVENT_CLIENT`
+- *CONTAINER_INSTANCE* (Type : `ContainerInstance`)
+  
+  The `ContainerInstance` object representing the created container.
 
 ---
 
+```{function} @ServerInterface.on_container_domain_started
 ```
-@ServerInterface.on_client_closed
+
+Called when a container domain was started.
+
+**Affiliated event constant** : `EVENT_CONTAINER_DOMAIN_STARTED`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+	"container_instance": CONTAINER_INSTANCE,
+}
 ```
 
-> Triggered when a connected client was closed
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
 
-_Provided parameters_ :
+  The `ClientInstance` object representing the handled client.
 
-- `client_instance` : The `ClientInstance` instance Callback events representing the client
-
-_Affiliated constant_ : `EVENT_CLIENT_CLOSED`
+- *CONTAINER_INSTANCE* (Type : `ContainerInstance`)
+	
+	The `ContainerInstance` object representing the container.
 
 ---
 
+```{function} @ServerInterface.on_container_domain_stopped
 ```
-@ServerInterface.on_connection
+
+Called when a container domain was stopped.
+
+**Affiliated event constant** : `EVENT_CONTAINER_DOMAIN_STOPPED`
+
+**Provided values** :
+
+```
+{
+	"container_instance": CONTAINER_INSTANCE,
+}
 ```
 
-> Triggered when a new client is connected and the keys have not been exchanged yet
+- *CONTAINER_INSTANCE* (Type : `ContainerInstance`)
 
-_Provided parameters_ :
+	The `ContainerInstance` object representing the container.
 
-- `client_socket` : The raw client socket instance
+Note that more keys can be provided :
 
-_Affiliated constant_ : `EVENT_CONNECTION`
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
 
 ---
 
+```{function} @ServerInterface.on_forwarder_created
 ```
-@ServerInterface.on_created_container
+
+Called when a new forwarder was created.
+
+**Affiliated event constant** : `EVENT_FORWARDER_CREATED`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+	"forwarder_instance": FORWARDER_INSTANCE,
+}
 ```
 
-> Triggered when a new container instance is created
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
 
-_Provided parameters_ :
+  The `ClientInstance` object representing the handled client.
 
-- `client_instance` : The `ClientInstance` instance representing the affiliated client
-- `container_instance` : The `ContainerInstance` instance of the created container
+- *FORWARDER_INSTANCE* (Type : `ForwarderInstance`)
 
-_Affiliated constant_ : `EVENT_CREATED_CONTAINER`
+  The `ForwarderInstance` object representing the forwarder.
 
 ---
 
+```{function} @ServerInterface.on_forwarder_started
 ```
-@ServerInterface.on_created_endpoint_shell
+
+Called when a forwarder process was started.
+
+**Affiliated event constant** : `EVENT_FORWARDER_STARTED`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+	"forwarder_instance": FORWARDER_INSTANCE,
+}
 ```
 
-> Triggered when an endpoint shell was opened on a container
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
 
-_Provided parameters_ :
+  The `ClientInstance` object representing the handled client.
 
-- `endpoint_shell_instance` : The `EndpointShellInstance` on the container
-- `container_instance` : The `ContainerInstance` instance representing the affiliated container
-- `client_instance` : The `ClientInstance` instance representing the affiliated client
+- *FORWARDER_INSTANCE* (Type : `ForwarderInstance`)
 
-_Affiliated constant_ : `EVENT_CREATED_ENDPOINT_SHELL`
+  The `ForwarderInstance` object representing the forwarder.
 
 ---
 
+```{function} @ServerInterface.on_forwarder_stopped
 ```
-@ServerInterface.on_destroyed_container
-```
 
-> Triggered when a container was destroyed
+Called when a forwarder process was stopped.
 
-_Provided parameters_ :
-
-- `client_instance` : The `ClientInstance` instance representing the affiliated client
-- `container_instance` : The `ContainerInstance` instance representing the affiliated container
-
-_Affiliated constant_ : `EVENT_DESTROYED_CONTAINER`
+**Affiliated event constant** : `EVENT_FORWARDER_STOPPED`
 
 ---
 
+```{function} @ServerInterface.on_endpoint_shell_created
 ```
-@ServerInterface.on_malformed_request
+
+Called when an endpoint shell was created.
+
+**Affiliated event constant** : `EVENT_ENDPOINT_SHELL_CREATED`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+	"endpoint_shell_instance": ENDPOINT_SHELL_INSTANCE,
+}
 ```
 
-> Triggered when the server has received a malformed request
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
 
-_Provided parameters_ :
+  The `ClientInstance` object representing the handled client.
 
-- `client_instance` : The `ClientInstance` instance representing the affiliated client
-- `cerberus_error_dict` : The [cerberus error dict](https://docs.python-cerberus.org/en/stable/errors.html#errors-error-handling) depicting the error detected on the request
+- *ENDPOINT_SHELL_INSTANCE* (Type : `EndpointShellInstance`)
 
-_Affiliated constant_ : `EVENT_MALFORMED_REQUEST`
+  The `EndpointShellInstance` object.
+
+---
+
+```{function} @ServerInterface.on_endpoint_shell_opened
+```
+
+Called when an endpoint shell was opened on a container.
+
+**Affiliated event constant** : `EVENT_ENDPOINT_SHELL_OPENED`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+	"endpoint_shell_instance": ENDPOINT_SHELL_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
+
+- *ENDPOINT_SHELL_INSTANCE* (Type : `EndpointShellInstance`)
+
+  The `EndpointShellInstance` object.
+
+---
+
+```{function} @ServerInterface.on_endpoint_shell_closed
+```
+
+Called when an prevoiusly opened endpoint shell was closed.
+
+**Affiliated event constant** : `EVENT_ENDPOINT_SHELL_CLOSED`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+	"endpoint_shell_instance": ENDPOINT_SHELL_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
+
+- *ENDPOINT_SHELL_INSTANCE* (Type : `EndpointShellInstance`)
+
+  The `EndpointShellInstance` object.
+
+---
+
+```{function} @ServerInterface.on_server_started
+```
+
+Called when the server is started and ready to operate.
+
+**Affiliated event constant** : `EVENT_SERVER_STARTED`
+
+**Provided values** : None.
+
+---
+
+```{function} @ServerInterface.on_server_stopped
+```
+
+Called when the server was stopped.
+
+**Affiliated event constant** : `EVENT_SERVER_STOPPED`
+
+**Provided values** : None.
+
+---
+
+```{function} @ServerInterface.on_client_initialized
+```
+
+Called when a new client is ready for secure interactions.
+
+**Affiliated event constant** : `EVENT_CLIENT_INITIALIZED`
+
+**Provided values** : None.
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the initialized client.
+
+---
+
+```{function} @ServerInterface.on_client_closed
+```
+
+Called when a client was closed.
+
+**Affiliated event constant** : `EVENT_CLIENT_CLOSED`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
+
+---
+
+```{function} @ServerInterface.on_connection_accepted
+```
+
+Called when a new socket connection happened.
+
+**Affiliated event constant** : `EVENT_CONNECTION_ACCEPTED`
+
+**Provided values** :
+
+```
+{
+	"client_socket": CLIENT_SOCKET,
+}
+```
+
+- *CLIENT_SOCKET* (Type : `socket.socket`)
+
+  The raw client socket object.
 
 ---
 
@@ -380,13 +775,43 @@ _Affiliated constant_ : `EVENT_MALFORMED_REQUEST`
 @ServerInterface.on_request
 ```
 
-> Triggered when the server receives a request
+Called when a request is received.
 
-_Provided parameters_ :
+**Affiliated event constant** : `EVENT_REQUEST`
 
-- `client_instance` : The `ClientInstance` instance representing the affiliated client
+**Provided values** :
 
-_Affiliated constant_ : `EVENT_REQUEST`
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
+
+---
+
+```
+@ServerInterface.on_authentication_error
+```
+
+Called when an authentication error occured.
+
+**Affiliated event constant** : `EVENT_AUTHENTICATION_ERROR`
+
+**Provided values** :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
 
 ---
 
@@ -394,55 +819,84 @@ _Affiliated constant_ : `EVENT_REQUEST`
 @ServerInterface.on_runtime_error
 ```
 
-> Triggered when an exception was raised during the server process
+Called when an error occured during runtime.
 
-_Provided parameters_ :
+**Affiliated event constant** : `EVENT_RUNTIME_ERROR`
 
-- `name` : The name of the thread where the error occured
-- `ex_class` : The exception class
-- `traceback` : The full traceback of the exception as a string
-- (optional) `client_instance` : The `ClientInstance` instance representing the affiliated client
+**Provided values** :
 
-_Affiliated constant_ : `EVENT_RUNTIME_ERROR`
+```
+{
+	"exception_object": EXCEPTION_OBJECT,
+	"traceback": TRACEBACK,
+}
+```
+
+- *EXCEPTION_OBJECT* (Type : class)
+
+	The exception class object.
+
+- *TRACEBACK* (Type : str)
+
+	The full traceback of the exception as a string.
+
+Note that more keys can be provided depending on the context :
+
+```
+{
+	"client_socket": CLIENT_SOCKET,
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_SOCKET* (Type : `socket.socket`)
+
+  The raw client socket object.
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
 
 ---
 
 ```
-@ServerInterface.on_started
+@ServerInterface.on_malformed_request
 ```
 
-> Triggered when the server is started and ready to operate
+Called when the server received a malformed request.
 
-_Provided parameters_ :
+**Affiliated event constant** : `EVENT_MALFORMED_REQUEST`
 
-- None
+**Provided values** :
 
-_Affiliated constant_ : `EVENT_STARTED`
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
+
+  The `ClientInstance` object representing the handled client.
 
 ---
 
 ```
-@ServerInterface.on_stopped
+@ServerInterface.on_unhandled_verb
 ```
 
-> Triggered when the server was stopped
+Called when the server has received a request containing an unhandled verb.
 
-_Provided parameters_ :
+**Affiliated event constant** : `EVENT_UNHANDLED_VERB`
 
-- None
-
-_Affiliated constant_ : `EVENT_STOPPED`
-
----
+**Provided values** :
 
 ```
-@ServerInterface.on_unknown_verb
+{
+	"client_instance": CLIENT_INSTANCE,
+}
 ```
 
-> Triggered when the server has received an unknown or unsupported verb
+- *CLIENT_INSTANCE* (Type : `ClientInstance`)
 
-_Provided parameters_ :
-
-- `client_instance` : The `ClientInstance` instance representing the affiliated client
-
-_Affiliated constant_ : `EVENT_UNKNOWN_VERB`
+  The `ClientInstance` object representing the handled client.

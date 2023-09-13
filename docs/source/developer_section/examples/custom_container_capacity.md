@@ -7,31 +7,26 @@ from anwdlserver.core.server import ServerInterface
 
 # Replace it with your own path
 CONTAINER_ISO_PATH = "/path/of/the/ISO/file.iso"
+NEW_CONTAINER_MEMORY = 2048
+NEW_CONTAINER_VCPUS_AMOUNT = 4
 
 # Create a new ServerInterface instance
-server = ServerInterface(container_iso_path=CONTAINER_ISO_PATH)
+server = ServerInterface(CONTAINER_ISO_PATH)
 
 # Print the message when the server is ready
-@server.on_started
-def notify_started(**kwargs):
+@server.on_server_started
+def notify_started(context, data):
 	print("Server is started")
-
-# Print a message when a request is received
-@server_interface.on_request
-def notify_request(**kwargs):
-	request_verb = kwargs["client_instance"].getStoredRequest()
-	
-	print("Received {} request".format(request_verb["verb"]))
 
 # Set created containers capacity with 2048 Mb of memory and 2 VCPUs
 @server.on_container_created
-def handle_container_creation(**kwargs):
-	container_instance = kwargs.get("container_instance")
+def handle_container_creation(context, data):
+	container_instance = data.get("container_instance")
 
 	print(f"New container created : {container_instance.getUUID()}")
 
-	container_instance.setMemory(2048)
-	container_instance.setVCPUs(2)
+	container_instance.setMemory(NEW_CONTAINER_MEMORY)
+	container_instance.setVCPUs(NEW_CONTAINER_VCPUS_AMOUNT)
 
 # Start the server
 server.startServer()

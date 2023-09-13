@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# Simple script that uninstalls the Anweddol server
-# Is supposed to be on the /usr/local/bin/ folder after installation
+# Simple script that uninstalls the Anweddol server and its environment
 
 if [ `id -u` -eq 0 ]; then 
-
 	echo "Deleting system files ..."
 	rm -rf /etc∕anweddol
 	rm -rf /var/log/anweddol
@@ -18,10 +16,9 @@ if [ `id -u` -eq 0 ]; then
 	systemctl daemon-reload
 
 else
-
 	echo "WARN : The script is not launched as root, the 'anwdlserver' package will be uninstalled but affiliated files and users will still be present on the system"
 
 fi
 
-echo "Uninstalling 'anwdlserver' package ... "
+echo "Uninstalling 'anwdlserver' python package ... "
 pip uninstall anwdlserver -y

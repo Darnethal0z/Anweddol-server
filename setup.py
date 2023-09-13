@@ -6,16 +6,19 @@
     Server installation script
 
 """
+from subprocess import Popen, DEVNULL
 from setuptools import setup
-from subprocess import Popen, PIPE
 import shutil
 import os
 
-VERSION = "1.2.8"
+
+VERSION = "2.0.0"
 
 
 def executeCommand(command):
-    Popen(command.split(" "), shell=False, stdout=PIPE, stderr=PIPE)
+    Popen(
+        command.split(" "), shell=False, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL
+    )
 
 
 def getReadmeContent():
@@ -44,14 +47,6 @@ if os.geteuid() == 0:
         os.path.dirname(os.path.realpath(__file__)) + "/resources/config.yaml",
         "/etc/anweddol/config.yaml",
     )
-
-    print("[SETUP (root)] Creating uninstallation script ...")
-    shutil.copy(
-        os.path.dirname(os.path.realpath(__file__))
-        + "/resources/anwdlserver-uninstall",
-        "/usr/local/bin/anwdlserver-uninstall",
-    )
-    executeCommand("/bin/chmod +x /usr/local/bin/anwdlserver-uninstall")
 
     # Add the user anweddol and rwx 'anweddol' user permission
     # on the /etc/anweddol and the /var/log/anweddol directory
@@ -88,7 +83,7 @@ setup(
     description="The Anweddol server implementation",
     long_description=getReadmeContent(),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",

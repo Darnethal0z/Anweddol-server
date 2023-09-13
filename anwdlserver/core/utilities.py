@@ -29,18 +29,7 @@ def isPortBindable(port: int) -> bool:
 
 
 def isSocketClosed(socket_descriptor: socket.socket) -> bool:
-    try:
-        data = socket_descriptor.recv(16, socket.MSG_DONTWAIT | socket.MSG_PEEK)
-        return len(data) == 0
-
-    except OSError:
-        return False
-
-    except BlockingIOError:
-        return False
-
-    except ConnectionResetError:
-        return True
+    return socket_descriptor.fileno() == -1
 
 
 def isValidIP(ip: str) -> bool:
@@ -56,16 +45,12 @@ def isValidIP(ip: str) -> bool:
 
 
 def isInterfaceExists(interface_name: str) -> bool:
-    stdout, stderr = Popen(["/sbin/ip", "a"], stdout=PIPE, shell=False).communicate()
-    if interface_name not in stdout.decode():
-        return False
-
-    return True
+    _stdout, _ = Popen(
+        ["/sbin/ip", "a"], stdout=PIPE, stderr=PIPE, shell=False
+    ).communicate()
+    return interface_name in _stdout.decode()
 
 
 def isUserExists(username: str) -> bool:
     with open("/etc/passwd", "r") as fd:
-        if username not in fd.read():
-            return False
-
-    return True
+        return username in fd.read()

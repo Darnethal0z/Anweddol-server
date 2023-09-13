@@ -24,8 +24,8 @@ class DatabaseInterface:
 
         try:
             meta = MetaData()
-            self.runtime_table = Table(
-                "AnweddolRuntimeSessionCredentialsTable",
+            self.table = Table(
+                "AnweddolServerSessionCredentialsTable",
                 meta,
                 Column("EntryID", Integer, primary_key=True),
                 Column("CreationTimestamp", Integer),
@@ -40,7 +40,11 @@ class DatabaseInterface:
             raise E
 
     def __del__(self):
-        self.closeDatabase()
+        if not self.isClosed():
+            self.closeDatabase()
+
+    def isClosed(self) -> bool:
+        return self.connection.closed
 
     def getEngine(self) -> sqlalchemy.engine.Engine:
         return self.engine
@@ -48,23 +52,21 @@ class DatabaseInterface:
     def getEngineConnection(self) -> sqlalchemy.engine.Connection:
         return self.connection
 
-    def getRuntimeTableObject(self) -> sqlalchemy.schema.Table:
-        return self.runtime_table
+    def getTableObject(self) -> sqlalchemy.schema.Table:
+        return self.table
 
     def getEntryID(
         self,
         container_uuid: str,
         client_token: str,
     ) -> None | int:
-        query = select(
-            self.runtime_table.c.EntryID, self.runtime_table.c.CreationTimestamp
-        ).where(
+        query = select(self.table.c.EntryID, self.table.c.CreationTimestamp).where(
             (
-                self.runtime_table.c.ContainerUUID
+                self.table.c.ContainerUUID
                 == hashlib.sha256(container_uuid.encode()).hexdigest()
             )
             and (
-                self.runtime_table.c.ClientToken
+                self.table.c.ClientToken
                 == hashlib.sha256(client_token.encode()).hexdigest()
             )
         )
@@ -74,8 +76,8 @@ class DatabaseInterface:
         return result[0] if result else None
 
     def getContainerUUIDEntryID(self, container_uuid: str) -> None | int:
-        query = select(self.runtime_table.c.EntryID).where(
-            self.runtime_table.c.ContainerUUID
+        query = select(self.table.c.EntryID).where(
+            self.table.c.ContainerUUID
             == hashlib.sha256(container_uuid.encode()).hexdigest()
         )
 
@@ -84,15 +86,13 @@ class DatabaseInterface:
         return result[0] if result else None
 
     def getEntry(self, entry_id: int) -> tuple:
-        query = self.runtime_table.select().where(
-            self.runtime_table.c.EntryID == entry_id
-        )
+        query = self.table.select().where(self.table.c.EntryID == entry_id)
 
         return self.connection.execute(query).fetchone()
 
     def addEntry(self, container_uuid: str) -> tuple:
-        check_query = select(self.runtime_table.c.EntryID).where(
-            self.runtime_table.c.ContainerUUID
+        check_query = select(self.table.c.EntryID).where(
+            self.table.c.ContainerUUID
             == hashlib.sha256(container_uuid.encode()).hexdigest()
         )
 
@@ -105,7 +105,7 @@ class DatabaseInterface:
         new_client_token = secrets.token_urlsafe(191)
 
         try:
-            query = self.runtime_table.insert().values(
+            query = self.table.insert().values(
                 CreationTimestamp=new_entry_creation_timestamp,
                 ContainerUUID=hashlib.sha256(container_uuid.encode()).hexdigest(),
                 ClientToken=hashlib.sha256(new_client_token.encode()).hexdigest(),
@@ -125,9 +125,7 @@ class DatabaseInterface:
             raise E
 
     def listEntries(self) -> list:
-        query = select(
-            self.runtime_table.c.EntryID, self.runtime_table.c.CreationTimestamp
-        )
+        query = select(self.table.c.EntryID, self.table.c.CreationTimestamp)
 
         return self.connection.execute(query).fetchall()
 
@@ -136,8 +134,8 @@ class DatabaseInterface:
     ) -> None:
         try:
             query = (
-                self.runtime_table.update()
-                .where(self.runtime_table.c.EntryID == entry_id)
+                self.table.update()
+                .where(self.table.c.EntryID == entry_id)
                 .values(
                     ContainerUUID=hashlib.sha256(container_uuid.encode()).hexdigest(),
                     ClientToken=hashlib.sha256(client_token.encode()).hexdigest(),
@@ -153,9 +151,7 @@ class DatabaseInterface:
 
     def deleteEntry(self, entry_id: int) -> None:
         try:
-            query = self.runtime_table.delete().where(
-                self.runtime_table.c.EntryID == entry_id
-            )
+            query = self.table.delete().where(self.table.c.EntryID == entry_id)
 
             self.connection.execute(query)
             self.connection.commit()
@@ -165,5 +161,8 @@ class DatabaseInterface:
             raise E
 
     def closeDatabase(self) -> None:
+        if self.isClosed():
+            raise RuntimeError("Database is already closed")
+
         self.connection.close()
         self.engine.dispose()

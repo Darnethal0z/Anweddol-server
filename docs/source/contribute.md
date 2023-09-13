@@ -2,9 +2,7 @@
 
 ----
 
-Thank you for taking the time to contribute to the Anweddol project!
-
-In this guide you will retrieve the contribution guidelines.
+Thank you for taking the time to contribute to the Anweddol project ! In this page you will retrieve the contribution guidelines.
 
 ## Getting started
 
@@ -29,3 +27,10 @@ Any changes will result in a new pull request, which will be reviewed before mer
 ### Documentation
 
 If your modification proposition involves a modification of the core features or of an already documented one, you need to provide the appropriate documentation as well.
+
+## Links
+
+Here is some useful links for contributing to the Anweddol project : 
+
+- GitHub link : [https://github.com/the-anweddol-project](https://github.com/the-anweddol-project)
+- ZulipChat organization : [https://anweddol.zulipchat.com](https://anweddol.zulipchat.com)
