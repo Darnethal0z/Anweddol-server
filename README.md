@@ -12,8 +12,6 @@ Anweddol is a client/server system providing temporary, SSH-controllable virtual
 
 It’s usefulness comes when someone wants to use a fully functional computer while being exposed to less dangers by using it remotely on a dedicated server, and by destroying it after use.
 
-**NOTE** : This is the beta version, some bugs or malfunctions can occur during usage
-
 ## Content
 
 This repository contains : 
@@ -67,15 +65,6 @@ Open a ticket on the [issue page](https://github.com/the-anweddol-project/Anwedd
 This software is under the GNU general public license v3, available under any later version.
 
 This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-
-## Links
-
-Here is the social links of the Anweddol project : 
-
-- [https://github.com/the-anweddol-project](https://github.com/the-anweddol-project)
-- [https://anweddol.zulipchat.com](https://anweddol.zulipchat.com)
-
-You can also mail `the-anweddol-project@proton.me`, consider using the [PGP public key](https://the-anweddol-project.github.io/contact/A050C2B36F2E80BE6FDE6E0F0D3F21975020EFC0.asc)
 
 ## Developer / Maintainer
 
