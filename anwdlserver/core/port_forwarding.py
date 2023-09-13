@@ -1,5 +1,5 @@
 from subprocess import Popen, DEVNULL
-import random
+import secrets
 import time
 
 from .utilities import isPortBindable
@@ -25,7 +25,7 @@ class ForwarderInstance:
         self.process = None
 
     def __del__(self):
-        if self.process:
+        if self.isForwarding():
             self.stopForward()
 
     def isForwarding(self) -> bool:
@@ -57,12 +57,12 @@ class ForwarderInstance:
 
     def startForward(self) -> None:
         if self.isForwarding():
-            raise RuntimeError("Forwarder is already forwarding")
+            raise RuntimeError("Forwarder process is already running")
 
         command_list = [
             "/bin/socat",
-            f"TCP-LISTEN:{self.server_origin_port},fork",
-            f"{self.container_ip}:{self.container_destination_port}",
+            f"TCP-LISTEN:{self.server_origin_port},fork,reuseaddr",
+            f"TCP:{self.container_ip}:{self.container_destination_port}",
         ]
         kw_args = {"stdin": DEVNULL, "stdout": DEVNULL, "stderr": DEVNULL}
 
@@ -70,7 +70,7 @@ class ForwarderInstance:
 
     def stopForward(self) -> None:
         if not self.isForwarding():
-            raise RuntimeError("Forwarder is not forwarding")
+            raise RuntimeError("Forwarder process is not running")
 
         self.process.terminate()
 
@@ -82,17 +82,32 @@ class PortForwardingInterface:
         self.available_port_list = list(forwardable_port_range)
         self.stored_forwarders_instance_dict = {}
 
+    def __del__(self):
+        forwarder_deletion_list = []
+
+        for (
+            container_ip,
+            forwarder_instance,
+        ) in self.stored_forwarders_instance_dict.items():
+            if forwarder_instance.isForwarding():
+                forwarder_instance.stopForward()
+
+            forwarder_deletion_list.append(container_ip)
+
+        for container_ip in forwarder_deletion_list:
+            self.stored_forwarders_instance_dict.pop(container_ip)
+
     def getStoredForwarder(self, container_ip: str) -> None | ForwarderInstance:
         return self.stored_forwarders_instance_dict.get(container_ip)
 
     def listStoredForwarders(self) -> list:
-        return self.forwarding_rule_instance_list.keys()
+        return self.stored_forwarders_instance_dict.keys()
 
     def storeForwarder(self, forwarder_instance: ForwarderInstance) -> None:
         if forwarder_instance.getContainerIP() in self.listStoredForwarders():
             raise ValueError("A forwarder already exists for this container IP")
 
-        self.forwarding_rule_instance_list.update(
+        self.stored_forwarders_instance_dict.update(
             {forwarder_instance.getContainerIP(): forwarder_instance}
         )
         self.available_port_list.remove(forwarder_instance.getServerOriginPort())
@@ -109,7 +124,7 @@ class PortForwardingInterface:
         new_server_origin_port = None
 
         while True:
-            new_server_origin_port = random.choice(self.available_port_list)
+            new_server_origin_port = secrets.choice(self.available_port_list)
 
             if isPortBindable(new_server_origin_port):
                 break
@@ -117,7 +132,7 @@ class PortForwardingInterface:
             time.sleep(1)
 
         new_forwarder_instance = ForwarderInstance(
-            random.choice(self.available_port_list),
+            secrets.choice(self.available_port_list),
             container_ip,
             container_destination_port,
         )

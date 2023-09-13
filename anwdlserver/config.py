@@ -86,7 +86,7 @@ def loadConfigurationFileContent(config_file_path, auto_check=True) -> None | di
                     "min": 1,
                     "max": 65535,
                 },
-                "timeout": {"type": "integer", "min": 0},
+                "timeout": {"type": "integer", "nullable": True, "min": 1},
                 "enable_onetime_rsa_keys": {"type": "boolean"},
             },
         },
@@ -126,7 +126,7 @@ def loadConfigurationFileContent(config_file_path, auto_check=True) -> None | di
             "type": "dict",
             "require_all": True,
             "schema": {
-                "access_tokens_database_file_path": {"type": "string"},
+                "access_token_database_file_path": {"type": "string"},
                 "enabled": {"type": "boolean"},
             },
         },

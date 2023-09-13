@@ -3,9 +3,10 @@
 	See the LICENSE file for licensing informations
 	---
 
-	Server features
+	Main server functionalities
 
 """
+from typing import Callable
 import threading
 import traceback
 import socket
@@ -27,6 +28,8 @@ from ..__init__ import __version__
 DEFAULT_SERVER_BIND_ADDRESS = ""
 DEFAULT_SERVER_LISTEN_PORT = 6150
 DEFAULT_CLIENT_TIMEOUT = 10
+
+DEFAULT_DIE_ON_ERROR = False
 
 # Constants definition
 REQUEST_VERB_CREATE = "CREATE"
@@ -62,8 +65,9 @@ EVENT_MALFORMED_REQUEST = "on_malformed_request"
 EVENT_UNHANDLED_VERB = "on_unhandled_verb"
 
 CONTEXT_NORMAL_PROCESS = 20
-CONTEXT_HANDLE_END = 21
-CONTEXT_ERROR = 22
+CONTEXT_AUTOMATIC_ACTION = 21
+CONTEXT_HANDLE_END = 22
+CONTEXT_ERROR = 23
 
 
 class ServerInterface:
@@ -72,7 +76,7 @@ class ServerInterface:
         runtime_container_iso_file_path: str,
         bind_address: str = DEFAULT_SERVER_BIND_ADDRESS,
         listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
-        client_timeout: int = DEFAULT_CLIENT_TIMEOUT,
+        client_timeout: int | None = DEFAULT_CLIENT_TIMEOUT,
         runtime_virtualization_interface: VirtualizationInterface = None,
         runtime_database_interface: DatabaseInterface = None,
         runtime_port_forwarding_interface: PortForwardingInterface = None,
@@ -106,10 +110,10 @@ class ServerInterface:
             EVENT_UNHANDLED_VERB: None,
         }
 
-        self.bind_address = bind_address
-        self.listen_port = listen_port
-        self.client_timeout = client_timeout
         self.server_sock = None
+        self.listen_port = listen_port
+        self.bind_address = bind_address
+        self.client_timeout = client_timeout
         self.container_iso_file_path = runtime_container_iso_file_path
 
         self.recorded_runtime_errors_counter = 0
@@ -134,6 +138,13 @@ class ServerInterface:
         self.rsa_wrapper = runtime_rsa_wrapper if runtime_rsa_wrapper else RSAWrapper()
 
     def __del__(self):
+        if self.is_running:
+            self.__stop_server()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
         if self.is_running:
             self.__stop_server()
 
@@ -169,7 +180,9 @@ class ServerInterface:
                 container_instance.getUUID()
             )
         )
-        self.virtualization_interface.deleteStoredContainer(container_instance)
+        self.virtualization_interface.deleteStoredContainer(
+            container_instance.getUUID()
+        )
         self.port_forwarding_interface.deleteStoredForwarder(container_instance.getIP())
 
     # This routine detects inactive container and destroy them in consequence
@@ -202,11 +215,18 @@ class ServerInterface:
 
                         self.__execute_event_handler(
                             EVENT_FORWARDER_STOPPED,
-                            CONTEXT_NORMAL_PROCESS,
+                            CONTEXT_AUTOMATIC_ACTION,
                             data={"forwarder_instance": forwarder_instance},
                         )
 
                     self.__delete_container(container_instance)
+
+                    # Mark the container instance domain as stopped
+                    self.__execute_event_handler(
+                        EVENT_CONTAINER_DOMAIN_STOPPED,
+                        CONTEXT_AUTOMATIC_ACTION,
+                        data={"container_instance": container_instance},
+                    )
 
             except Exception as E:
                 self.__execute_event_handler(
@@ -237,7 +257,7 @@ class ServerInterface:
 
         self.__main_server_loop_routine()
 
-    def __stop_server(self, raise_errors=False):
+    def __stop_server(self, raise_errors=False, die_on_error=False):
         try:
             # Container UUID to delete are stored in a list and deleted after the
             # first loop to avoid the "Dictionary changed size during iteration" error
@@ -249,13 +269,15 @@ class ServerInterface:
                 )
 
             for container_instance in container_instance_list:
-                container_instance.stopDomain()
+                # Just a failsafe condition
+                if container_instance.isDomainRunning():
+                    container_instance.stopDomain()
 
-                self.__execute_event_handler(
-                    EVENT_CONTAINER_DOMAIN_STOPPED,
-                    CONTEXT_NORMAL_PROCESS,
-                    data={"container_instance": container_instance},
-                )
+                    self.__execute_event_handler(
+                        EVENT_CONTAINER_DOMAIN_STOPPED,
+                        CONTEXT_NORMAL_PROCESS,
+                        data={"container_instance": container_instance},
+                    )
 
                 self.__delete_container(container_instance)
 
@@ -278,6 +300,9 @@ class ServerInterface:
                     "traceback": self.__format_traceback(E),
                 },
             )
+
+            if die_on_error:
+                exit(0xDEAD)
 
     # Intern methods for normal processes
     def __handle_create_request(self, client_instance):
@@ -322,7 +347,9 @@ class ServerInterface:
                     return
 
             # Create an endpoint shell on the container and administrate it
-            new_endpoint_shell_instance = new_container_instance.createEndpointShell()
+            new_endpoint_shell_instance = new_container_instance.createEndpointShell(
+                open_shell=False
+            )
 
             if (
                 self.__execute_event_handler(
@@ -361,25 +388,26 @@ class ServerInterface:
                 ):
                     return
 
-            new_endpoint_shell_instance.administrateContainer()
-            new_endpoint_shell_instance.closeShell()
+            if not new_endpoint_shell_instance.isClosed():
+                new_endpoint_shell_instance.administrateContainer()
+                new_endpoint_shell_instance.closeShell()
 
-            if (
-                self.__execute_event_handler(
-                    EVENT_ENDPOINT_SHELL_CLOSED,
-                    CONTEXT_NORMAL_PROCESS,
-                    data={
-                        "client_instance": client_instance,
-                        "endpoint_shell_instance": new_endpoint_shell_instance,
-                    },
-                )
-                == -1
-            ):
-                return
+                if (
+                    self.__execute_event_handler(
+                        EVENT_ENDPOINT_SHELL_CLOSED,
+                        CONTEXT_NORMAL_PROCESS,
+                        data={
+                            "client_instance": client_instance,
+                            "endpoint_shell_instance": new_endpoint_shell_instance,
+                        },
+                    )
+                    == -1
+                ):
+                    return
 
             # Create a new forwarder and start it
             new_forwarder_instance = self.port_forwarding_interface.createForwarder(
-                new_container_instance.getIP(), 22, record=False
+                new_container_instance.getIP(), 22, store=False
             )
 
             if (
@@ -445,7 +473,11 @@ class ServerInterface:
             ):
                 return
 
-            if not client_instance.isClosed():
+            # Chech if the error is due to a broken pipe caused by peer,
+            # no response will be sent if it is the case
+            if not client_instance.isClosed() and "Peer refused the packet" not in str(
+                E
+            ):
                 client_instance.sendResponse(False, RESPONSE_MSG_INTERNAL_ERROR)
 
             if new_forwarder_instance and new_forwarder_instance.isForwarding():
@@ -576,6 +608,7 @@ class ServerInterface:
             (
                 is_recv_request_conform,
                 recv_request_content,
+                _,
             ) = client_instance.recvRequest()
 
             if not is_recv_request_conform:
@@ -711,7 +744,6 @@ class ServerInterface:
 
                 new_client_instance = ClientInstance(
                     new_client_socket,
-                    timeout=self.client_timeout,
                     rsa_wrapper=self.rsa_wrapper,
                 )
 
@@ -914,6 +946,9 @@ class ServerInterface:
         return wrapper
 
     # Utility methods
+    def getRuntimeContainerISOFilePath(self) -> str:
+        return self.runtime_container_iso_file_path
+
     def getRuntimeDatabaseInterface(self) -> DatabaseInterface:
         return self.database_interface
 
@@ -933,6 +968,15 @@ class ServerInterface:
             int(time.time()) - self.start_timestamp,
         )
 
+    def getRequestHandler(self, verb: str) -> None | Callable:
+        return self.request_handler_dict.get(verb)
+
+    def getEventHandler(self, event: int) -> None | Callable:
+        return self.event_handler_dict.get(event)
+
+    def setRuntimeContainerISOFilePath(self, iso_file_path: str) -> None:
+        self.runtime_container_iso_file_path = iso_file_path
+
     def setRuntimeDatabaseInterface(
         self, database_interface: DatabaseInterface
     ) -> None:
@@ -951,10 +995,10 @@ class ServerInterface:
     ) -> None:
         self.port_forwarding_interface = port_forwarding_interface
 
-    def setRequestHandler(self, verb: str, routine: callable) -> None:
+    def setRequestHandler(self, verb: str, routine: Callable) -> None:
         self.request_handler_dict.update({verb: routine})
 
-    def setEventHandler(self, event: int, routine: callable) -> None:
+    def setEventHandler(self, event: int, routine: Callable) -> None:
         self.event_handler_dict.update({event: routine})
 
     def startServer(self) -> None:
@@ -963,8 +1007,11 @@ class ServerInterface:
 
         self.__start_server()
 
-    def stopServer(self) -> None:
+    def stopServer(self, die_on_error: bool = DEFAULT_DIE_ON_ERROR) -> None:
         if not self.is_running:
+            if die_on_error:
+                return
+
             raise RuntimeError("Server is already stopped")
 
-        self.__stop_server(raise_errors=True)
+        self.__stop_server(raise_errors=True, die_on_error=die_on_error)

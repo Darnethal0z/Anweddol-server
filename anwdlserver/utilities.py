@@ -8,9 +8,9 @@ from .core.utilities import (
 
 
 class Colors:
-    GREEN = "\x1b[0;32;40m"
-    RED = "\x1b[0;31;40m"
-    ORANGE = "\x1b[0;33;40m"
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    YELLOW = "\033[93m"
 
 
 def createFileRecursively(path, is_folder=False):

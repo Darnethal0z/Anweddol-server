@@ -38,16 +38,18 @@ DEFAULT_CONTAINER_WAIT_AVAILABLE = True
 DEFAULT_STORE_CONTAINER = True
 DEFAULT_STORE_CREDENTIALS = True
 DEFAULT_STOP_CONTAINER_DOMAIN = False
+DEFAULT_OPEN_SHELL = True
 
 
 # Represents an established SSH tunnel between the server and a container domain
 class EndpointShellInstance:
     def __init__(
         self,
-        container_ip: str,
+        container_ip: str = None,
         endpoint_username: str = DEFAULT_CONTAINER_ENDPOINT_USERNAME,
         endpoint_password: str = DEFAULT_CONTAINER_ENDPOINT_PASSWORD,
         endpoint_listen_port: int = DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT,
+        open_shell: bool = DEFAULT_OPEN_SHELL,
     ):
         self.container_ip = container_ip
 
@@ -59,20 +61,24 @@ class EndpointShellInstance:
         self.endpoint_listen_port = endpoint_listen_port
 
         self.ssh_client = None
+        self.is_closed = True
+
+        if container_ip and self.open_shell:
+            self.openShell()
 
     def __del__(self):
-        if self.ssh_client:
+        if not self.isClosed():
             self.closeShell()
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
-        if self.ssh_client:
+        if not self.isClosed():
             self.closeShell()
 
     def isClosed(self) -> bool:
-        return True if not self.ssh_client else False
+        return self.is_closed
 
     def getSSHClient(self) -> paramiko.client.SSHClient:
         return self.ssh_client
@@ -113,7 +119,7 @@ class EndpointShellInstance:
 
     def openShell(self) -> None:
         if self.ssh_client is not None:
-            RuntimeError("Endpoint shell is already opened")
+            raise RuntimeError("Endpoint shell is already opened")
 
         self.ssh_client = paramiko.client.SSHClient()
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -124,7 +130,12 @@ class EndpointShellInstance:
             password=self.endpoint_password,
         )
 
+        self.is_closed = False
+
     def administrateContainer(self) -> None:
+        if not all(self.getEndpointCredentials()):
+            raise RuntimeError("No endpoint credentials was set")
+
         if not self.ssh_client:
             raise RuntimeError("Endpoint shell is not open")
 
@@ -155,14 +166,16 @@ class EndpointShellInstance:
         )
 
         if store:
-            self.stored_client_ssh_uername = username
-            self.stored_client_ssh_password = password
+            self.storeClientSSHCredentials(username, password)
 
         return (username, password)
 
     def closeShell(self) -> None:
+        if not self.ssh_client:
+            raise RuntimeError("Endpoint shell is not opened")
+
         self.ssh_client.close()
-        self.ssh_client = None
+        self.is_closed = True
 
 
 # Represents a container and its management functionnalities
@@ -185,13 +198,6 @@ class ContainerInstance:
 
     def __del__(self):
         if self.isDomainRunning():
-            self.stopDomain()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        if traceback and self.isDomainRunning():
             self.stopDomain()
 
     def isDomainRunning(self) -> bool:
@@ -222,14 +228,13 @@ class ContainerInstance:
             "address"
         )
 
-    # @TODO To test : https://libvirt.gitlab.io/libvirt-appdev-guide-python/libvirt_application_development_guide_using_python-Network_Interface-Addresses.html
     def getIP(self) -> None | str:
         if self.domain_descriptor is None:
             raise RuntimeError("Container domain is not created")
 
         container_mac_address = self.getMAC()
 
-        # Get the content of the interface file to get its IP
+        # Get the content of the dnsmasq interface file to get its IP
         with open(
             f"/var/lib/libvirt/dnsmasq/{self.nat_interface_name}.status", "r"
         ) as fd:
@@ -266,6 +271,9 @@ class ContainerInstance:
         self.nat_interface_name = nat_interface_name
 
     def makeISOFileChecksum(self) -> str:
+        if not self.iso_file_path:
+            raise RuntimeError("ISO file path is not set")
+
         hasher = hashlib.sha256()
 
         with open(self.iso_file_path, "rb") as fd:
@@ -278,12 +286,17 @@ class ContainerInstance:
         endpoint_username: str = DEFAULT_CONTAINER_ENDPOINT_USERNAME,
         endpoint_password: str = DEFAULT_CONTAINER_ENDPOINT_PASSWORD,
         endpoint_listen_port: int = DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT,
+        open_shell: bool = DEFAULT_OPEN_SHELL,
     ) -> EndpointShellInstance:
         if not self.isDomainRunning():
             raise RuntimeError("Container domain is not running")
 
         return EndpointShellInstance(
-            self.getIP(), endpoint_username, endpoint_password, endpoint_listen_port
+            self.getIP(),
+            endpoint_username,
+            endpoint_password,
+            endpoint_listen_port,
+            open_shell=open_shell,
         )
 
     def startDomain(
@@ -316,6 +329,7 @@ class ContainerInstance:
     					<acpi/>
     					<apic/>
     					<vmport state='off'/>
+                        <vmcoreinfo state='off'/>
     				</features>
     				<clock offset='utc'>
     					<timer name='rtc' tickpolicy='catchup'/>
@@ -326,6 +340,8 @@ class ContainerInstance:
     					<suspend-to-mem enabled='yes'/>
     					<suspend-to-disk enabled='yes'/>
     				</pm>
+                    <on_reboot>destroy</on_reboot>
+                    <on_crash>destroy</on_crash>
     				<devices>
     					<disk type='file' device='cdrom'>
     						<driver name='qemu' type='raw'/>
@@ -380,11 +396,19 @@ class VirtualizationInterface:
         self.stored_container_instance_dict = {}
 
     def __del__(self):
-        for stored_container in self.stored_container_instance_dict:
-            if stored_container.isDomainRunning():
-                stored_container.stopDomain()
+        container_deletion_list = []
 
-            self.deleteStoredContainer(stored_container.getUUID())
+        for (
+            stored_container_uuid,
+            stored_container_instance,
+        ) in self.stored_container_instance_dict.items():
+            if stored_container_instance.isDomainRunning():
+                stored_container_instance.stopDomain()
+
+            container_deletion_list.append(stored_container_uuid)
+
+        for stored_container_uuid in container_deletion_list:
+            self.deleteStoredContainer(stored_container_uuid)
 
     def getStoredContainersAmount(self) -> int:
         return len(self.listStoredContainers())
@@ -409,7 +433,7 @@ class VirtualizationInterface:
         new_container_interface = ContainerInstance()
 
         if store:
-            self.addStoredContainer(new_container_interface)
+            self.storeContainer(new_container_interface)
 
         return new_container_interface
 

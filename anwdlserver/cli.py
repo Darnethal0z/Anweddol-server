@@ -47,10 +47,9 @@ class MainAnweddolServerCLI:
             formatter_class=argparse.RawDescriptionHelpFormatter,
             usage=f"""{sys.argv[0]} <command> [OPT]
 
-\033[1mThe Anweddol server CLI implementation.\033[0m
-Provide clients with containers and manage them.
-
-Version {__version__}
+| The Anweddol server CLI implementation
+| 
+| Version {__version__}
 
 server lifecycle commands:
   start       start the server
@@ -80,7 +79,7 @@ please report it by opening an issue on the repository :
 
             if not self.config_content[0]:
                 raise ValueError(
-                    f"Configuration file is invalid -> \n{json.dumps(self.config_content[1], indent=4)}"
+                    f"Configuration file is invalid : \n{json.dumps(self.config_content[1], indent=4)}"
                 )
                 exit(-1)
 
@@ -100,7 +99,7 @@ please report it by opening an issue on the repository :
 
             else:
                 self.__log_stdout("An error occured : ", color=Colors.RED, end="")
-                self.__log_stdout(f"{E}\n")
+                self.__log_stdout(f"Error : {E}\n")
 
             exit(-1)
 
@@ -114,7 +113,7 @@ please report it by opening an issue on the repository :
     def start(self):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            description="\033[1m-> Start the server\033[0m",
+            description="| Start the server",
             usage=f"{sys.argv[0]} start [OPT]",
         )
         parser.add_argument(
@@ -170,8 +169,8 @@ please report it by opening an issue on the repository :
                 else:
                     self.__log_stdout("Check done, ", end="")
                     self.__log_stdout(
-                        f"{len(check_result_list)} errors recorded :",
-                        color=Colors.RED if len(check_result_list) else Colors.GREEN,
+                        f"{len(check_result_list)} errors recorded{' :' if len(check_result_list) else ''}",
+                        color=Colors.YELLOW if len(check_result_list) else Colors.GREEN,
                     )
 
                     for error in check_result_list:
@@ -214,7 +213,7 @@ please report it by opening an issue on the repository :
             self.__log_stdout(
                 f"A PID file already exists on {pid_file_path}",
                 bypass=args.json,
-                color=Colors.ORANGE,
+                color=Colors.YELLOW,
             )
             choice = (
                 input("Kill the affiliated processus (y/n) ? : ")
@@ -277,9 +276,7 @@ please report it by opening an issue on the repository :
     def stop(self):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            description="""\033[1m-> Stop the server\033[0m
-
-Sends a SIGINT signal to the server daemon to stop it.""",
+            description="""| Stop the server""",
             usage=f"{sys.argv[0]} stop [OPT]",
         )
         parser.add_argument(
@@ -295,7 +292,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                 self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
 
             else:
-                self.__log_stdout("Server is already stopped\n", color=Colors.RED)
+                self.__log_stdout("Server is already stopped", color=Colors.RED)
 
             return 0
 
@@ -310,7 +307,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
     def restart(self):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            description="\033[1m-> Restart the server\033[0m",
+            description="| Restart the server",
             usage=f"{sys.argv[0]} restart [OPT]",
         )
         parser.add_argument(
@@ -326,7 +323,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                 self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
 
             else:
-                self.__log_stdout("Server is already stopped\n")
+                self.__log_stdout("Server is already stopped")
 
             return 0
 
@@ -354,7 +351,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
     def access_tk(self):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            description="""\033[1m-> Manage access tokens\033[0m""",
+            description="""| Manage access tokens""",
             usage=f"{sys.argv[0]} access-tk [OPT]",
         )
         parser.add_argument("-a", help="add a new token entry", action="store_true")
@@ -391,14 +388,14 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
-        access_tokens_database_file_path = self.config_content["access_token"].get(
-            "access_tokens_database_file_path"
+        access_token_database_file_path = self.config_content["access_token"].get(
+            "access_token_database_file_path"
         )
 
-        if not os.path.exists(access_tokens_database_file_path):
-            createFileRecursively(access_tokens_database_file_path)
+        if not os.path.exists(access_token_database_file_path):
+            createFileRecursively(access_token_database_file_path)
 
-        access_token_manager = AccessTokenManager(access_tokens_database_file_path)
+        access_token_manager = AccessTokenManager(access_token_database_file_path)
 
         if args.a:
             new_entry_tuple = access_token_manager.addEntry(
@@ -415,11 +412,10 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                     },
                 )
 
-                return 0
-
-            self.__log_stdout("New access token created", color=Colors.GREEN)
-            self.__log_stdout(f"Entry ID : {new_entry_tuple[0]}")
-            self.__log_stdout(f"   Token : {new_entry_tuple[2]}\n")
+            else:
+                self.__log_stdout("New access token created", color=Colors.GREEN)
+                self.__log_stdout(f"Entry ID : {new_entry_tuple[0]}")
+                self.__log_stdout(f"Token : {new_entry_tuple[2]}")
 
         elif args.l:
             if args.json:
@@ -431,18 +427,17 @@ Sends a SIGINT signal to the server daemon to stop it.""",
                     data={"entry_list": entry_list},
                 )
 
-                return 0
-
-            for (
-                entry_id,
-                creation_timestamp,
-                enabled,
-            ) in access_token_manager.listEntries():
-                self.__log_stdout(f"- Entry ID {entry_id}")
-                self.__log_stdout(
-                    f"Created : {datetime.fromtimestamp(creation_timestamp)}"
-                )
-                self.__log_stdout(f"Enabled : {bool(enabled)}\n")
+            else:
+                for (
+                    entry_id,
+                    creation_timestamp,
+                    enabled,
+                ) in access_token_manager.listEntries():
+                    self.__log_stdout(f"== Entry ID {entry_id} ==")
+                    self.__log_stdout(
+                        f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
+                    )
+                    self.__log_stdout(f"  Enabled : {bool(enabled)}\n")
 
         else:
             if args.delete_entry:
@@ -455,17 +450,15 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
                     else:
                         self.__log_stdout(
-                            f"Entry ID {args.delete_entry} does not exists on database\n",
+                            f"Entry ID {args.delete_entry} does not exists on database",
                             color=Colors.RED,
                         )
 
-                    return 0
+                else:
+                    access_token_manager.deleteEntry(args.delete_entry)
 
-                access_token_manager.deleteEntry(args.delete_entry)
-
-                if args.json:
-                    self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
-                    return 0
+                    if args.json:
+                        self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
 
             elif args.enable_entry:
                 if not access_token_manager.getEntry(args.enable_entry):
@@ -477,7 +470,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
                     else:
                         self.__log_stdout(
-                            f"Entry ID {args.enable_entry} does not exists on database\n",
+                            f"Entry ID {args.enable_entry} does not exists on database",
                             color=Colors.RED,
                         )
 
@@ -500,7 +493,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
                         else:
                             self.__log_stdout(
-                                f"Entry ID {args.disable_entry} does not exists on database\n",
+                                f"Entry ID {args.disable_entry} does not exists on database",
                                 color=Colors.RED,
                             )
 
@@ -519,7 +512,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
 
     def regen_rsa(self):
         parser = argparse.ArgumentParser(
-            description="\033[1m-> Regenerate RSA keys\033[0m",
+            description="| Regenerate RSA keys",
             usage=f"{sys.argv[0]} regen-rsa [OPT]",
         )
         parser.add_argument(
@@ -570,7 +563,7 @@ Sends a SIGINT signal to the server daemon to stop it.""",
         else:
             self.__log_stdout("RSA keys re-generated", color=Colors.GREEN)
             self.__log_stdout(
-                f"Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}\n"
+                f"Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}"
             )
 
         return 0

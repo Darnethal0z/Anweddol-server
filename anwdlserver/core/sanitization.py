@@ -3,7 +3,7 @@
     See the LICENSE file for licensing informations
     ---
 
-    Normalized request / response values and formats
+    Normalized request / response values and formats verification
 
 """
 import cerberus
@@ -39,10 +39,11 @@ def verifyRequestContent(request_dict: dict) -> tuple:
         },
     }
 
-    if not validator.validate(request_dict, request_verification_scheme):
-        return (False, validator.errors)
-
-    return (True, validator.document)
+    return (
+        validator.validate(request_dict, request_verification_scheme),
+        validator.document if validator.document else None,
+        validator.errors if validator.errors else None,
+    )
 
 
 def makeResponse(
@@ -157,7 +158,8 @@ def makeResponse(
         },
     }
 
-    if not validator.validate(response_dict, response_verification_scheme):
-        return (False, validator.errors)
-
-    return (True, validator.document)
+    return (
+        validator.validate(response_dict, response_verification_scheme),
+        validator.document if validator.document else None,
+        validator.errors if validator.errors else None,
+    )

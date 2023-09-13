@@ -21,9 +21,10 @@ class AccessTokenManager:
             access_token_db_path, check_same_thread=False
         )
         self.database_cursor = self.database_connection.cursor()
+        self.is_closed = False
 
         self.database_cursor.execute(
-            """CREATE TABLE IF NOT EXISTS AnweddolAccessTokenTable (
+            """CREATE TABLE IF NOT EXISTS AnweddolServerAccessTokenTable (
 				EntryID INTEGER NOT NULL PRIMARY KEY, 
 				CreationTimestamp INTEGER NOT NULL,
 				AccessToken TEXT NOT NULL, 
@@ -32,7 +33,18 @@ class AccessTokenManager:
         )
 
     def __del__(self):
-        self.closeDatabase()
+        if not self.isClosed():
+            self.closeDatabase()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if not self.isClosed():
+            self.closeDatabase()
+
+    def isClosed(self) -> bool:
+        return self.is_closed
 
     def getDatabaseConnection(self) -> sqlite3.Connection:
         return self.database_connection
@@ -42,7 +54,7 @@ class AccessTokenManager:
 
     def getEntryID(self, access_token: str) -> None | int:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID from AnweddolAccessTokenTable WHERE AccessToken=? AND Enabled=1",
+            "SELECT EntryID from AnweddolServerAccessTokenTable WHERE AccessToken=? AND Enabled=1",
             (hashlib.sha256(access_token.encode()).hexdigest(),),
         )
         query_result = query_cursor.fetchone()
@@ -51,7 +63,7 @@ class AccessTokenManager:
 
     def getEntry(self, entry_id: int) -> tuple:
         query_cursor = self.database_cursor.execute(
-            "SELECT * from AnweddolAccessTokenTable WHERE EntryID=?", (entry_id,)
+            "SELECT * from AnweddolServerAccessTokenTable WHERE EntryID=?", (entry_id,)
         )
 
         return query_cursor.fetchone()
@@ -65,7 +77,7 @@ class AccessTokenManager:
 
         try:
             self.database_cursor.execute(
-                "INSERT INTO AnweddolAccessTokenTable (CreationTimestamp, AccessToken, Enabled) VALUES (?, ?, ?)",
+                "INSERT INTO AnweddolServerAccessTokenTable (CreationTimestamp, AccessToken, Enabled) VALUES (?, ?, ?)",
                 (
                     new_entry_creation_timestamp,
                     hashlib.sha256(new_auth_token.encode()).hexdigest(),
@@ -86,7 +98,7 @@ class AccessTokenManager:
 
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, Enabled from AnweddolAccessTokenTable",
+            "SELECT EntryID, CreationTimestamp, Enabled from AnweddolServerAccessTokenTable",
         )
 
         return query_cursor.fetchall()
@@ -94,7 +106,7 @@ class AccessTokenManager:
     def enableEntry(self, entry_id: int) -> None:
         try:
             self.database_cursor.execute(
-                "UPDATE AnweddolAccessTokenTable SET Enabled=1 WHERE EntryID=?",
+                "UPDATE AnweddolServerAccessTokenTable SET Enabled=1 WHERE EntryID=?",
                 (entry_id,),
             )
             self.database_connection.commit()
@@ -106,7 +118,7 @@ class AccessTokenManager:
     def disableEntry(self, entry_id: int) -> None:
         try:
             self.database_cursor.execute(
-                "UPDATE AnweddolAccessTokenTable SET Enabled=0 WHERE EntryID=?",
+                "UPDATE AnweddolServerAccessTokenTable SET Enabled=0 WHERE EntryID=?",
                 (entry_id,),
             )
             self.database_connection.commit()
@@ -118,7 +130,7 @@ class AccessTokenManager:
     def deleteEntry(self, entry_id: int) -> None:
         try:
             self.database_cursor.execute(
-                "DELETE from AnweddolAccessTokenTable WHERE EntryID=?",
+                "DELETE from AnweddolServerAccessTokenTable WHERE EntryID=?",
                 (entry_id,),
             )
             self.database_connection.commit()
@@ -131,5 +143,7 @@ class AccessTokenManager:
         try:
             self.database_cursor.close()
             self.database_connection.close()
+            self.is_closed = True
+
         except sqlite3.ProgrammingError:
             pass

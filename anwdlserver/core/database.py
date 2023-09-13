@@ -25,7 +25,7 @@ class DatabaseInterface:
         try:
             meta = MetaData()
             self.table = Table(
-                "AnweddolRuntimeSessionCredentialsTable",
+                "AnweddolServerSessionCredentialsTable",
                 meta,
                 Column("EntryID", Integer, primary_key=True),
                 Column("CreationTimestamp", Integer),

@@ -57,46 +57,37 @@ class RSAWrapper:
         return self.public_key.key_size if self.public_key else None
 
     def getPublicKey(self, pem_format: bool = DEFAULT_PEM_FORMAT) -> None | str | bytes:
-        if pem_format and not self.public_key:
-            raise ValueError("Local public key is not set")
-
         return (
             self.public_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
-            if pem_format
+            if pem_format and self.public_key
             else self.public_key
         )
 
     def getPrivateKey(
         self, pem_format: bool = DEFAULT_PEM_FORMAT
     ) -> None | str | bytes:
-        if pem_format and not self.private_key:
-            raise ValueError("Local private key is not set")
-
         return (
             self.private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption(),
             )
-            if pem_format
+            if pem_format and self.private_key
             else self.private_key
         )
 
     def getRemotePublicKey(
         self, pem_format: bool = DEFAULT_PEM_FORMAT
     ) -> None | str | bytes:
-        if pem_format and not self.remote_public_key:
-            raise ValueError("Remote public key is not set")
-
         return (
             self.remote_public_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
-            if pem_format
+            if pem_format and self.remote_public_key
             else self.remote_public_key
         )
 

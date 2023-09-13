@@ -30,7 +30,7 @@ from .core.crypto import RSAWrapper
 
 from .tools.access_token import AccessTokenManager
 from .utilities import createFileRecursively
-
+from .__init__ import __version__
 
 # Constants definition
 LOG_INFO = "INFO: "
@@ -40,6 +40,7 @@ LOG_ERROR = "ERROR: "
 # Default parameters
 DEFAULT_ENABLE_STDOUT_LOG = False
 DEFAULT_ENABLE_TRACEBACK_ON_LOG = False
+DEFAULT_DISABLE_LOGGING = False
 
 
 class AnweddolServerProcess:
@@ -48,10 +49,12 @@ class AnweddolServerProcess:
         config_content,
         enable_stdout_log=DEFAULT_ENABLE_STDOUT_LOG,
         enable_traceback_on_log=DEFAULT_ENABLE_TRACEBACK_ON_LOG,
+        disable_logging=DEFAULT_DISABLE_LOGGING,
     ):
         self.enable_stdout_log = enable_stdout_log
         self.enable_traceback_on_log = enable_traceback_on_log
 
+        self.disable_logging = disable_logging
         self.config_content = config_content
         self.access_token_manager = None
         self.runtime_rsa_wrapper = None
@@ -60,19 +63,23 @@ class AnweddolServerProcess:
 
         self.actual_running_container_domains_counter = 0
 
-        try:
-            logging.basicConfig(
-                format="%(asctime)s %(levelname)s : %(message)s",
-                filename=self.config_content["server"].get("log_file_path"),
-                level=logging.INFO,
-                encoding="utf-8",
-                filemode="a",
-            )
+        if not self.disable_logging:
+            try:
+                logging.basicConfig(
+                    format="%(asctime)s %(levelname)s : %(message)s",
+                    filename=self.config_content["server"].get("log_file_path"),
+                    level=logging.INFO,
+                    encoding="utf-8",
+                    filemode="a",
+                )
 
-        except Exception as E:
-            raise RuntimeError(f"FATAL : Cannot load log file ({E})")
+            except Exception as E:
+                raise RuntimeError(f"Cannot access log file ({E})")
 
     def __log(self, kind, message):
+        if self.disable_logging:
+            return
+
         if kind == LOG_INFO:
             logging.info(message)
         elif kind == LOG_WARN:
@@ -120,8 +127,8 @@ class AnweddolServerProcess:
 
                     with open(
                         self.config_content["server"].get("log_file_path"), "w"
-                    ) as fd:
-                        fd.close()
+                    ) as fd_:
+                        fd_.close()
 
             time.sleep(1)
 
@@ -139,6 +146,7 @@ class AnweddolServerProcess:
                 True,
                 RESPONSE_MSG_OK,
                 data={
+                    "version": __version__,
                     "uptime": runtime_statistics[2],
                     "available": (
                         max_allowed_running_container_domains
@@ -221,9 +229,10 @@ class AnweddolServerProcess:
 
             if self.config_content["access_token"].get("enabled"):
                 self.__log(LOG_INFO, "Loading access token database ...")
+
                 self.access_token_manager = AccessTokenManager(
-                    self.config_content["container"].get(
-                        "access_tokens_database_file_path"
+                    self.config_content["access_token"].get(
+                        "access_token_database_file_path"
                     )
                 )
 
@@ -248,7 +257,11 @@ class AnweddolServerProcess:
                 )
                 self.__log(
                     LOG_INFO,
-                    f"(client ID {client_id}) Actual running containers amount : {self.actual_running_container_domains_counter}/{max_allowed_running_container_domains}",
+                    "(client ID {}) Actual running container domains amount : {} / {}".format(
+                        client_id,
+                        self.actual_running_container_domains_counter,
+                        max_allowed_running_container_domains,
+                    ),
                 )
 
                 container_instance.setMemory(
@@ -259,9 +272,6 @@ class AnweddolServerProcess:
                 )
                 container_instance.setNATInterfaceName(
                     self.config_content["container"].get("nat_interface_name")
-                )
-                container_instance.setISOFilePath(
-                    self.config_content["container"].get("container_iso_path")
                 )
 
             @self.server_interface.on_connection_accepted
@@ -385,7 +395,7 @@ class AnweddolServerProcess:
                     self.__log(LOG_INFO, f"(client ID {client_id}) Connection closed")
 
             @self.server_interface.on_server_stopped
-            def handle_stopped(context, data):
+            def handle_server_stopped(context, data):
                 self.__log(LOG_INFO, "Server is stopped")
 
                 if self.config_content["access_token"].get("enabled"):
@@ -450,7 +460,7 @@ class AnweddolServerProcess:
                 )
 
             @self.server_interface.on_container_domain_stopped
-            def notify_stopped_container_domain(context, data):
+            def notify_container_domain_stopped(context, data):
                 container_uuid = data.get("container_instance").getUUID()
                 client_id = (
                     data.get("client_instance").getID()
@@ -466,7 +476,7 @@ class AnweddolServerProcess:
                 )
 
             @self.server_interface.on_endpoint_shell_closed
-            def notify_closed_endpoint_shell(context, data):
+            def notify_endpoint_shell_closed(context, data):
                 client_id = data.get("client_instance").getID()
 
                 self.__log(
@@ -480,12 +490,11 @@ class AnweddolServerProcess:
                     if data.get("client_instance")
                     else "unspec"
                 )
-                exception_type = type(data.get("ex_class"))
-                exception_class = data.get("ex_class")
+                exception_object = data.get("exception_object")
 
                 self.__log(
                     LOG_ERROR,
-                    f"(client ID {client_id}) {exception_type} : {exception_class}",
+                    f"(client ID {client_id}) {type(exception_object)} : {exception_object}",
                 )
 
                 if self.enable_traceback_on_log:
@@ -522,9 +531,9 @@ class AnweddolServerProcess:
 
         self.server_interface.startServer()
 
-    # 2 parameters are given on method call ?
-    # Probably missing info here
-    def stopProcess(self, n=None, p=None):
+    # signal_no and stack_frame are dummy arguments for signal handler execution
+    # See https://docs.python.org/3/library/signal.html#signal.signal
+    def stopProcess(self, signal_no=None, stack_frame=None):
         self.__log(LOG_INFO, "Stopping server ...")
         if self.access_token_manager:
             self.access_token_manager.closeDatabase()
@@ -533,7 +542,7 @@ class AnweddolServerProcess:
             self.is_running = False
 
         if self.server_interface:
-            self.server_interface.stopServer()
+            self.server_interface.stopServer(die_on_error=True)
 
 
 def launchServerProcess(

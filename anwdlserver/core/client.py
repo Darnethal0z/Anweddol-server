@@ -56,6 +56,13 @@ class ClientInstance:
         if not self.isClosed():
             self.closeConnection()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if not self.isClosed():
+            self.closeConnection()
+
     def isClosed(self) -> bool:
         return isSocketClosed(self.socket)
 
@@ -131,9 +138,6 @@ class ClientInstance:
         if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
-        if not self.rsa_wrapper:
-            raise ValueError("RSA cipher is not set")
-
         aes_key = self.aes_wrapper.getKey()
 
         self.socket.sendall(self.rsa_wrapper.encryptData(aes_key[0] + aes_key[1]))
@@ -145,9 +149,6 @@ class ClientInstance:
         try:
             if self.isClosed():
                 raise RuntimeError("Client must be connected to the server")
-
-            if not self.rsa_wrapper:
-                raise ValueError("RSA cipher is not set")
 
             # Key size is divided by 8 to get the maximum supported block size
             recv_packet = self.rsa_wrapper.decryptData(
@@ -185,15 +186,14 @@ class ClientInstance:
         if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
-        if not self.aes_wrapper:
-            raise ValueError("AES cipher is not set")
+        is_response_valid, response_content, response_errors = makeResponse(
+            success, message, data, reason
+        )
 
-        response_tuple = makeResponse(success, message, data, reason)
+        if not is_response_valid:
+            raise ValueError(f"Error in specified values : {response_errors}")
 
-        if not response_tuple[0]:
-            raise ValueError(f"Error in specified values : {response_tuple[1]}")
-
-        encrypted_packet = self.aes_wrapper.encryptData(json.dumps(response_tuple[1]))
+        encrypted_packet = self.aes_wrapper.encryptData(json.dumps(response_content))
 
         packet_length = str(len(encrypted_packet))
         self.socket.sendall((packet_length + ("=" * (8 - len(packet_length)))).encode())
@@ -207,9 +207,6 @@ class ClientInstance:
         if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 
-        if not self.aes_wrapper:
-            raise ValueError("AES cipher is not set")
-
         recv_packet_length = int(self.socket.recv(8).decode().split("=")[0])
 
         if recv_packet_length <= 0:
@@ -222,13 +219,14 @@ class ClientInstance:
             self.socket.recv(recv_packet_length)
         )
 
-        verification_result = verifyRequestContent(json.loads(decrypted_recv_request))
+        is_request_valid, request_content, request_errors = verifyRequestContent(
+            json.loads(decrypted_recv_request)
+        )
 
-        if verification_result[0]:
-            if store_request:
-                self.stored_request = verification_result[1]
+        if is_request_valid and store_request:
+            self.stored_request = request_content
 
-        return verification_result
+        return (is_request_valid, request_content, request_errors)
 
     def closeConnection(self) -> None:
         self.socket.close()
