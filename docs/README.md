@@ -17,7 +17,13 @@ $ pip install sphinx
 And install the `myst` plugin for markdown support : 
 
 ```
-pip install --upgrade myst-parser
+$ pip install --upgrade myst-parser
+```
+
+**NOTE** : By default, the `sphinx_rtd_theme` theme is used on the `conf.py` file in the sources. If you want to use it, install it with pip :
+
+```
+$ pip install sphinx_rtd_theme
 ```
 
 ## Build the documentation
@@ -25,5 +31,9 @@ pip install --upgrade myst-parser
 Execute the Makefile to build the documentation depending of your need : 
 
 ```
-make <target>
+$ make <target>
 ```
+
+## ReadTheDocs integration notice
+
+If you want to publish this documentation on ReadTheDocs, every needed dependancies are already specified in the `requirements.txt` file in the sources.

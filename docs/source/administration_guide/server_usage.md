@@ -6,34 +6,36 @@
 
 ## Start the server
 
-First, you need the libvirtd daemon running : 
+If you are using the `virbr0` interface as `nat_interface_name`, the first thing you need is to start the libvirtd daemon (if not already started) : 
 
 ```
 $ sudo systemctl start libvirtd.service
 ```
 
-(**optional**) You may need to check if the server environment is correctly set up : 
+You may also need to check if the server environment is correctly set up : 
 ```
 $ sudo anwdlserver start -c
 ```
 
-If some error occured, check the [Troubleshooting](troubleshooting.md) section to fix them.
+If some errors are displayed, check the [Troubleshooting](troubleshooting.md) section to fix them.
 
-Start the Anweddol server via systemd : 
+And start the Anweddol server via systemd : 
 
 ```
 $ sudo systemctl start anweddol-server.service
 ```
 
-Or via the CLI : 
+You can also start the anweddol server directly from the terminal : 
 
 ```
 $ sudo anwdlserver start
 ```
 
-(**optional**) add the option `-d` to enable direct execution (the server will run synchronously in the terminal, as the actual user)
+You can add the option `-d` to enable direct execution (the server will run synchronously in the terminal, as the actual user).
 
-**NOTE** : It is preferable to use systemd for server lifetime control, mixed usage between CLI and systemd can cause hazardous behaviour.
+```{note}
+It is preferable to use systemd for server lifetime control, mixed usage between CLI and systemd can cause hazardous behaviour.
+```
 
 ## Stop the server
 
@@ -49,4 +51,4 @@ Or via the CLI :
 $ sudo anwdlserver stop
 ```
 
-**NOTE** : As mentionned in the previous section, it is preferable to use systemd for server lifetime control : mixed usage between CLI and systemd can cause hazardous behaviour.
+As mentionned in the previous section, it is preferable to use systemd for server lifetime control : mixed usage between CLI and systemd can cause hazardous behaviour.

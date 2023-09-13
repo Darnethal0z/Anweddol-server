@@ -16,9 +16,9 @@ $ sudo pip install .
 
 The nessessary files and users will be created during the installation.
 
-**NOTE** : If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the full setup will be skipped.
-
-## Environment setup
+```{warning}
+If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the full setup will be skipped.
+```
 
 ### Libvirt
 
@@ -26,34 +26,26 @@ The nessessary files and users will be created during the installation.
 
 #### Installation
 
-Libvirt must be installed via your package manager : 
+Libvirt and qemu must be installed via your package manager : 
 
 Apt : 
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install python-libvirt
+$ sudo apt-get install libvirt-daemon-system python-libvirt
 ```
 
 DNF :
 
 ```
-$ sudo dnf install python-libvirt
+$ sudo dnf install libvirt python-libvirt
 ```
 
 Yum :
 
 ```
-$ sudo yum install python-libvirt
+$ sudo yum install libvirt python-libvirt
 ```
-
-**NOTE** : You can also install it from pip by executing : 
-
-```
-$ pip install libvirt-python
-```
-
-But you need to install build dependencies manually, and this topic is not covered in this documentation.
 
 #### Setup
 
@@ -101,95 +93,51 @@ group = "libvirt"
 
 Then restart the libvirtd daemon :
 
-```
+``` 
 $ sudo systemctl restart libvirtd.service
+```
+
+```{note}
+If you want to use the Anweddol server API for external programming, you can replace `anweddol` with the user of your choice. Also make sure that this user is part of the `libvirt` group.
 ```
 
 (source : [ostechnix](https://ostechnix.com/solved-cannot-access-storage-file-permission-denied-error-in-kvm-libvirt/))
 
 ### Networking
 
-For the containers to be able to communicate with the outside, the host system must have a bridge interface linking the main network interface to the container domain's interface.
+To enable clients to communicate with containers, the server includes a port forwarding system that will be managed with [socat](https://linux.die.net/man/1/socat).
 
-It consists of a bridge interface with the main network interface set as a slave to the bridge : 
-the container domain's interface will connect to it on the runtime via TAP link.
+If not already installed, install `socat` via your local package manager : 
 
-> If the server is using a WI-FI interface as the main network interface, a more specific setup must be done before continuing (see the [debian documentation](https://wiki.debian.org/BridgeNetworkConnections#Bridging_with_a_wireless_NIC) for more).
-
-Follow the steps below according to your system : 
-
-#### Debian-based systems
-
-First, you need to stop the networking service : 
+Apt : 
 
 ```
-$ service network stop
+$ sudo apt-get install socat
 ```
 
-Then you can create the `anwdlbr0` bridge interface, replacing `MASTER_INTERFACE_NAME` by your actual master interface name : 
+DNF :
 
 ```
-$ brctl addbr anwdlbr0
-$ brctl addif anwdlbr0 MASTER_INTERFACE_NAME
+$ sudo dnf install socat
 ```
 
-Create persistent configuration files for your interfaces : 
+Yum :
 
 ```
-$ printf "iface MASTER_INTERFACE_NAME inet manual" >> /etc/network/interfaces
-$ printf "iface anwdlbr0 inet dhcp\n\tbridge_ports MASTER_INTERFACE_NAME" >> /etc/network/interfaces
+$ sudo yum install socat
 ```
 
-Enable the `anwdlbr0` interface, and restart the networking service : 
+Containers will use a bridge interface called `virbr0` as internal NIC which is affiliated to the `libvirtd` daemon.
+
+To create the `virbr0` interface, you need to start the `libvirtd` daemon (previously installed) : 
 
 ```
-$ ifup anwdlbr0
-$ service network start
-```
- 
-
-#### Redhat-based systems
-
-Disable NetworkManager : 
-
-```
-$ sudo chkconfig NetworkManager off
-$ sudo chkconfig network on
-$ sudo service NetworkManager stop
-$ sudo service network start
+$ sudo systemctl start libvirtd.service
 ```
 
-Define the main network interface in networks-script, replacing `MASTER_INTERFACE_NAME` by your actual master interface name  : 
+The containers should now have a functional interface at disposal.
 
-```
-$ sudo printf "DEVICE=MASTER_INTERFACE_NAME\nHWADDR=$(ifconfig MASTER_INTERFACE_NAME | grep -o -E ..:..:..:..:..:..)\nONBOOT=yes\nBRIDGE=anwdlbr0\nNM_CONTROLLED=no" /etc/sysconfig/networks-script/MASTER_INTERFACE_NAME
-```
-
-Create the `anwdlbr0` bridge interface in networks-script : 
-
-```
-$ sudo printf "DEVICE=anwdlbr0\nTYPE=Bridge\nBOOTPROTO=dhcp\nONBOOT=yes\nDELAY=0\nNM_CONTROLLED=no" /etc/sysconfig/networks-script/ifcfg-anwdlbr0
-```
-
-Add sysctl rules to enable packet forwarding : 
-
-```
-$ sudo printf "net.bridge.bridge-nf-call-ip6tables = 0\nnet.bridge.bridge-nf-call-iptables = 0\nnet.bridge.bridge-nf-call-arptables = 0" >> /etc/sysctl.conf
-$ sudo sysctl -p /etc/sysctl.conf
-```
-
-Add iptables rules to accept packet forwarding from bridged interfaces : 
-
-```
-$ sudo printf "-I FORWARD -m physdev --physdev-is-bridged -j ACCEPT" /etc/sysconfig/anweddol-iptables-forward-rules
-$ sudo lokkit --custom-rules=ipv4:filter:/etc/sysconfig/anweddol-iptables-forward-rules
-```
-
-Restart the network service : 
-
-```
-$ sudo service network restart
-```
+Note that you can modify the port forwarding feature behaviour on the [configuration file](configuration_file.md), `port_forwarding` section.
 
 ### Container ISO
 
@@ -203,10 +151,4 @@ At this point, you should be able to start the server. See the [Server usage sec
 
 ## Anweddol server uninstallation
 
-To uninstall the Anweddol server, execute : 
-
-```
-$ sudo anwdlserver-uninstall
-```
-
-The script will delete any files and everything associated with the Anweddol server.
+To uninstall the Anweddol server, an `uninstall.sh` script exists on the root of the package, execute it as root to delete any files and everything associated with the Anweddol server.

@@ -4,15 +4,21 @@
 
 Hello and welcome to the Anweddol server developer documentation.
 
-Here, you'll find every informations and documentation about the server [python](https://www.python.org/) API features.
+Here, you'll find every informations and documentation about the [python](https://www.python.org/) server API features.
 
-**NOTE** : At the root of `anwdlserver`, there is the CLI source code : They are not meant to be used on an external program since it's the server implementation's code itself.
+```{note}
+At the root of `anwdlserver`, there is the CLI source code : They are not meant to be used on an external program since it's the server implementation's code itself.
+```
 
-## Important note
+## Before getting started
 
 The Anweddol server installation requires a specific setup before installation and usage in order to provide a functional service.
 
-See the administration guide [Installation section](https://anweddol-server.readthedocs.io/en/latest/administration_guide/installation.html) to learn more before getting started on the server API.
+See the administration guide [Installation section](../administration_guide/installation.md) before getting started on the server API.
+
+```{note}
+The "**Possible raise classes**" sections define exceptions specific to the method in question: others are likely to be raised.
+```
 
 ## Examples
 
@@ -57,11 +63,23 @@ examples/custom_container_capacity
 ## API references
 
 Learn about every features that the Anweddol server can provide.
-You can also see the *Technical specificatons* section to get every informations on how the Anweddol server works.
 
 ### Core features
 
-The core features, also called `core`, are every needed functionnalities that an Anweddol server must have in order to provide a valid service.
+The core features, also called `core`, are every basic functionnalities that an Anweddol server must have in order to provide a valid service. 
+
+The `ServerInterface` class is the main server which encompasses all these features into a single and easy-to-use object : 
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+api_references/core/server
+```
+
+If you want to make a more complex use of Anweddol, you can retrieve every others `core` features documentations and references below : 
 
 ```{toctree}
 ---
@@ -96,7 +114,7 @@ maxdepth: 3
 includehidden:
 ---
 
-api_references/core/sanitization
+api_references/core/port_forwarding
 ```
 
 ```{toctree}
@@ -105,7 +123,7 @@ maxdepth: 3
 includehidden:
 ---
 
-api_references/core/server
+api_references/core/sanitization
 ```
 
 ```{toctree}
@@ -130,6 +148,8 @@ api_references/core/virtualization
 
 The `tools` features are additional functionnalities (authentication utilities, ...) coming with the Anweddol server package.
 
+These are not essential features, although they can be used in specific contexts : 
+
 ```{toctree}
 ---
 maxdepth: 3
@@ -142,6 +162,8 @@ api_references/tools/accesstk
 ## CLI references
 
 The actual Anweddol server CLI provides a JSON output feature that allows inter-program communication.
+
+You may retrieve every references concerning the JSON format and keys : 
 
 ```{toctree}
 ---

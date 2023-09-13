@@ -13,23 +13,19 @@ from anwdlserver.core.server import (
 # Replace it with your own path
 CONTAINER_ISO_PATH = "/path/of/the/ISO/file.iso"
 
-# Sends 'PONG' in response when a 'PING' request is received
-def handle_ping_request(**kwargs):
-	client_instance = kwargs.get("client_instance")
+# Create a new ServerInterface instance
+server = ServerInterface(CONTAINER_ISO_PATH)
 
+# Sends 'PONG' in response when a 'PING' request is received
+def handle_ping_request(client_instance):
 	print("Received PING request")
 
 	client_instance.sendResponse(True, RESPONSE_MSG_OK, data={"answer": "PONG"})
-
-	# Not mandatory, but programatically correct
 	client_instance.closeConnection()
 
-# Create a new ServerInterface instance
-server = ServerInterface(container_iso_path=CONTAINER_ISO_PATH)
-
 # Print the message when the server is ready
-@server.on_started
-def notify_started(**kwargs):
+@server.on_server_started
+def notify_started(context, data):
 	print("Server is started")
 	
 # Add the new 'PING' request handler

@@ -1,7 +1,7 @@
 # Technical specifications
 ---
 
-Hello and welcome to the Anweddol server technical specifications.
+Welcome to the Anweddol server technical specifications.
 
 You'll retrieve documentation about how the Anweddol server and its affiliated features works.
 

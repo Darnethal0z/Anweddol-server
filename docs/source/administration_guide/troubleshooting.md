@@ -24,7 +24,7 @@ Do not forget to re-enable it when unused :
 $ sudo setenforce 1
 ```
 
-## [...] `authentication unavailable: no polkit agent available to authenticate action 'org.libvirt.unix.manage'`
+## [...]`authentication unavailable: no polkit agent available to authenticate action 'org.libvirt.unix.manage'`
 
 *Description* : The user `anweddol` is not on the `libvirt` group.
 
@@ -35,3 +35,21 @@ Set the user `anweddol` in the `libvirt` group:
 ```
 $ sudo usermod -aG libvirt anweddol
 ```
+
+## Interface '...' does not exists on system
+
+*Description* : The specified network interface does not exists on system.
+
+*Solution* : Create it, or if the interface in question is the default `virbr0`, you need to start the `libvirtd` daemon to make in appear : 
+
+```
+$ sudo systemctl start libvirtd.service
+```
+
+The `virbr0` interface should now exists, check with `ip a`.
+
+## `Network interface name [...] is too long [...]`
+
+*Description* : The value specified in the field `virtual_network_name` in the config file is longer than the allowed interval.
+
+*Solution* : Choose a name shorter than 16 characters.

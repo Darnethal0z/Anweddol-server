@@ -2,8 +2,7 @@
 
 ----
 
-An access token system is provided in the `tools` features.
-It is used to restrict users of the service by providing tokens to authenticate them before processing the request.
+An access token system is provided in the `tools` features, it is used to restrict users of the service by providing tokens to authenticate them before processing the request.
 
 A typical use case is when a client sends a request on a server, it must send an access token in the request parameters that must match one of the tokens in the database in order to be processed by the server.
 
@@ -25,10 +24,21 @@ Here is a representation of the used SQL table :
 |------------------------------- | ------------------- | --------------- | ------------------ |
 | `INTEGER NOT NULL PRIMARY KEY` | `INTEGER NOT NULL`  | `TEXT NOT NULL` | `INTEGER NOT NULL` |
 
-- `EntryID` : Identifies the row
-- `CreationTimestamp` : Store the row creation timestamp
-- `AccessToken` : Store the affiliated access token
-- `Enabled` : Store a boolean value (`1` / `0`) depicting if the row must be used or ignored
+- *EntryID*
+
+  The entry ID, identifies the row.
+
+- *CreationTimestamp*
+
+  The row creation timestamp.
+
+- *AccessToken*
+
+  The affiliated access token.
+
+- *Enabled*
+
+  A boolean integer (`1` or `0`) depicting if the row must be used or not.
 
 ### Security
 

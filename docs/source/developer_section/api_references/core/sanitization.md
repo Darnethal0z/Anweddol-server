@@ -2,96 +2,124 @@
 
 ---
 
-> Normalized request / response values and formats
+## Request and response formatting
 
-> Package `anwdlserver.core.sanitize`
+### Verify a request content
 
-## Constants
-
-None
-
-## Functions
-
-```
-verifyRequestContent(request_dict: dict) -> tuple
+```{function} anwdlserver.core.sanitize.verifyRequestContent(request_dict)
 ```
 
-> Check if a request dictionary is a valid normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format)
+Check if a request dictionary is a valid normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format).
 
-_Parameters_ :
+**Parameters** :
 
-- `request_dict` : The request dictionary
+> ```{attribute} request_dict
+> > Type : dict
+> 
+> The request dictionary to verify.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- A tuple representing the verification results :
+> A tuple representing the verification results :
 
-```
-(
-	True,
-	sanitized_request_dictionary
-)
-```
+> ```
+> (
+> 	True,
+> 	sanitized_request_dictionary
+> )
+> ```
 
-if the `request_dict` is a valid normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format),
+> if the `request_dict` is a valid normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format),
 
-```
-(
-	False,
-	errors_dictionary
-)
-```
+> ```
+> (
+> 	False,
+> 	errors_dictionary
+> )
+> ```
 
-otherwise.
+> otherwise.
 
-- `sanitized_request_dictionary` : The sanitized request as a normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary.
-- `errors_dictionary` : A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+> - *sanitized_request_dictionary* (Type : dict)
+> 
+>   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary.
+> 
+> - *errors_dictionary* (Type : dict)
+> 
+>   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
-**NOTE** : The function `verifyRequestContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (see the technical specifications [Sanitization section](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#sanitization) to learn more).
-
----
-
-```
-makeResponse(
-    success: bool,
-    message: str,
-    data: dict = {},
-    reason: str = None
-) -> tuple:
-```
-
-> Make a normalized response dictionary
-
-_Parameters_ :
-
-- `success` : `True` to announce a success, `False` otherwise
-- `message` : The message to send
-- `data` : The data to send. The content must be an empty dict or a normalized [Response format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
-- `reason` : The reason to specify if `success` is set to `False`. The value will be appended to the message like : `Refused request (reason : <specified_reason>)`
-
-_Return value_ :
-
-- A tuple representing a valid [Response format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format) dictionary :
-
-```
-(
-	True,
-	response_dictionary
-)
+```{warning}
+The function `verifyRequestContent()` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (see the technical specifications [Sanitization section](../../../technical_specifications/core/communication.md) to learn more).
 ```
 
-if the operation succeeded,
+### Make a normalized response
 
-```
-(
-	False,
-	errors_dictionary
-)
+```{function} anwdlserver.core.sanitize.makeResponse(success, message, data, reason)
 ```
 
-otherwise.
+Make a normalized response dictionary.
 
-- `response_dictionary` : The response dictionary as a normalized [Response format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
-- `errors_dictionary` : A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+**Parameters** :
 
-**NOTE** : The `sendResponse` method from `ClientInstance` wraps this function in its process. Like `verifyRequestContent`, the method only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms.
+> ```{attribute} success
+> > Type : bool
+> 
+> `True` to announce a success, `False` otherwise.
+> ```
+
+> ```{attribute} message
+> > Type : str
+> 
+> The message to send.
+> ```
+
+> ```{attribute} data
+> > Type : dict
+> 
+>The data to send. The content must be an empty dict or a normalized [Response format](../../../technical_specifications/core/communication.md). Default is an empty dict.
+> ```
+
+> ```{attribute} reason
+> > Type : str
+> 
+> The reason to specify if `success` is set to `False`. The value will be appended to the message in the form : `Refused request (reason : <reason>)`. Default is `None`.
+> ```
+
+**Return value** : 
+
+> A tuple representing a valid [Response format](../../../technical_specifications/core/communication.md) dictionary :
+
+> ```
+> (
+> 	True,
+> 	response_dictionary
+> )
+> ```
+
+> if the operation succeeded,
+
+> ```
+> (
+> 	False,
+> 	errors_dictionary
+> )
+> ```
+ 
+> otherwise.
+
+> - *response_dictionary* (Type : dict)
+> 
+>   The response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
+> 
+> - *errors_dictionary* (Type : dict)
+> 
+>   A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+
+```{note}
+The `sendResponse` method from `ClientInstance` wraps this function in its process.
+```
+
+```{warning}
+Like `verifyRequestContent`, the method only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms.
+```

@@ -11,11 +11,11 @@ from anwdlserver.core.server import ServerInterface
 CONTAINER_ISO_PATH = "/path/of/the/ISO/file.iso"
 
 # Create a new ServerInterface instance
-server = ServerInterface(container_iso_path=CONTAINER_ISO_PATH)
+server = ServerInterface(CONTAINER_ISO_PATH)
 
 # Print the message when the server is ready
-@server.on_started
-def notify_started(**kwargs):
+@server.on_server_started
+def notify_started(context, data):
 	print("Server is started")
 
 # Start the server
