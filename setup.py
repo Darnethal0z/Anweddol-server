@@ -83,7 +83,7 @@ setup(
     description="The Anweddol server implementation",
     long_description=getReadmeContent(),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
