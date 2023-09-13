@@ -83,7 +83,7 @@ log_rotation:
   # Archived logs folder path.
   log_archive_folder_path: /var/log/anweddol/archived
 
-  # The amount of lines allowed in the log file specified in log_file_path
+  # The amount of lines allowed in the file specified in log_file_path
   # before archiving it.
   max_log_lines_amount: 4000
 
@@ -116,5 +116,4 @@ access_token:
   enabled: False
 
   # Access token database file path.
-  access_tokens_database_file_path: /etc/anweddol/credentials/access_token.db
-
+  access_token_database_file_path: /etc/anweddol/credentials/access_token.db
