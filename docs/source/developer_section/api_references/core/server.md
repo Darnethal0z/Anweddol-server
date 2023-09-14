@@ -349,6 +349,10 @@ Set a request handler.
 
 > `None`.
 
+```{note}
+When the `routine` object is called, the `ClientInstance` object of the session will be passed in a `client_instance` parameter.
+```
+
 ### Server lifecycle control
 
 ```{classmethod} startServer(asynchronous)
