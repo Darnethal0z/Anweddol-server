@@ -26,11 +26,11 @@ To get the client source code, see the [Anweddol client repository](https://gith
 The main technologies used are : 
 
 - Python
-- Libvirt
 - SQLite3
 
 But also : 
 
+- [Libvirt](https://libvirt.org/)
 - [Cerberus](https://pypi.org/project/Cerberus/)
 - [Cryptography](https://pypi.org/project/cryptography/)
 - [Paramiko](https://pypi.org/project/paramiko/)
