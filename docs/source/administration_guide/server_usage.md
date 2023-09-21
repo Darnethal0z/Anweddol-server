@@ -2,7 +2,9 @@
 
 ----
 
-> You need to follows the [Installation](installation.md) section before continuing this tutorial.
+```{warning}
+You need to follows the [Installation](installation.md) section before continuing this tutorial.
+```
 
 ## Start the server
 
