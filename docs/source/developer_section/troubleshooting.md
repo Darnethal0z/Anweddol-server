@@ -6,7 +6,9 @@ Here is a list of non-exhaustive potential problems that can be encountered whil
 
 ## *libvirt:  error : Cannot get interface MTU on 'virbr0' [...]*
 
-*Description* : The libvirt daemon is not started.
+*Description* : 
+
+The libvirt daemon is not started.
 
 *Solution* : 
 
