@@ -395,88 +395,6 @@ Stop the server.
 This method is automatically called within the `__del__` method, but it is programatically better to call it naturally.
 ```
 
-### Manual handler execution
-
-```{classmethod} executeRequestHandler(verb, client_instance, data)
-```
-
-Execute a request handler.
-
-**Parameters** :
-
-> ```{attribute} verb
-> > Type : str
-> 
-> The verb corresponding to the handler to execute. It can be a custom one or a pre-defined normalized one :
-> ```
-
->> ```{attribute} REQUEST_VERB_CREATE
->> Handle a CREATE request.
->> ```
->> 
->> ```{attribute} REQUEST_VERB_STAT
->> Handle a STAT request.
->> ```
->> 
->> ```{attribute} REQUEST_VERB_DESTROY
->> Handle a DESTROY request.
->> ```
-
-> ```{attribute} client_instance
-> > Type : `ClientInstance`
-> 
-> The `ClientInstance` object representing the client to handle. Default is `None`.
-> ```
-
-> ```{attribute} data
-> > Type : dict
-> 
-> The data dictionary to pass to handlers. Default is an empty dict.
-> ```
-
-**Return value** : 
-
-> A response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
-
-```{note}
-The parameter `data` must be set with appropriate credentials for `DESTROY` requests.
-```
-
-```{tip}
-This method is made to enable access to default request handlers without specifying a `ClientInstance` object in the process.
-```
-
----
-
-```{classmethod} executeEventHandler(event, context, data)
-```
-
-Execute an event handler.
-
-**Parameters** :
-
-> ```{attribute} event
-> > Type : str
-> 
-> The `ClientInstance` object representing the client to handle. Default is `None`.
-> ```
-
-> ```{attribute} context
-> > Type : int
-> 
-> The `ClientInstance` object representing the client to handle. Default is `None`.
-> ```
-
-> ```{attribute} data
-> > Type : data
-> 
-> The `ClientInstance` object representing the client to handle. Default is `None`.
-> ```
-
-```{warning}
-If the routine returns any value, this value will be available only if the `context` parameter is set to `CONTEXT_DEFERRED_CALL`.
-```
-
 ### Events handling
 
 You can interact with the server process via events. Those events can be bind to callable objects via 2 techniques : 
@@ -544,10 +462,6 @@ Routine execution is integrated with the server process itself, passing its own 
 
 ```{warning}
 If the parameter `client_instance` representing a client is detected as closed after the routine execution, the server will instantly terminate its process since it will interpret it as a handle termination notice.
-```
-
-```{warning}
-If the routine returns any value, this value will be available only if the `context` parameter is set to `CONTEXT_DEFERRED_CALL`.
 ```
 
 ##### Decorators references
