@@ -47,7 +47,7 @@ List stored containers.
 
 ### Containers management
 
-```{classmethod} createContainer(iso_path: str, store: bool) -> ContainerInstance
+```{classmethod} createContainer(iso_path: str, store: bool)
 ```
 
 Create a container.
@@ -436,7 +436,7 @@ Set the virtual CPUs amount to allocate on the container domain.
 
 ---
 
-```{classmethod} setNATInterfaceName(nat_interface_name: str) -> None
+```{classmethod} setNATInterfaceName(nat_interface_name: str)
 ```
 
 Set the NAT interface name that will be used on the container domain.
@@ -492,7 +492,7 @@ Create an `EndpointShell` instance on the container domain.
 
 ### Container domain lifetime control
 
-```{classmethod} startDomain(wait_available: bool, wait_max_tryout: int, driver_uri: str) -> None
+```{classmethod} startDomain(wait_available: bool, wait_max_tryout: int, driver_uri: str)
 ```
 
 Start the [container domain](../../../technical_specifications/core/virtualization.md).

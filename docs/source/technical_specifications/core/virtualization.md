@@ -15,7 +15,7 @@ The libvirt domain XML used for container domain definition is :
 	<name>container_uuid</name>
 	<memory unit='MiB'>memory</memory>
 	<currentMemory unit='MiB'>memory</currentMemory>
-	<vcpu placement='static'>vcpus/vcpu>
+	<vcpu placement='static'>vcpus</vcpu>
 	<uuid>container_uuid</uuid>
 	<os>
 		<type arch='x86_64' machine='pc'>hvm</type>
@@ -37,8 +37,6 @@ The libvirt domain XML used for container domain definition is :
 		<suspend-to-mem enabled='yes'/>
 		<suspend-to-disk enabled='yes'/>
 	</pm>
-	<on_reboot>destroy</on_reboot>
-	<on_crash>destroy</on_crash>
 	<devices>
 		<disk type='file' device='cdrom'>
 			<driver name='qemu' type='raw'/>
@@ -47,11 +45,11 @@ The libvirt domain XML used for container domain definition is :
 			<address type='drive' controller='0' bus='0' target='0' unit='0'/>
 		</disk>
 		<interface type='bridge'>
-			<start mode='onboot'/>
-			<source bridge='nat_interface_name'/> 
-			<model type='virtio'/>
-		</interface>
-    	<memballoon model='virtio'>
+        <start mode='onboot'/>
+        <source bridge='nat_interface_name'/> 
+        <model type='virtio'/>
+    </interface>
+    <memballoon model='virtio'>
 			<address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
 		</memballoon>
 	</devices>

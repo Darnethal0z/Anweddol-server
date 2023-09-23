@@ -251,7 +251,7 @@ Provides `ForwarderInstance` management features.
 
 ### General usage
 
-```{classmethod} getStoredForwarder(container_ip: str) -> None | ForwarderInstance
+```{classmethod} getStoredForwarder(container_ip: str)
 ```
 
 Get a stored forwarder.

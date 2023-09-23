@@ -148,7 +148,7 @@ This method must be used for client access verification. If the access token ent
 
 ---
 
-```{classmethod} getEntry(entry_id: int) -> tuple
+```{classmethod} getEntry(entry_id: int)
 ```
 
 Get an entry content.
@@ -268,7 +268,7 @@ List entries.
 
 ---
 
-```{classmethod} deleteEntry(entry_id: int) -> None
+```{classmethod} deleteEntry(entry_id: int)
 ```
 
 Delete an entry.
