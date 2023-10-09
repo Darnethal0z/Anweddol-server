@@ -1,11 +1,16 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Client management features
+This module provides the Anweddol server with client 
+representation and management features. It includes :
+
+ - RSA / AES key exchange ;
+ - Request / response processing ;
 
 """
+
 import hashlib
 import socket
 import json

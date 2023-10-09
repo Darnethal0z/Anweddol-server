@@ -1,14 +1,16 @@
 """
-	Copyright 2023 The Anweddol project
-	See the LICENSE file for licensing informations
-	---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-	Miscellaneous features
+This module provides some miscellaneous features that the Anweddol server
+various modules uses in their processes.
 
-    NOTE : Some functions be hard to debug with the several except statements, 
-    please considerate this function when implementing a new experimental feature 
+NOTE : Some functions be hard to debug with the several except statements,
+please considerate this function when implementing a new experimental feature
 
 """
+
 from subprocess import Popen, PIPE
 import socket
 import re

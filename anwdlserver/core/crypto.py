@@ -1,14 +1,16 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    RSA/AES encryption features.
+This module provides the Anweddol server with RSA/AES encryption features.
+There is 2 provided encryption algorithms :
 
-    Provided encryption scheme is RSA with a default 4096 key size,
-    and AES 256 CBC utilities.
+ - RSA 4096 ;
+ - AES 256 CBC ;
 
 """
+
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import cryptography.hazmat.primitives.padding as symetric_padding
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -218,6 +220,20 @@ class AESWrapper:
 
         self.cipher = Cipher(algorithms.AES(self.key), modes.CBC(self.iv))
 
+    def _pad_data(self, data, size=128):
+        padder = symetric_padding.PKCS7(size).padder()
+        padded_data = padder.update(data)
+        padded_data += padder.finalize()
+
+        return padded_data
+
+    def _unpad_data(self, data, size=128):
+        padder = symetric_padding.PKCS7(size).unpadder()
+        unpadded_data = padder.update(data)
+        unpadded_data += padder.finalize()
+
+        return unpadded_data
+
     def getKeySize(self) -> int:
         return len(self.key) * 8
 
@@ -234,26 +250,12 @@ class AESWrapper:
         encryptor = self.cipher.encryptor()
         encoded_data = data.encode() if type(data) is str else data
 
-        return encryptor.update(self.__pad_data(encoded_data)) + encryptor.finalize()
+        return encryptor.update(self._pad_data(encoded_data)) + encryptor.finalize()
 
     def decryptData(self, cipher: bytes, decode: bool = True) -> str | bytes:
         decryptor = self.cipher.decryptor()
-        decrypted_data = self.__unpad_data(
+        decrypted_data = self._unpad_data(
             decryptor.update(cipher) + decryptor.finalize()
         )
 
         return decrypted_data.decode() if decode else decrypted_data
-
-    def __pad_data(self, data, size=128):
-        padder = symetric_padding.PKCS7(size).padder()
-        padded_data = padder.update(data)
-        padded_data += padder.finalize()
-
-        return padded_data
-
-    def __unpad_data(self, data, size=128):
-        padder = symetric_padding.PKCS7(size).unpadder()
-        unpadded_data = padder.update(data)
-        unpadded_data += padder.finalize()
-
-        return unpadded_data

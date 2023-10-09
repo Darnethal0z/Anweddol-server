@@ -1,11 +1,13 @@
 """
-	Copyright 2023 The Anweddol project
-	See the LICENSE file for licensing informations
-	---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-	Virtualization management and utilities, using libvirt API
+This module provides the Anweddol server with virtualization appliance
+and container management features. It is based on the libvirt API.
 
 """
+
 from defusedxml.minidom import parseString
 import paramiko
 import secrets
@@ -63,7 +65,7 @@ class EndpointShellInstance:
         self.ssh_client = None
         self.is_closed = True
 
-        if container_ip and self.open_shell:
+        if container_ip and open_shell:
             self.openShell()
 
     def __del__(self):
@@ -80,7 +82,7 @@ class EndpointShellInstance:
     def isClosed(self) -> bool:
         return self.is_closed
 
-    def getSSHClient(self) -> paramiko.client.SSHClient:
+    def getSSHClient(self) -> paramiko.client.SSHClient | None:
         return self.ssh_client
 
     def getContainerIP(self) -> str:
@@ -147,7 +149,9 @@ class EndpointShellInstance:
         )
 
         if _stdout or _stderr:
-            raise RuntimeError(f"Failed to set SSH credentials : {_stdout} | {_stderr}")
+            raise RuntimeError(
+                f"Failed to set SSH credentials (stdout='{_stdout.rstrip()}', stderr='{_stderr.rstrip()}')"
+            )
 
     def executeCommand(self, command: str) -> tuple:
         _, _stdout, _stderr = self.ssh_client.exec_command(command)

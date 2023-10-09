@@ -1,11 +1,14 @@
 """
-	Copyright 2023 The Anweddol project
-	See the LICENSE file for licensing informations
-	---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-	Database features using SQLAlchemy memory database
+This module provides the Anweddol server with database features.
+It is based on a SQLAlchemy memory database instance, since it is
+used for run time credentials storage only.
 
 """
+
 from sqlalchemy import select, create_engine, MetaData, Table, Column
 from sqlalchemy import Integer, String
 import sqlalchemy

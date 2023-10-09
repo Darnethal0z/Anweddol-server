@@ -1,11 +1,16 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Access token management features
+This module provides additional features for access token 
+storage and management. Its primary goal is to provide an 
+authentication method that can be implemented for server usage 
+/ access restriction. If the server is in a public or multi-user 
+area, it makes a pretty easy-to-deploy solution to authenticate users.
 
 """
+
 import hashlib
 import sqlite3
 import secrets
