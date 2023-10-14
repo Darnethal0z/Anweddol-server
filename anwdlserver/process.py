@@ -467,8 +467,9 @@ class AnweddolServerProcess:
                     if data.get("client_instance")
                     else "unspec"
                 )
-
-                self.actual_running_container_domains_counter -= 1
+                
+                if self.actual_running_container_domains_counter > 0:
+                    self.actual_running_container_domains_counter -= 1
 
                 self.__log(
                     LOG_INFO,
