@@ -12,7 +12,7 @@ import shutil
 import os
 
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 
 
 def executeCommand(command):
