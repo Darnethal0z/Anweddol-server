@@ -13,7 +13,7 @@ import yaml
 from .core.utilities import isValidIP
 
 
-def loadConfigurationFileContent(config_file_path, auto_check=True) -> None | dict:
+def loadConfigurationFileContent(config_file_path, auto_check=True):
     with open(config_file_path, "r") as fd:
         data = yaml.safe_load(fd)
 
