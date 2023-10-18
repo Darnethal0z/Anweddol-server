@@ -11,6 +11,7 @@ used for run time credentials storage only.
 
 from sqlalchemy import select, create_engine, MetaData, Table, Column
 from sqlalchemy import Integer, String
+from typing import Union
 import sqlalchemy
 import secrets
 import hashlib
@@ -62,7 +63,7 @@ class DatabaseInterface:
         self,
         container_uuid: str,
         client_token: str,
-    ) -> None | int:
+    ) -> Union[None, int]:
         query = select(self.table.c.EntryID, self.table.c.CreationTimestamp).where(
             (
                 self.table.c.ContainerUUID
@@ -78,7 +79,7 @@ class DatabaseInterface:
 
         return result[0] if result else None
 
-    def getContainerUUIDEntryID(self, container_uuid: str) -> None | int:
+    def getContainerUUIDEntryID(self, container_uuid: str) -> Union[None, int]:
         query = select(self.table.c.EntryID).where(
             self.table.c.ContainerUUID
             == hashlib.sha256(container_uuid.encode()).hexdigest()

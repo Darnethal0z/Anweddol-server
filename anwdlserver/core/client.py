@@ -11,6 +11,7 @@ representation and management features. It includes :
 
 """
 
+from typing import Union
 import hashlib
 import socket
 import json
@@ -83,7 +84,7 @@ class ClientInstance:
     def getCreationTimestamp(self) -> int:
         return self.creation_timestamp
 
-    def getStoredRequest(self) -> None | dict:
+    def getStoredRequest(self) -> Union[None, dict]:
         return self.stored_request
 
     def getRSAWrapper(self) -> RSAWrapper:

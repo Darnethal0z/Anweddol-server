@@ -16,7 +16,7 @@ The server responds by a JSON response containing a normalized response dictiona
 from twisted.web.http import Request
 from twisted.web import server, resource
 from twisted.internet.error import ReactorNotRunning
-from twisted.internet import reactor, task, defer, ssl, endpoints
+from twisted.internet import reactor, task, defer, ssl, endpoints, threads
 import threading
 import json
 import time
@@ -48,7 +48,7 @@ DEFAULT_RESTWEBSERVER_LISTEN_PORT = 8080
 DEFAULT_ENABLE_SSL = False
 
 
-class RESTWebServerInterface(ServerInterface, resource.Resource):
+class WebServerInterface(ServerInterface, resource.Resource):
     isLeaf = True
 
     def __init__(
@@ -82,25 +82,19 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
 
         # request_handler_dict redefinition from ServerInterface
         self.request_handler_dict = {
-            "": self._handle_http_home,  # If no verb is specified, return home data
-            REQUEST_VERB_CREATE: self._handle_http_create_request,
-            REQUEST_VERB_STAT: self._handle_http_stat_request,
-            REQUEST_VERB_DESTROY: self._handle_http_destroy_request,
+            "": self._handle_home_from_http,  # If no verb is specified, return home data
+            REQUEST_VERB_CREATE: self._handle_create_request_from_http,
+            REQUEST_VERB_STAT: self._handle_stat_request_from_http,
+            REQUEST_VERB_DESTROY: self._handle_destroy_request_from_http,
         }
 
-    def _remove_dict_key(self, dict_, key):
-        new_dict = dict_
-        del new_dict[key]
-
-        return new_dict
-
     def _extract_post_request_args_values(self, request_args):
-        container_uuid = request_args.get(b"container_uuid")
-        client_token = request_args.get(b"client_token")
+        container_uuid, _ = request_args.get(b"container_uuid")
+        client_token, _ = request_args.get(b"client_token")
 
         return (
-            container_uuid[0].decode() if container_uuid else None,
-            client_token[0].decode() if client_token else None,
+            container_uuid.decode() if container_uuid else None,
+            client_token.decode() if client_token else None,
         )
 
     def _handle_error(
@@ -120,7 +114,7 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
 
         return result
 
-    def _handle_http_home(self, request):
+    def _handle_home_from_http(self, request):
         return makeResponse(
             True,
             "Hello and welcome to this Anweddol server REST API. This server provides temporary, SSH-controllable virtual machines to enhance anonymity online.",
@@ -133,7 +127,7 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
             },
         )[1]
 
-    def _handle_http_stat_request(self, request):
+    def _handle_stat_request_from_http(self, request):
         try:
             return self._handle_stat_request(passive_execution=True)
 
@@ -142,11 +136,11 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
                 self._format_traceback(E), data={"request": request}
             )
 
-    def _handle_http_create_request(self, request):
+    def _handle_create_request_from_http(self, request):
         # Errors are already handled inside _handle_create_request
         return self._handle_create_request(passive_execution=True)
 
-    def _handle_http_destroy_request(self, request):
+    def _handle_destroy_request_from_http(self, request):
         try:
             container_uuid, client_token = self._extract_post_request_args_values(
                 request.args
@@ -175,7 +169,6 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
         try:
             # Extract and transform the verb into upper case
             verb = request.postpath[-1].decode().upper()
-
             result = self._execute_event_handler(
                 EVENT_REQUEST,
                 CONTEXT_NORMAL_PROCESS,
@@ -201,6 +194,23 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
 
         except Exception as E:
             return self._handle_error(self._format_traceback(E))
+
+    def _pre_handle_http_request(self, request):
+        def end(result, request):
+            request.write(json.dumps(result).encode("utf8"))
+            request.finish()
+
+        def err(failure):
+            self._handle_error(data={"failure": failure})
+            # return failure
+
+        request.setHeader(b"content-type", b"application/json")
+
+        d = threads.deferToThread(self._handle_http_request, request)
+        d.addCallback(end, request)
+        d.addErrback(err)
+
+        return server.NOT_DONE_YET
 
     def _start_server(self):
         def process(reactor, *args):
@@ -246,11 +256,12 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
 
             self.is_running = False
 
+            # reactor.running is set to True during startup to during shutdown,
+            # which can lead to ReactorNotRunning raised if not timed properly.
             if reactor.running:
-                # reactor.running is set to True during startup to during shutdown,
-                # which can lead to ReactorNotRunning raised if not timed properly.
                 try:
                     reactor.stop()
+
                 except ReactorNotRunning:
                     pass
 
@@ -266,14 +277,10 @@ class RESTWebServerInterface(ServerInterface, resource.Resource):
                 exit(0xDEAD)
 
     def render_POST(self, request):
-        request.setHeader(b"content-type", b"application/json")
-
-        return json.dumps(self._handle_http_request(request)).encode("utf8")
+        return self._pre_handle_http_request(request)
 
     def render_GET(self, request):
-        request.setHeader(b"content-type", b"application/json")
-
-        return json.dumps(self._handle_http_request(request)).encode("utf8")
+        return self._pre_handle_http_request(request)
 
     def executeRequestHandler(
         self,

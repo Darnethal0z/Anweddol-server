@@ -9,7 +9,7 @@ so that they can all be used in a single module.
 
 """
 
-from typing import Callable, Any
+from typing import Callable, Any, Union
 import threading
 import traceback
 import socket
@@ -82,7 +82,7 @@ class ServerInterface:
         runtime_container_iso_file_path: str,
         bind_address: str = DEFAULT_SERVER_BIND_ADDRESS,
         listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
-        client_timeout: int | None = DEFAULT_CLIENT_TIMEOUT,
+        client_timeout: Union[int, None] = DEFAULT_CLIENT_TIMEOUT,
         runtime_virtualization_interface: VirtualizationInterface = None,
         runtime_database_interface: DatabaseInterface = None,
         runtime_port_forwarding_interface: PortForwardingInterface = None,
@@ -1053,10 +1053,10 @@ class ServerInterface:
             (int(time.time()) - self.start_timestamp) if self.is_running else 0,
         )
 
-    def getRequestHandler(self, verb: str) -> None | Callable:
+    def getRequestHandler(self, verb: str) -> Union[None, Callable]:
         return self.request_handler_dict.get(verb)
 
-    def getEventHandler(self, event: str) -> None | Callable:
+    def getEventHandler(self, event: str) -> Union[None, Callable]:
         return self.event_handler_dict.get(event)
 
     def setRuntimeContainerISOFilePath(self, iso_file_path: str) -> None:

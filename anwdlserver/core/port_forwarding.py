@@ -10,6 +10,7 @@ communicate.
 """
 
 from subprocess import Popen, DEVNULL
+from typing import Union
 import secrets
 import time
 
@@ -93,7 +94,8 @@ class ForwarderInstance:
 
 class PortForwardingInterface:
     def __init__(
-        self, forwardable_port_range: range | list = DEFAULT_FORWARDABLE_PORT_RANGE
+        self,
+        forwardable_port_range: Union[range, list] = DEFAULT_FORWARDABLE_PORT_RANGE,
     ):
         self.available_port_list = list(forwardable_port_range)
         self.stored_forwarders_instance_dict = {}
@@ -113,7 +115,7 @@ class PortForwardingInterface:
         for container_ip in forwarder_deletion_list:
             self.stored_forwarders_instance_dict.pop(container_ip)
 
-    def getStoredForwarder(self, container_uuid: str) -> None | ForwarderInstance:
+    def getStoredForwarder(self, container_uuid: str) -> Union[None, ForwarderInstance]:
         return self.stored_forwarders_instance_dict.get(container_uuid)
 
     def listStoredForwarders(self) -> list:

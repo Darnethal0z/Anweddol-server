@@ -9,6 +9,7 @@ and container management features. It is based on the libvirt API.
 """
 
 from defusedxml.minidom import parseString
+from typing import Union
 import paramiko
 import secrets
 import hashlib
@@ -82,7 +83,7 @@ class EndpointShellInstance:
     def isClosed(self) -> bool:
         return self.is_closed
 
-    def getSSHClient(self) -> paramiko.client.SSHClient | None:
+    def getSSHClient(self) -> Union[None, paramiko.client.SSHClient]:
         return self.ssh_client
 
     def getContainerIP(self) -> str:
@@ -213,7 +214,7 @@ class ContainerInstance:
     def getNATInterfaceName(self) -> str:
         return self.nat_interface_name
 
-    def getDomainDescriptor(self) -> None | libvirt.virDomain:
+    def getDomainDescriptor(self) -> Union[None, libvirt.virDomain]:
         return self.domain_descriptor
 
     def getUUID(self) -> str:
@@ -222,7 +223,7 @@ class ContainerInstance:
     def getISOFilePath(self) -> str:
         return self.iso_file_path
 
-    def getMAC(self) -> None | str:
+    def getMAC(self) -> Union[None, str]:
         if self.domain_descriptor is None:
             raise RuntimeError("Container domain is not created")
 
@@ -232,7 +233,7 @@ class ContainerInstance:
             "address"
         )
 
-    def getIP(self) -> None | str:
+    def getIP(self) -> Union[None, str]:
         if self.domain_descriptor is None:
             raise RuntimeError("Container domain is not created")
 
@@ -420,7 +421,7 @@ class VirtualizationInterface:
     def listStoredContainers(self) -> list:
         return self.stored_container_instance_dict.keys()
 
-    def getStoredContainer(self, container_uuid: str) -> None | ContainerInstance:
+    def getStoredContainer(self, container_uuid: str) -> Union[None, ContainerInstance]:
         return self.stored_container_instance_dict.get(container_uuid)
 
     def storeContainer(self, container_instance: ContainerInstance) -> None:
