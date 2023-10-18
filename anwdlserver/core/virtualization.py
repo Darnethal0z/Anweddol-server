@@ -1,12 +1,15 @@
 """
-	Copyright 2023 The Anweddol project
-	See the LICENSE file for licensing informations
-	---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-	Virtualization management and utilities, using libvirt API
+This module provides the Anweddol server with virtualization appliance
+and container management features. It is based on the libvirt API.
 
 """
+
 from defusedxml.minidom import parseString
+from typing import Union
 import paramiko
 import secrets
 import hashlib
@@ -63,7 +66,7 @@ class EndpointShellInstance:
         self.ssh_client = None
         self.is_closed = True
 
-        if container_ip and self.open_shell:
+        if container_ip and open_shell:
             self.openShell()
 
     def __del__(self):
@@ -80,7 +83,7 @@ class EndpointShellInstance:
     def isClosed(self) -> bool:
         return self.is_closed
 
-    def getSSHClient(self) -> paramiko.client.SSHClient:
+    def getSSHClient(self) -> Union[None, paramiko.client.SSHClient]:
         return self.ssh_client
 
     def getContainerIP(self) -> str:
@@ -147,7 +150,9 @@ class EndpointShellInstance:
         )
 
         if _stdout or _stderr:
-            raise RuntimeError(f"Failed to set SSH credentials : {_stdout} | {_stderr}")
+            raise RuntimeError(
+                f"Failed to set SSH credentials (stdout='{_stdout.rstrip()}', stderr='{_stderr.rstrip()}')"
+            )
 
     def executeCommand(self, command: str) -> tuple:
         _, _stdout, _stderr = self.ssh_client.exec_command(command)
@@ -209,7 +214,7 @@ class ContainerInstance:
     def getNATInterfaceName(self) -> str:
         return self.nat_interface_name
 
-    def getDomainDescriptor(self) -> None | libvirt.virDomain:
+    def getDomainDescriptor(self) -> Union[None, libvirt.virDomain]:
         return self.domain_descriptor
 
     def getUUID(self) -> str:
@@ -218,7 +223,7 @@ class ContainerInstance:
     def getISOFilePath(self) -> str:
         return self.iso_file_path
 
-    def getMAC(self) -> None | str:
+    def getMAC(self) -> Union[None, str]:
         if self.domain_descriptor is None:
             raise RuntimeError("Container domain is not created")
 
@@ -228,7 +233,7 @@ class ContainerInstance:
             "address"
         )
 
-    def getIP(self) -> None | str:
+    def getIP(self) -> Union[None, str]:
         if self.domain_descriptor is None:
             raise RuntimeError("Container domain is not created")
 
@@ -416,7 +421,7 @@ class VirtualizationInterface:
     def listStoredContainers(self) -> list:
         return self.stored_container_instance_dict.keys()
 
-    def getStoredContainer(self, container_uuid: str) -> None | ContainerInstance:
+    def getStoredContainer(self, container_uuid: str) -> Union[None, ContainerInstance]:
         return self.stored_container_instance_dict.get(container_uuid)
 
     def storeContainer(self, container_instance: ContainerInstance) -> None:

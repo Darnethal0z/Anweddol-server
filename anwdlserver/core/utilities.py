@@ -1,9 +1,9 @@
 """
-	Copyright 2023 The Anweddol project
-	See the LICENSE file for licensing informations
-	---
+    Copyright 2023 The Anweddol project
+    See the LICENSE file for licensing informations
+    ---
 
-	Miscellaneous features
+    Miscellaneous features
 
     NOTE : Some functions be hard to debug with the several except statements, 
     please considerate this function when implementing a new experimental feature 

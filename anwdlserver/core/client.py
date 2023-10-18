@@ -1,11 +1,17 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Client management features
+This module provides the Anweddol server with client 
+representation and management features. It includes :
+
+ - RSA / AES key exchange ;
+ - Request / response processing ;
 
 """
+
+from typing import Union
 import hashlib
 import socket
 import json
@@ -78,7 +84,7 @@ class ClientInstance:
     def getCreationTimestamp(self) -> int:
         return self.creation_timestamp
 
-    def getStoredRequest(self) -> None | dict:
+    def getStoredRequest(self) -> Union[None, dict]:
         return self.stored_request
 
     def getRSAWrapper(self) -> RSAWrapper:

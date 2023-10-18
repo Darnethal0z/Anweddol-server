@@ -1,11 +1,13 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Normalized request / response values and formats verification
+This module provides the Anweddol server with normalized 
+request / response values and formats verification features.
 
 """
+
 import cerberus
 
 

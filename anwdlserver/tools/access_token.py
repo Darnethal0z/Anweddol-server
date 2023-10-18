@@ -1,11 +1,17 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Access token management features
+This module provides additional features for access token 
+storage and management. Its primary goal is to provide an 
+authentication method that can be implemented for server usage 
+/ access restriction. If the server is in a public or multi-user 
+area, it makes a pretty easy-to-deploy solution to authenticate users.
 
 """
+
+from typing import Union
 import hashlib
 import sqlite3
 import secrets
@@ -52,7 +58,7 @@ class AccessTokenManager:
     def getCursor(self) -> sqlite3.Cursor:
         return self.database_cursor
 
-    def getEntryID(self, access_token: str) -> None | int:
+    def getEntryID(self, access_token: str) -> Union[None, int]:
         query_cursor = self.database_cursor.execute(
             "SELECT EntryID from AnweddolServerAccessTokenTable WHERE AccessToken=? AND Enabled=1",
             (hashlib.sha256(access_token.encode()).hexdigest(),),

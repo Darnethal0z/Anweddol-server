@@ -1,4 +1,16 @@
+"""
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
+
+This module provides the Anweddol server with port forwarding
+features. It is used to allow clients and container domains to
+communicate.
+
+"""
+
 from subprocess import Popen, DEVNULL
+from typing import Union
 import secrets
 import time
 
@@ -16,10 +28,12 @@ class ForwarderInstance:
         self,
         server_origin_port: int,
         container_ip: str,
+        container_uuid: str,
         container_destination_port: int,
     ):
         self.server_origin_port = server_origin_port
         self.container_ip = container_ip
+        self.container_uuid = container_uuid
         self.container_destination_port = container_destination_port
 
         self.process = None
@@ -36,6 +50,9 @@ class ForwarderInstance:
 
     def getContainerIP(self) -> str:
         return self.container_ip
+
+    def getContainerUUID(self) -> str:
+        return self.container_uuid
 
     def getContainerDestinationPort(self) -> int:
         return self.container_destination_port
@@ -77,7 +94,8 @@ class ForwarderInstance:
 
 class PortForwardingInterface:
     def __init__(
-        self, forwardable_port_range: range | list = DEFAULT_FORWARDABLE_PORT_RANGE
+        self,
+        forwardable_port_range: Union[range, list] = DEFAULT_FORWARDABLE_PORT_RANGE,
     ):
         self.available_port_list = list(forwardable_port_range)
         self.stored_forwarders_instance_dict = {}
@@ -97,24 +115,25 @@ class PortForwardingInterface:
         for container_ip in forwarder_deletion_list:
             self.stored_forwarders_instance_dict.pop(container_ip)
 
-    def getStoredForwarder(self, container_ip: str) -> None | ForwarderInstance:
-        return self.stored_forwarders_instance_dict.get(container_ip)
+    def getStoredForwarder(self, container_uuid: str) -> Union[None, ForwarderInstance]:
+        return self.stored_forwarders_instance_dict.get(container_uuid)
 
     def listStoredForwarders(self) -> list:
         return self.stored_forwarders_instance_dict.keys()
 
     def storeForwarder(self, forwarder_instance: ForwarderInstance) -> None:
-        if forwarder_instance.getContainerIP() in self.listStoredForwarders():
-            raise ValueError("A forwarder already exists for this container IP")
+        if forwarder_instance.getContainerUUID() in self.listStoredForwarders():
+            raise ValueError("A forwarder already exists for this container UUID")
 
         self.stored_forwarders_instance_dict.update(
-            {forwarder_instance.getContainerIP(): forwarder_instance}
+            {forwarder_instance.getContainerUUID(): forwarder_instance}
         )
         self.available_port_list.remove(forwarder_instance.getServerOriginPort())
 
     def createForwarder(
         self,
         container_ip: str,
+        container_uuid: str,
         container_destination_port: int,
         store: bool = DEFAULT_STORE_FORWARDER,
     ) -> ForwarderInstance:
@@ -134,6 +153,7 @@ class PortForwardingInterface:
         new_forwarder_instance = ForwarderInstance(
             secrets.choice(self.available_port_list),
             container_ip,
+            container_uuid,
             container_destination_port,
         )
 
@@ -143,15 +163,15 @@ class PortForwardingInterface:
         return new_forwarder_instance
 
     def deleteStoredForwarder(
-        self, container_ip: str, stop_forward: bool = DEFAULT_STOP_FORWARD
+        self, container_uuid: str, stop_forward: bool = DEFAULT_STOP_FORWARD
     ) -> None:
-        forwarder_instance = self.getStoredForwarder(container_ip)
+        forwarder_instance = self.getStoredForwarder(container_uuid)
 
         if stop_forward:
             if forwarder_instance and forwarder_instance.isForwarding():
                 forwarder_instance.stopForward()
 
-        self.stored_forwarders_instance_dict.pop(container_ip, None)
+        self.stored_forwarders_instance_dict.pop(container_uuid, None)
 
         if forwarder_instance:
             self.available_port_list.append(forwarder_instance.getServerOriginPort())
