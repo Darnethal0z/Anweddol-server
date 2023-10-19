@@ -41,14 +41,14 @@ container:
 server:
 
   # RSA keys paths.
-  public_rsa_key_file_path: /etc/anweddol/rsa_keys/public.pem
-  private_rsa_key_file_path: /etc/anweddol/rsa_keys/private.pem
+  public_rsa_key_file_path: /etc/anweddol/rsa/public.pem
+  private_rsa_key_file_path: /etc/anweddol/rsa/private.pem
 
   # Server log file path.
-  log_file_path: /var/log/anweddol/runtime.txt
+  log_file_path: /var/log/anweddol/server.txt
 
   # PID file path for server daemon process.
-  pid_file_path: /etc/anweddol/daemon_process.pid
+  pid_file_path: /etc/anweddol/server_daemon.pid
 
   # Privilege-separated user with which to run the server.
   # It is not recommended to launch the server with root privileges.
@@ -59,9 +59,35 @@ server:
   listen_port: 6150
   timeout: 10
 
-  # Generate RSA key pair on start and ignore the stored one.
-  # May increase startup time.
+  # Generate RSA key pair on start and use it for the instance.
+  # It ignores the stored one, so it may increase startup time.
   enable_onetime_rsa_keys: False
+
+# ---
+# Parameters for server web version.
+web_server:
+
+  # Web server log file path.
+  log_file_path: /var/log/anweddol/web.txt
+
+  # PID file path for server daemon process.
+  pid_file_path: /etc/anweddol/web_server_daemon.pid
+
+  # Privilege-separated user with which to run web the server.
+  # It is not recommended to launch the web server with root privileges.
+  user: anweddol
+
+  # Web server listen informations.
+  # If 'enable_ssl' below is set to 'True', you may need to change it
+  # for 4443 or a similar port for convention matters.
+  listen_port: 8080
+
+  # Enable SSL.
+  enable_ssl: False
+
+  # SSL private key and certificate file paths.
+  ssl_pem_private_key_file_path: /etc/anweddol/ssl/private_key.pem
+  ssl_pem_certificate_file_path: /etc/anweddol/ssl/certificate.pem
 
 # ---
 # Port forwarding parameters
@@ -83,11 +109,11 @@ log_rotation:
   # Archived logs folder path.
   log_archive_folder_path: /var/log/anweddol/archived
 
-  # The amount of lines allowed in the file specified in log_file_path
-  # before archiving it.
+  # The amount of lines allowed in the file specified in 'log_file_path'
+  # in the 'server' section before archiving it.
   max_log_lines_amount: 4000
 
-  # Specify the action on log rotation :
+  # Specify the action on rotation :
   # - 'delete' to delete the actual log file content,
   # - 'archive' to archive log file in a zip format.
   action: archive
@@ -100,8 +126,8 @@ ip_filter:
   enabled: False
 
   # List of allowed / denied IPs.
-  # If 'any' is specified in the denied_ip_list list, the server will search in
-  # the allowed_ip_list list for the IP in question. If specified, the server 
+  # If 'any' is specified in 'denied_ip_list', the server will search in
+  # 'allowed_ip_list' for the IP in question. If specified, the server 
   # will accept the connection, and will deny it otherwise.
   denied_ip_list: []
 
