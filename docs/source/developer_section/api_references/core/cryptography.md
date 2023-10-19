@@ -2,6 +2,21 @@
 
 ---
 
+## Constants
+
+In the module `anwdlserver.core.crypto` : 
+
+### Default values
+
+Constant name                 | Value   | Definition
+----------------------------- | ------- | ----------
+*DEFAULT_RSA_EXPONENT*        | 65537   | The default RSA exponent.
+*DEFAULT_RSA_KEY_SIZE*        | 4096    | The default RSA key size.
+*DEFAULT_AES_KEY_SIZE*        | 256     | The default AES key size.
+*DEFAULT_PEM_FORMAT*          | `True`  | Keys are specified in PEM format by default or not.
+*DEFAULT_GENERATE_KEY_PAIR*   | `True`  | Generate key pair on initialization or not.
+*DEFAULT_DERIVATE_PUBLIC_KEY* | `False` | Derivate the public key out of the private key or not.
+
 ## class *RSAWrapper*
 
 ### Definition
@@ -9,12 +24,12 @@
 ```{class} anwdlserver.core.crypto.RSAWrapper(generate_key_pair: bool)
 ```
 
-Provides [RSA encryption](https://en.wikipedia.org/wiki/RSA_(cryptosystem)) functionality.
+This class provides [RSA encryption](https://en.wikipedia.org/wiki/RSA_(cryptosystem)) functionality.
 
 **Parameters** :
 
 > ```{attribute} generate_key_pair
-> > Type : bool
+> Type : bool
 > 
 > `True` to generate RSA key pair on initialization, `False` otherwise. Default is `True`.
 > ```
@@ -36,6 +51,8 @@ Get the bit length of the local public key modulus.
 
 **Return value** : 
 
+> Type : int | `NoneType`
+>
 > The key size exprimed in bytes, or `None` if there is none.
 
 ---
@@ -50,13 +67,15 @@ Get the local public key.
 **Parameters** :
 
 > ```{attribute} pem_format
-> > Type : bool
+> Type : bool
 > 
 > `True` to return the local public key in a [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/), `False` to return it as a byte sequence. Default is `True`.
 > ```
 
 **Return value** : 
 
+> Type : str | bytes | `NoneType`
+>
 > The local public key, or `None` if there is none.
 
 ---
@@ -69,13 +88,15 @@ Get the local private key.
 **Parameters** :
 
 > ```{attribute} pem_format
-> > Type : bool
+> Type : bool
 > 
 > `True` to return the local public key in a [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/), `False` to return it as a byte sequence. Default is `True`.
 > ```
 
 **Return value** : 
 
+> Type : str | bytes | `NoneType`
+>
 > The local private key, or `None` if there is none.
 
 ---
@@ -88,13 +109,15 @@ Get the client public key.
 **Parameters** :
 
 > ```{attribute} pem_format
-> > Type : bool
+> Type : bool
 > 
 > `True` to return the local public key in a [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/), `False` to return it as a byte sequence. Default is `True`.
 > ```
 
 **Return value** : 
 
+> Type : str | bytes | `NoneType`
+>
 > The client public key, or `None` if there is none.
 
 ---
@@ -107,7 +130,7 @@ Set the local public key.
 **Parameters** :
 
 > ```{attribute} public_key
-> > Type : str | bytes
+> Type : str | bytes
 > 
 > The public key, in [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/) if the parameter `pem_format` is set to `True`, in a byte sequence otherwise.
 > ```
@@ -126,19 +149,19 @@ Set the local private key.
 **Parameters** :
 
 > ```{attribute} private_key
-> > Type : str | bytes
+> Type : str | bytes
 > 
 > The private key, in [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/) if the parameter `pem_format` is set to `True`, in a byte sequence otherwise.
 > ```
 
 > ```{attribute} pem_format
-> > Type : bool
+> Type : bool
 > 
 > `True` to specify the format of the key in the parameter `private_key` in a [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/), in a byte sequence otherwise. Default is `True`.
 > ```
 
 > ```{attribute} derivate_public_key
-> > Type : bool
+> Type : bool
 > 
 > Derivate the public key out of the private key in the parameter `private_key` or not. Default is `False`.
 > ```
@@ -157,13 +180,13 @@ Set the remote public key.
 **Parameters** :
 
 > ```{attribute} remote_public_key
-> > Type : str | bytes
+> Type : str | bytes
 > 
 > The remote public key, in [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/) if the parameter `pem_format` is set to `True`, in a byte sequence otherwise.
 > ```
 
 > ```{attribute} pem_format
-> > Type : bool
+> Type : bool
 > 
 > `True` to specify the format of the key in the parameter `remote_public_key` in a [PEM format](https://www.howtogeek.com/devops/what-is-a-pem-file-and-how-do-you-use-it/), in a byte sequence otherwise. Default is `True`.
 > ```
@@ -182,13 +205,13 @@ Generate the RSA key pair.
 **Parameters** :
 
 > ```{attribute} pem_format
-> > Type : int
+> Type : int
 > 
 > The public exponent to use. Default is `65537`.
 > ```
 
 > ```{attribute} key_size
-> > Type : int
+> Type : int
 > 
 > The RSA key size exprimed in bits, must be a multiple of 2. Default is `4096`.
 > ```
@@ -207,19 +230,21 @@ Encrypt a buffer of data.
 **Parameters** :
 
 > ```{attribute} data
-> > Type : str | bytes
+> Type : str | bytes
 > 
 > The data to encrypt. It can be a string or a byte sequence.
 > ```
 
 > ```{attribute} use_local_public_key
-> > Type : bool
+> Type : bool
 > 
 > `True` to specify if the local public key must be used for encryption instead of the remote public key, `False` otherwise. Default is `False`.
 > ```
 
 **Return value** : 
 
+> Type : bytes
+>
 > The encrypted `data` content as a byte sequence.
 
 **Possible raise classes** :
@@ -240,19 +265,21 @@ Decrypt data.
 **Parameters** :
 
 > ```{attribute} cipher
-> > Type : bytes
+> Type : bytes
 > 
 > The encrypted cipher text as a byte sequence.
 > ```
 
 > ```{attribute} decode
-> > Type : bool
+> Type : bool
 > 
 > `True` to specify if the decrypted data should be decoded before being returned, `False` otherwise. Default is `True`.
 > ```
 
 **Return value** : 
 
+> Type : str | bytes
+>
 > The decrypted `data` content as a string or a byte sequence according to the value of `decode`
 
 **Possible raise classes** :
@@ -273,13 +300,15 @@ Sign a block of data.
 **Parameters** :
 
 > ```{attribute} data
-> > Type : str | bytes
+> Type : str | bytes
 > 
 > The clear data to sign. It can be a string or a byte sequence.
 > ```
 
 **Return value** : 
 
+> Type : bytes
+>
 > The signed data, as a byte sequence.
 
 **Possible raise classes** :
@@ -300,19 +329,21 @@ Verify the authenticity of a signed block of data.
 **Parameters** :
 
 > ```{attribute} signature
-> > Type : bytes
+> Type : bytes
 > 
 > The signed data, as a byte sequence.
 > ```
   
 > ```{attribute} data
-> > Type : str | bytes
+> Type : str | bytes
 > 
 > The clear data to verify. It can be a string or a byte sequence.
 > ```
 
 **Return value** : 
 
+> Type : bool
+>
 > `True` if the data and its signature are authentic, `False` otherwise.
 
 **Possible raise classes** :
@@ -330,12 +361,12 @@ Verify the authenticity of a signed block of data.
 ```{classmethod} anwdlserver.core.crypto.AESWrapper(key_size)
 ```
 
-Provides [AES encryption](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) functionality.
+This class provides [AES encryption](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) functionality.
 
 **Parameters** :
 
 > ```{attribute} key_size
-> > Type : int
+> Type : int
 > 
 > The AES key size, exprimed in bits. Default is `256`.
 > ```
@@ -353,6 +384,8 @@ Get the key size.
 
 **Return value** : 
 
+> Type : int
+>
 > The AES key size exprimed in bits.
 
 ---
@@ -368,6 +401,8 @@ Get the AES key and the IV.
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the actual AES key and the IV : 
 
 > ```
@@ -378,10 +413,12 @@ Get the AES key and the IV.
 > ```
 
 > - *KEY*
->   
+>   Type : bytes
+> 
 >   The AES key.
 > 
 > - *IV*
+>   Type : bytes
 > 
 >   The affiliated IV.
 
@@ -395,13 +432,13 @@ Set the AES key.
 **Parameters** :
 
 > ```{attribute} key
-> > Type : bytes
+> Type : bytes
 > 
 > The AES key, as a byte sequence. Must be 16, 24 or 32 bytes long.
 > ```
 
 > ```{attribute} iv
-> > Type : bytes
+> Type : bytes
 > 
 > The [Initialisation Vector](https://en.wikipedia.org/wiki/Initialization_vector). Must be 16 bytes long. Default is `None`.
 > ```
@@ -424,13 +461,15 @@ Encrypt data.
 **Parameters** :
 
 > ```{attribute} data
-> > Type : str | bytes
+> Type : str | bytes
 > 
 > The data to encrypt. It can be a string or a byte sequence.
 > ```
 
 **Return value** : 
 
+> Type : bytes
+>
 > The `data` as a byte sequence.
 
 ---
@@ -443,17 +482,24 @@ Decrypt data.
 **Parameters** :
 
 > ```{attribute} cipher
-> > Type : bytes
+> Type : bytes
 > 
 > The encrypted cipher text as a byte sequence.
 > ```
 
 > ```{attribute} decode
-> > Type : bytes
+> Type : bytes
 > 
 > Specify if the decrypted data should be decoded before being returned. Default is `True`
 > ```
 
 **Return value** : 
 
+> Type : str | bytes
+>
 > The decrypted `data` content as a string or a byte sequence according to the value of `decode`.
+
+### Undocumented methods
+
+- `_pad_data(data, size=128)`
+- `_unpad_data(data, size=128)`

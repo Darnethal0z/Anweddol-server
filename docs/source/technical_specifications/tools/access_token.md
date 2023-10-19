@@ -2,9 +2,9 @@
 
 ----
 
-An access token system is provided in the `tools` features, it is used to restrict users of the service by providing tokens to authenticate them before processing the request.
+An access token system is provided in the `tools` features, it is used to restrict users of the service by providing tokens to authenticate them before processing any request.
 
-A typical use case is when a client sends a request on a server, it must send an access token in the request parameters that must match one of the tokens in the database in order to be processed by the server.
+If the server is in a public or multi-user area, it makes a pretty easy-to-deploy solution to prevent unwanted usage.
 
 ## Tokens
 

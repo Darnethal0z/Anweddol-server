@@ -2,6 +2,16 @@
 
 ----
 
+## Constants
+
+In the module `anwdlserver.tools.accesstk` : 
+
+### Default values
+
+Constant name                  | Value   | Definition
+------------------------------ | ------- | ----------
+*DEFAULT_DISABLE_TOKEN*        | `False` | Disable the created token entry by default or not. 
+
 ## class *AccessTokenManager*
 
 ### Definition
@@ -9,12 +19,14 @@
 ```{class} anwdlserver.tools.accesstk.AccessTokenManager(auth_token_db_path)
 ```
 
-Provides access token features.
+This module provides additional features for access token storage and management. 
+
+The primary goal of access tokens is providing an authentication method that can be implemented for server usage / access restriction. If the server is in a public or multi-user area, it makes a pretty easy-to-deploy solution to authenticate users.
 
 **Parameters** : 
 
 > ```{attribute} auth_token_db_path
-> > Type : str
+> Type : str
 > 
 > The access tokens database file path.
 > ```
@@ -36,6 +48,8 @@ Check if the database is closed or not.
 
 **Return value** : 
 
+> Type : bool
+>
 > `True` if the database is closed, `False` otherwise.
 
 ---
@@ -51,6 +65,8 @@ Get the [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#
 
 **Return value** : 
 
+> Type : `sqlite3.Connection`
+>
 > The `sqlite3.Connection` object of the instance.
 
 ---
@@ -65,6 +81,8 @@ Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqli
 
 **Return value** : 
 
+> Type : `sqlite3.Cursor`
+>
 > The `sqlite3.Cursor` object of the instance.
 
 ---
@@ -95,7 +113,7 @@ Enable the usage of an entry.
 **Parameters** : 
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to enable.
 > ```
@@ -114,7 +132,7 @@ Disable the usage of an entry.
 **Parameters** : 
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to disable.
 > ```
@@ -133,13 +151,15 @@ Get the access token entry ID (similar to the ROWID in sqlite, identifies the ro
 **Parameters** : 
 
 > ```{attribute} access_token
-> > Type : str
+> Type : str
 > 
 > The clear access token to search for.
 > ```
 
 **Return value** : 
 
+> Type : str | `NoneType`
+>
 > The access token entry ID if exists, `None` otherwise.
 
 ```{note}
@@ -156,13 +176,15 @@ Get an entry content.
 **Parameters** :
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to get.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the entry content :
 
 > ```
@@ -174,19 +196,27 @@ Get an entry content.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id* 
+>
+> 	Type : int
 > 
 >   The entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp* 
+>
+> 	Type : int
 > 
 >   The entry creation timestamp.
 > 
-> - *access_token* (Type : str)
+> - *access_token* 
+>
+> 	Type : str
 > 
 >   The hashed access token.
 > 
-> - *enabled* (Type : bool)
+> - *enabled* 
+>
+> 	Type : bool
 > 
 >   `True` if the entry is enabled, `False` otherwise.
 
@@ -203,13 +233,15 @@ Create an entry.
 **Parameters** : 
 
 > ```{attribute} disable
-> > Type : bool
+> Type : bool
 > 
 > `True` to disable the token entry by default, `False` otherwise. Default is `False`.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the created token entry informations : 
 
 > ```
@@ -219,11 +251,15 @@ Create an entry.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id* 
+>
+> 	Type : int
 > 
 >   The created entry ID.
 > 
-> - *auth_token* (Type : str)
+> - *auth_token* 
+>
+> 	Type : str
 > 
 >   The created access token, in plain text.
 
@@ -244,6 +280,8 @@ List entries.
 
 **Return value** : 
 
+> Type : tuple
+>
 > A list of tuples representing every entries on the database : 
 
 > ```
@@ -254,15 +292,21 @@ List entries.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id* 
+>
+>	Type : int
 > 
 >   The entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp* 
+>
+>	Type : int
 > 
 >   The entry creation timestamp.
 > 
-> - *enabled* (Type : bool)
+> - *enabled* 
+> 
+> 	Type : bool
 > 
 >   `True` if the entry is enabled, `False` otherwise.
 
@@ -276,7 +320,7 @@ Delete an entry.
 **Parameters** : 
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to delete on the database.
 > ```

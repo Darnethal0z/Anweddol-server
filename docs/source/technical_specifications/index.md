@@ -62,3 +62,14 @@ includehidden:
 
 tools/access_token
 ```
+
+### Web features
+
+```{toctree}
+---
+maxdepth: 2
+includehidden:
+---
+
+web/rest_api
+```

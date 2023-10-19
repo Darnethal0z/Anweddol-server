@@ -14,13 +14,15 @@ Check if a request dictionary is a valid normalized [Request format](https://anw
 **Parameters** :
 
 > ```{attribute} request_dict
-> > Type : dict
+> Type : dict
 > 
 > The request dictionary to verify.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the verification results :
 
 > ```
@@ -41,11 +43,13 @@ Check if a request dictionary is a valid normalized [Request format](https://anw
 
 > otherwise.
 
-> - *sanitized_request_dictionary* (Type : dict)
+> - *sanitized_request_dictionary*
+>	Type : dict
 > 
 >   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary.
 > 
-> - *errors_dictionary* (Type : dict)
+> - *errors_dictionary*
+>	Type : dict
 > 
 >   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
@@ -63,31 +67,33 @@ Make a normalized response dictionary.
 **Parameters** :
 
 > ```{attribute} success
-> > Type : bool
+> Type : bool
 > 
 > `True` to announce a success, `False` otherwise.
 > ```
 
 > ```{attribute} message
-> > Type : str
+> Type : str
 > 
 > The message to send.
 > ```
 
 > ```{attribute} data
-> > Type : dict
+> Type : dict
 > 
 >The data to send. The content must be an empty dict or a normalized [Response format](../../../technical_specifications/core/communication.md). Default is an empty dict.
 > ```
 
 > ```{attribute} reason
-> > Type : str
+> Type : str
 > 
 > The reason to specify if `success` is set to `False`. The value will be appended to the message in the form : `Refused request (reason : <reason>)`. Default is `None`.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing a valid [Response format](../../../technical_specifications/core/communication.md) dictionary :
 
 > ```
@@ -108,11 +114,13 @@ Make a normalized response dictionary.
  
 > otherwise.
 
-> - *response_dictionary* (Type : dict)
+> - *response_dictionary*
+>	Type : dict
 > 
 >   The response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
 > 
-> - *errors_dictionary* (Type : dict)
+> - *errors_dictionary*
+>	Type : dict
 > 
 >   A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 

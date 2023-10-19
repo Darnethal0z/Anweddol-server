@@ -15,23 +15,19 @@ There is one token for one client, since a client cannot store 2 tokens for one 
 
 This feature can be enabled or disabled.
 
-Being disabled by default, you can enable it by changing the `enabled` field value for `True` : 
+Being disabled by default, you can enable it in the configuration file `/etc/anweddol/config.yaml` by changing the affiliated `enabled` field value for `True` : 
 
 ```
 [...]
-  # List of allowed / denied IPs
-  # Specify any IPs with 'any'
-  allowed_ip_list:
-    - any
-  denied_ip_list: []
-
 # ---
-# Access token parameters
-token_authentication:
+# Access token parameters.
+access_token:
 
-  # Enable this feature or not
-  # If this value is set to 'false', all parameters below will be ignored 
-  enabled: True # <----- Here
+  # Enable this feature or not.
+  enabled: False <----- here
+
+  # Access token database file path.
+  access_token_database_file_path: /etc/anweddol/credentials/access_token.db
 
 [...]
 ```
@@ -39,7 +35,7 @@ token_authentication:
 Then restart the server.
 
 ```{warning} 
-If this feature is enabled but no tokens are added, no clients will be able to use the server. 
+If this feature is enabled but no tokens are in the database, nobody will be able to use the server. 
 ```
 
 ## Add / delete a token

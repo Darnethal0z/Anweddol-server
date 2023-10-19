@@ -24,13 +24,15 @@ The "**Possible raise classes**" sections define exceptions specific to the meth
 
 See basic server stubs that can be used as examples.
 
+### `core` examples
+
 ```{toctree}
 ---
 maxdepth: 3
 includehidden:
 ---
 
-examples/basic_server
+examples/core/basic_server
 ```
 
 ```{toctree}
@@ -39,7 +41,7 @@ maxdepth: 3
 includehidden:
 ---
 
-examples/custom_verb_handle
+examples/core/custom_verb_handle
 ```
 
 ```{toctree}
@@ -48,7 +50,7 @@ maxdepth: 3
 includehidden:
 ---
 
-examples/ip_filtering
+examples/core/ip_filtering
 ```
 
 ```{toctree}
@@ -57,7 +59,27 @@ maxdepth: 3
 includehidden:
 ---
 
-examples/custom_container_capacity
+examples/core/custom_container_capacity
+```
+
+### `web` examples
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+examples/web/basic_web_server
+```
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+examples/web/basic_web_server_ssl
 ```
 
 ## API references
@@ -157,6 +179,19 @@ includehidden:
 ---
 
 api_references/tools/accesstk
+```
+
+### Web features
+
+The `web` features consists of a REST API based on the `core` features, which provides all the features of a classic server, but in the form of a web server : 
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+api_references/web/server
 ```
 
 ## CLI references

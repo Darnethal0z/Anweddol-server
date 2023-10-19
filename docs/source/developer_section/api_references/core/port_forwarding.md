@@ -4,32 +4,48 @@
 
 ## class *ForwarderInstance*
 
+Constant name                    | Value                     | Definition
+-------------------------------- | ------------------------- | ----------
+*DEFAULT_STORE_FORWARDER*        | `True`                    | Store the forwarder once created or not.
+*DEFAULT_STOP_FORWARD*           | `False`                   | Stop the forwarder if running or not.
+*DEFAULT_FORWARDABLE_PORT_RANGE* | `range(10000, 15000)`     | The default AES key size.
+
 ### Definition
 
-```{class} anwdlserver.core.port_forwarding.ForwarderInstance(server_origin_port, container_ip, container_destination_port)
+```{class} anwdlserver.core.port_forwarding.ForwarderInstance(server_origin_port, container_ip, container_uuid, container_destination_port)
 ```
 
-Provides port forwarding feature between the server and containers in order to permit client and containers to communicate.
+This class provides the Anweddol server with port forwarding features. It is used to allow clients and container domains to communicate.
 
 **Parameters** :
 
 > ```{attribute} server_origin_port
-> > Type : int
+> Type : int
 > 
 > The server port to bind to the forwarder.
 > ```
 
 > ```{attribute} container_ip
-> > Type : int
+> Type : int
 > 
 > The destination container IP to forward packets to.
 > ```
 
+> ```{attribute} container_uuid
+> Type : int
+> 
+> The destination container UUID.
+> ```
+
 > ```{attribute} container_destination_port
-> > Type : int
+> Type : int
 > 
 > The container destination port to forward packets to.
 > ```
+
+```{note} 
+The parameter `container_uuid` is used for management fins only.
+```
 
 ```{note}
 The forwarder will be automatically stopped with the `stopForward()` method on the `__del__` method. The `server_origin_port` will be bind to a `socat` object, forwarding any input packets from this port to `container_ip`:`container_destination_port`.
@@ -48,6 +64,8 @@ Check if the forwarder is forwarding.
 
 **Return value** : 
 
+> Type : bool
+>
 > `True` if the forwarder is forwarding, `False` otherwise.
 
 ---
@@ -63,6 +81,8 @@ Get the server origin port.
 
 **Return value** : 
 
+> Type : int
+>
 > The server origin port.
 
 ---
@@ -78,7 +98,26 @@ Get the destination container IP.
 
 **Return value** : 
 
+> Type : str
+>
 > The destination container IP.
+
+---
+
+```{classmethod} getContainerUUID()
+```
+
+Get the destination container UUID.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> Type : str
+>
+> The destination container UUID.
 
 ---
 
@@ -93,6 +132,8 @@ Get the container destination port.
 
 **Return value** : 
 
+> Type : int
+>
 > The container destination port.
 
 ---
@@ -108,6 +149,8 @@ Get the forwarder `subprocess.Popen` process object.
 
 **Return value** : 
 
+> Type : `subprocess.Popen`
+>
 > The forwarder `subprocess.Popen` process object.
 
 ---
@@ -120,7 +163,7 @@ Set the server port to bind to the forwarder.
 **Parameters** : 
 
 > ```{attribute} server_origin_port
-> > Type : int
+> Type : int
 > 
 > The server origin port to set.
 > ```
@@ -139,7 +182,7 @@ Set the destination container IP to forward packets to.
 **Parameters** : 
 
 > ```{attribute} container_ip
-> > Type : str
+> Type : str
 > 
 > The destination container IP to set.
 > ```
@@ -158,7 +201,7 @@ Set the container destination port.
 **Parameters** : 
 
 > ```{attribute} container_destination_port
-> > Type : int
+> Type : int
 > 
 > The container destination port to forward packets to.
 > ```
@@ -177,7 +220,7 @@ Set the forwarder `subprocess.Popen` process object.
 **Parameters** : 
 
 > ```{attribute} process
-> > Type : `subprocess.Popen`
+> Type : `subprocess.Popen`
 > 
 > The forwarder `subprocess.Popen` process object to set.
 > ```
@@ -244,28 +287,30 @@ Provides `ForwarderInstance` management features.
 **Parameters** : 
 
 > ```{attribute} forwardable_port_range
-> > Type : range | list
+> Type : range | list
 > 
 > The port range / list in which forwarders will be assigned. Default is `range(10000, 15000)`.
 > ```
 
 ### General usage
 
-```{classmethod} getStoredForwarder(container_ip: str)
+```{classmethod} getStoredForwarder(container_uuid: str)
 ```
 
 Get a stored forwarder.
 
 **Parameters** : 
 
-> ```{attribute} container_ip
-> > Type : str
+> ```{attribute} container_uuid
+> Type : str
 > 
-> The forwarder destination container IP to get.
+> The forwarder destination container UUID to get.
 > ```
 
 **Return value** : 
 
+> Type : `ForwarderInstance`
+>
 > The `ForwarderInstance` object of the stored forwarder if exists, `None` otherwise.
 
 ---
@@ -281,19 +326,21 @@ List stored forwarders.
 
 **Return value** : 
 
+> Type : list
+>
 > A list containing the stored forwarder destination container IPs as strings.
 
 ### Forwarder management
 
-```{classmethod} storeForwarder(forwarder_object)
+```{classmethod} storeForwarder(forwarder_instance)
 ```
 
 Store a forwarder.
 
 **Parameters** : 
 
-> ```{attribute} forwarder_object
-> > Type : `ForwarderInstance`
+> ```{attribute} forwarder_instance
+> Type : `ForwarderInstance`
 > 
 > The `ForwarderInstance` object to store.
 > ```
@@ -312,7 +359,7 @@ Store a forwarder.
 
 ---
 
-```{classmethod} createForwarder(container_ip, container_destination_port, store)
+```{classmethod} createForwarder(container_ip, container_uuid, container_destination_port, store)
 ```
 
 Create a forwarder.
@@ -320,44 +367,56 @@ Create a forwarder.
 **Parameters** : 
 
 > ```{attribute} container_ip
-> > Type : str
+> Type : str
 > 
 > The destination container IP.
 > ```
 
+> ```{attribute} container_uuid
+> Type : str
+> 
+> The destination container UUID.
+> ```
+
 > ```{attribute} container_destination_port
-> > Type : int
+> Type : int
 > 
 > The container destination port.
 > ```
 
 > ```{attribute} store
-> > Type : bool
+> Type : bool
 > 
 > `True` to store the created forwarder, `False` otherwise. Default is `True`.
 > ```
 
 **Return value** : 
 
+> Type : `ForwarderInstance` 
+> 
 > The `ForwarderInstance` object of the created forwarder.
+
+```{note} 
+The parameter `container_uuid` is used for management fins only.
+```
 
 ---
 
-```{classmethod} deleteStoredForwarder(container_ip, stop_forward)
+```{classmethod} deleteStoredForwarder(container_uuid, stop_forward)
 ```
 
 Delete a stored forwarder.
 
 **Parameters** : 
 
-> ```{attribute} container_ip
-> > Type : str
+> ```{attribute} container_uuid
+> Type : str
 > 
-> The forwarder destination container IP.
+> The forwarder destination container UUID.
 > ```
 
 > ```{attribute} stop_forward
-> > Type : bool
+> Type : bool
 > 
 > `True` to stop the forwarder process before deletion, `False` otherwise. Default is `False`.
 > ```

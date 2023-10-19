@@ -11,7 +11,7 @@
 
 Provides an [SQLAlchemy](../../../technical_specifications/core/database.md) memory database instance.
 
-**Parameters**
+**Parameters** :
 
 > None.
 
@@ -32,6 +32,8 @@ Get the SQLAlchemy [`sqlalchemy.engine.Engine`](https://docs.sqlalchemy.org/en/2
 
 **Return value** : 
 
+> Type : `sqlalchemy.engine.Engine`
+>
 > The `sqlalchemy.engine.Engine` object of the instance.
 
 ---
@@ -47,6 +49,8 @@ Get the SQLAlchemy [`sqlalchemy.engine.Connection`](https://docs.sqlalchemy.org/
 
 **Return value** : 
 
+> Type : `sqlalchemy.engine.Connection`
+>
 > The `sqlalchemy.engine.Connection` object of the instance.
 
 ---
@@ -62,6 +66,8 @@ Get the SQLAlchemy [`sqlalchemy.schema.Table`](https://docs.sqlalchemy.org/en/20
 
 **Return value** : 
 
+> Type : `sqlalchemy.schema.Table`
+>
 > The `sqlalchemy.schema.Table` object of the instance.
 
 ---
@@ -93,19 +99,21 @@ Get the credentials pair entry ID (see Additional note).
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The clear [container UUID](../../../technical_specifications/core/client_authentication.md).
 > ```
 
 > ```{attribute} client_token
-> > Type : str
+> Type : str
 > 
 > The clear [client token](../../../technical_specifications/core/client_authentication.md).
 > ```
 
 **Return value** : 
 
+> Type : int | `NoneType`
+>
 > The credentials entry ID if the credentials exists, `None` otherwise.
 
 ```{note}
@@ -122,13 +130,15 @@ Get the entry ID of a specific container UUID.
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The container UUID to search for. It can be a [container UUID](../../../technical_specifications/core/client_authentication.md) or a [client token](../../../technical_specifications/core/client_authentication.md).
 > ```
 
 **Return value** : 
 
+> Type : str | `NoneType`
+>
 > The container UUID entry ID if exists, `None` otherwise.
 
 ```{note}
@@ -145,13 +155,15 @@ Get an entry content.
 **Parameters** :
 
 > ```{attribute} entry_id
-> > Type : str
+> Type : str
 > 
 > The entry ID to get the credentials from.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the entry content :
 
 > ```
@@ -163,19 +175,27 @@ Get an entry content.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 > 
 >   The entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry creation timestamp.
 > 
-> - *container_uuid* (Type : str)
+> - *container_uuid*
+>
+>	Type : str
 > 
 >   The hashed [container UUID](../../../technical_specifications/core/client_authentication.md).
 > 
-> - *client_token* (Type : str)
+> - *client_token*
+>
+>	Type : str
 > 
 >   The hashed [client token](../../../technical_specifications/core/client_authentication.md).
 
@@ -193,13 +213,15 @@ Add an entry.
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The [container UUID](../../../technical_specifications/core/client_authentication.md) to add.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the infomations of the created entry :
 
 > ```
@@ -210,15 +232,21 @@ Add an entry.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 > 
 >   The new entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry creation timestamp.
 > 
-> - *client_token* (Type : str)
+> - *client_token*
+>
+>	Type : str
 > 
 >   The [client token](../../../technical_specifications/core/client_authentication.md), in plain text.
 
@@ -247,6 +275,8 @@ List entries.
 
 **Return value** : 
 
+> Type : list
+>
 > A list of tuples representing the entries partial informations :
 
 > ```
@@ -259,11 +289,15 @@ List entries.
 > ]
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 > 
 >   The created entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry creation timestamp.
 
@@ -277,19 +311,19 @@ Update an entry.
 **Parameters** :
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to update.
 > ```
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The [container UUID](../../../technical_specifications/core/client_authentication.md) to set.
 > ```
 
 > ```{attribute} client_token
-> > Type : str
+> Type : str
 > 
 > The [client token](../../../technical_specifications/core/client_authentication.md) to set.
 > ```
@@ -308,7 +342,7 @@ Delete an entry.
 **Parameters** :
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to delete.
 > ```
