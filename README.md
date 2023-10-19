@@ -21,21 +21,6 @@ This repository contains :
 
 To get the client source code, see the [Anweddol client repository](https://github.com/the-anweddol-project/Anweddol-client).
 
-## Tech stack
-
-The main technologies used are : 
-
-- Python
-- SQLite3
-
-But also : 
-
-- [Libvirt](https://libvirt.org/)
-- [Cerberus](https://pypi.org/project/Cerberus/)
-- [Cryptography](https://pypi.org/project/cryptography/)
-- [Paramiko](https://pypi.org/project/paramiko/)
-- [SQLAlchemy](https://www.sqlalchemy.org/)
-
 ## Installation
 
 The Anweddol server installation requires a specific setup before installation and usage in order to provide a functional service.
