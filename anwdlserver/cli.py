@@ -1,17 +1,19 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    CLI : Main anwdlserver CLI process
+This module contains the 'anwdlserver' executable CLI process.
 
 """
+
 from datetime import datetime
 import daemon.pidfile
 import argparse
 import hashlib
 import daemon
 import signal
+import shutil
 import time
 import json
 import pwd
@@ -29,11 +31,7 @@ from .process import launchServerProcess
 from .__init__ import __version__
 
 # Constants definition
-CONFIG_FILE_PATH = (
-    "C:\\Windows\\Anweddol\\config.yaml"
-    if os.name == "nt"
-    else "/etc/anweddol/config.yaml"
-)
+CONFIG_FILE_PATH = "/etc/anweddol/config.yaml"
 
 LOG_JSON_STATUS_SUCCESS = "OK"
 LOG_JSON_STATUS_ERROR = "ERROR"
@@ -73,7 +71,10 @@ please report it by opening an issue on the repository :
 
         try:
             if not os.path.exists(CONFIG_FILE_PATH):
-                raise FileNotFoundError(f"{CONFIG_FILE_PATH} was not found on system")
+                shutil.copy(
+                    f"{os.path.dirname(__file__)}/resources/config.yaml",
+                    CONFIG_FILE_PATH,
+                )
 
             self.config_content = loadConfigurationFileContent(CONFIG_FILE_PATH)
 
@@ -89,26 +90,36 @@ please report it by opening an issue on the repository :
 
         except Exception as E:
             if type(E) is KeyboardInterrupt:
-                self.__log_stdout("")
+                self._log("")
                 exit(0)
 
             if self.json:
-                self.__log_json(
-                    LOG_JSON_STATUS_ERROR, "An error occured", data={"error": str(E)}
+                self._log_json(
+                    LOG_JSON_STATUS_ERROR,
+                    "An error occured",
+                    data={"error": str(E)},
+                    error=True,
                 )
 
             else:
-                self.__log_stdout("An error occured : ", color=Colors.RED, end="")
-                self.__log_stdout(f"Error : {E}\n")
+                self._log("An error occured : ", color=Colors.RED, end="", error=True)
+                self._log(f"Error : {E}\n", error=True)
 
             exit(-1)
 
-    def __log_stdout(self, message, bypass=False, color=None, end="\n"):
+    def _log(self, message, bypass=False, color=None, end="\n", error=False):
         if not bypass:
-            print(f"{color}{message}\033[0;0m" if color else message, end=end)
+            print(
+                f"{color}{message}\033[0;0m" if color else message,
+                end=end,
+                file=sys.stderr if error else sys.stdout,
+            )
 
-    def __log_json(self, status, message, data={}):
-        print(json.dumps({"status": status, "message": message, "data": data}))
+    def _log_json(self, status, message, data={}, error=False):
+        print(
+            json.dumps({"status": status, "message": message, "data": data}),
+            file=sys.stderr if error else sys.stdout,
+        )
 
     def start(self):
         parser = argparse.ArgumentParser(
@@ -123,23 +134,31 @@ please report it by opening an issue on the repository :
         )
         parser.add_argument(
             "-d",
-            help="execute the server in direct mode (parent terminal). Server will run as the actual effective user",
+            help="execute the server in the parent terminal (will run as the actual effective user)",
             action="store_true",
         )
         parser.add_argument(
-            "-y", "--assume-yes", help="answer 'y' to any prompts", action="store_true"
+            "--classic",
+            help="run the classic server (the default option)",
+            action="store_true",
         )
         parser.add_argument(
-            "-n", "--assume-no", help="answer 'n' to any prompts", action="store_true"
+            "--web", help="run the web version of the server", action="store_true"
+        )
+        parser.add_argument(
+            "--assume-yes", help="answer 'y' to any prompts", action="store_true"
+        )
+        parser.add_argument(
+            "--assume-no", help="answer 'n' to any prompts", action="store_true"
         )
         parser.add_argument(
             "--enable-stdout-log",
-            help="display logs in stdout or not",
+            help="display logs in stdout",
             action="store_true",
         )
         parser.add_argument(
             "--enable-traceback-log",
-            help="enable tracebacks in logs or not",
+            help="enable full tracebacks display in logs (for debug)",
             action="store_true",
         )
         parser.add_argument(
@@ -157,7 +176,7 @@ please report it by opening an issue on the repository :
 
             if args.c:
                 if args.json:
-                    self.__log_json(
+                    self._log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Check done",
                         data={
@@ -167,41 +186,42 @@ please report it by opening an issue on the repository :
                     )
 
                 else:
-                    self.__log_stdout("Check done, ", end="")
-                    self.__log_stdout(
+                    self._log("Check done, ", end="")
+                    self._log(
                         f"{len(check_result_list)} errors recorded{' :' if len(check_result_list) else ''}",
                         color=Colors.YELLOW if len(check_result_list) else Colors.GREEN,
                     )
 
                     for error in check_result_list:
-                        self.__log_stdout(f"- {error}")
+                        self._log(f"- {error}")
 
-                    self.__log_stdout("")
+                    self._log("")
 
                 return 0
 
             if len(check_result_list) != 0:
                 if args.json:
-                    self.__log_json(
+                    self._log_json(
                         LOG_JSON_STATUS_ERROR,
                         "Errors detected on server environment",
                         data={
                             "errors_recorded": len(check_result_list),
                             "errors_list": check_result_list,
                         },
+                        error=True,
                     )
 
                     return -1
 
                 else:
-                    self.__log_stdout(
-                        "Server environment is invalid : ", color=Colors.RED
+                    self._log(
+                        "Server environment is invalid : ", color=Colors.RED, error=True
                     )
 
                     for error in check_result_list:
-                        self.__log_stdout(f"- {error}")
+                        self._log(f"- {error}", error=True)
 
-                    self.__log_stdout("")
+                    self._log("", error=True)
 
                     raise EnvironmentError(
                         f"{len(check_result_list)} error(s) detected on server environment"
@@ -210,7 +230,7 @@ please report it by opening an issue on the repository :
         pid_file_path = self.config_content["server"].get("pid_file_path")
 
         if os.path.exists(pid_file_path):
-            self.__log_stdout(
+            self._log(
                 f"A PID file already exists on {pid_file_path}",
                 bypass=args.json,
                 color=Colors.YELLOW,
@@ -231,19 +251,19 @@ please report it by opening an issue on the repository :
 
                     time.sleep(1)
 
-            self.__log_stdout("", bypass=args.json)
+            self._log("", bypass=args.json)
 
         if args.d:
             if args.json:
                 if args.enable_stdout_log:
-                    self.__log_json(
+                    self._log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Direct execution mode enabled, use CTRL+C to stop the server.",
                     )
 
             else:
                 if args.enable_stdout_log:
-                    self.__log_stdout(
+                    self._log(
                         "Direct execution mode enabled, use CTRL+C to stop the server.\n",
                     )
 
@@ -255,13 +275,13 @@ please report it by opening an issue on the repository :
 
         else:
             if args.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_SUCCESS,
                     "Server is starting",
                 )
 
             else:
-                self.__log_stdout("Server is starting")
+                self._log("Server is starting")
 
             # https://pypi.org/project/python-daemon/
             with daemon.DaemonContext(
@@ -289,10 +309,10 @@ please report it by opening an issue on the repository :
 
         if not os.path.exists(pid_file_path):
             if args.json:
-                self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
+                self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
 
             else:
-                self.__log_stdout("Server is already stopped", color=Colors.RED)
+                self._log("Server is already stopped", color=Colors.RED)
 
             return 0
 
@@ -300,7 +320,7 @@ please report it by opening an issue on the repository :
             os.kill(int(fd.read()), signal.SIGTERM)
 
         if args.json:
-            self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is stopped")
+            self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is stopped")
 
         return 0
 
@@ -320,10 +340,10 @@ please report it by opening an issue on the repository :
 
         if not os.path.exists(pid_file_path):
             if args.json:
-                self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
+                self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
 
             else:
-                self.__log_stdout("Server is already stopped")
+                self._log("Server is already stopped")
 
             return 0
 
@@ -337,7 +357,7 @@ please report it by opening an issue on the repository :
                 time.sleep(1)
 
         if args.json:
-            self.__log_json(LOG_JSON_STATUS_SUCCESS, "Server is started")
+            self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is started")
 
         with daemon.DaemonContext(
             uid=pwd.getpwnam(self.config_content["server"].get("user")).pw_uid,
@@ -403,7 +423,7 @@ please report it by opening an issue on the repository :
             )
 
             if args.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_SUCCESS,
                     "New access token created",
                     data={
@@ -413,15 +433,15 @@ please report it by opening an issue on the repository :
                 )
 
             else:
-                self.__log_stdout("New access token created", color=Colors.GREEN)
-                self.__log_stdout(f"Entry ID : {new_entry_tuple[0]}")
-                self.__log_stdout(f"Token : {new_entry_tuple[2]}")
+                self._log("New access token created", color=Colors.GREEN)
+                self._log(f"Entry ID : {new_entry_tuple[0]}")
+                self._log(f"Token : {new_entry_tuple[2]}")
 
         elif args.l:
             if args.json:
                 entry_list = access_token_manager.listEntries()
 
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_SUCCESS,
                     "Recorded entries ID",
                     data={"entry_list": entry_list},
@@ -433,24 +453,26 @@ please report it by opening an issue on the repository :
                     creation_timestamp,
                     enabled,
                 ) in access_token_manager.listEntries():
-                    self.__log_stdout(f"== Entry ID {entry_id} ==")
-                    self.__log_stdout(
+                    self._log(f"== Entry ID {entry_id} ==")
+                    self._log(
                         f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
                     )
-                    self.__log_stdout(f"  Enabled : {bool(enabled)}\n")
+                    self._log(f"  Enabled : {bool(enabled)}\n")
 
         else:
             if args.delete_entry:
                 if not access_token_manager.getEntry(args.delete_entry):
                     if args.json:
-                        self.__log_json(
+                        self._log_json(
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID {args.delete_entry} does not exists on database",
+                            error=True,
                         )
 
                     else:
-                        self.__log_stdout(
+                        self._log(
                             f"Entry ID {args.delete_entry} does not exists on database",
+                            error=True,
                             color=Colors.RED,
                         )
 
@@ -458,19 +480,21 @@ please report it by opening an issue on the repository :
                     access_token_manager.deleteEntry(args.delete_entry)
 
                     if args.json:
-                        self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
+                        self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
 
             elif args.enable_entry:
                 if not access_token_manager.getEntry(args.enable_entry):
                     if args.json:
-                        self.__log_json(
+                        self._log_json(
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID {args.enable_entry} does not exists on database",
+                            error=True,
                         )
 
                     else:
-                        self.__log_stdout(
+                        self._log(
                             f"Entry ID {args.enable_entry} does not exists on database",
+                            error=True,
                             color=Colors.RED,
                         )
 
@@ -479,21 +503,23 @@ please report it by opening an issue on the repository :
                 access_token_manager.enableEntry(args.enable_entry)
 
                 if args.json:
-                    self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
+                    self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
                     return 0
 
             else:
                 if args.disable_entry:
                     if not access_token_manager.getEntry(args.disable_entry):
                         if args.json:
-                            self.__log_json(
+                            self._log_json(
                                 LOG_JSON_STATUS_ERROR,
                                 f"Entry ID {args.disable_entry} does not exists on database",
+                                error=True,
                             )
 
                         else:
-                            self.__log_stdout(
+                            self._log(
                                 f"Entry ID {args.disable_entry} does not exists on database",
+                                error=True,
                                 color=Colors.RED,
                             )
 
@@ -502,9 +528,7 @@ please report it by opening an issue on the repository :
                     access_token_manager.disableEntry(args.disable_entry)
 
                     if args.json:
-                        self.__log_json(
-                            LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled"
-                        )
+                        self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled")
                         return 0
 
         access_token_manager.closeDatabase()
@@ -550,7 +574,7 @@ please report it by opening an issue on the repository :
             fd.write(new_rsa_wrapper.getPrivateKey().decode())
 
         if args.json:
-            self.__log_json(
+            self._log_json(
                 LOG_JSON_STATUS_SUCCESS,
                 "RSA keys re-generated",
                 data={
@@ -561,8 +585,8 @@ please report it by opening an issue on the repository :
             )
 
         else:
-            self.__log_stdout("RSA keys re-generated", color=Colors.GREEN)
-            self.__log_stdout(
+            self._log("RSA keys re-generated", color=Colors.GREEN)
+            self._log(
                 f"Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}"
             )
 
