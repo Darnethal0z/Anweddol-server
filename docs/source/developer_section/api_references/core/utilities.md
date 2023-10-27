@@ -25,7 +25,7 @@ Check if a port is bindable.
 >
 > `True` if the port is bindable, `False` otherwise.
 
-### Check is a network interface exists on system
+### Check if a network interface exists on system
 
 ```{function} anwdlserver.core.utilities.isInterfaceExists(interface_name)
 ```
@@ -63,7 +63,7 @@ Check if the username exists on the system.
 
 **Return value** : 
 
-> TYpe : bool
+> Type : bool
 >
 > `True` if the username exists, `False` otherwise.
 

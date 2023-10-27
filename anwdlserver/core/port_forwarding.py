@@ -9,8 +9,8 @@ communicate.
 
 """
 
-from subprocess import Popen, DEVNULL
 from typing import Union
+import subprocess
 import secrets
 import time
 
@@ -57,7 +57,7 @@ class ForwarderInstance:
     def getContainerDestinationPort(self) -> int:
         return self.container_destination_port
 
-    def getProcess(self) -> Popen:
+    def getProcess(self) -> subprocess.Popen:
         return self.process
 
     def setServerOriginPort(self, server_origin_port: int) -> None:
@@ -69,7 +69,7 @@ class ForwarderInstance:
     def setContainerDestinationPort(self, container_destination_port: int) -> None:
         self.container_destination_port = container_destination_port
 
-    def setProcess(self, process: Popen) -> None:
+    def setProcess(self, process: subprocess.Popen) -> None:
         self.process = process
 
     def startForward(self) -> None:
@@ -81,9 +81,13 @@ class ForwarderInstance:
             f"TCP-LISTEN:{self.server_origin_port},fork,reuseaddr",
             f"TCP:{self.container_ip}:{self.container_destination_port}",
         ]
-        kw_args = {"stdin": DEVNULL, "stdout": DEVNULL, "stderr": DEVNULL}
+        kw_args = {
+            "stdin": subprocess.DEVNULL,
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+        }
 
-        self.process = Popen(command_list, **kw_args, shell=False)
+        self.process = subprocess.Popen(command_list, **kw_args, shell=False)
 
     def stopForward(self) -> None:
         if not self.isForwarding():

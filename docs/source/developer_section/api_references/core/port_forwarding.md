@@ -294,7 +294,7 @@ Provides `ForwarderInstance` management features.
 
 ### General usage
 
-```{classmethod} getStoredForwarder(container_uuid: str)
+```{classmethod} getStoredForwarder(container_uuid)
 ```
 
 Get a stored forwarder.

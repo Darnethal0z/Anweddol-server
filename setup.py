@@ -6,24 +6,23 @@
     Server installation script
 
 """
+
 from subprocess import Popen, DEVNULL
 from setuptools import setup
 import shutil
 import os
 
 
-VERSION = "2.0.0"
-
-
-def executeCommand(command):
-    Popen(
-        command.split(" "), shell=False, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL
-    )
+VERSION = "2.1.1"
 
 
 def getReadmeContent():
     with open("README.md", "r") as fd:
         return fd.read()
+
+
+def executeCommand(command):
+    Popen(command.split(" "), shell=False, stdout=DEVNULL, stderr=DEVNULL)
 
 
 print("[SETUP] Checking operating system ...")
@@ -41,7 +40,7 @@ if os.geteuid() == 0:
     # Create the configuration file
     print("[SETUP (root)] Creating configuration file ...")
     if os.path.exists("/etc/anweddol/config.yaml"):
-        os.remove("/etc/anweddol/config.yaml")
+        shutil.copy("/etc/anweddol/config.yaml", "/etc/anweddol/config.yaml.old")
 
     shutil.copy(
         os.path.dirname(os.path.realpath(__file__)) + "/resources/config.yaml",
@@ -93,7 +92,12 @@ setup(
         "Topic :: System :: Emulators",
     ],
     license="GPL v3",
-    packages=["anwdlserver", "anwdlserver.core", "anwdlserver.tools"],
+    packages=[
+        "anwdlserver",  # Includes every CLI modules at the root of 'anwdlserver'
+        "anwdlserver.core",
+        "anwdlserver.tools",
+        "anwdlserver.web",
+    ],
     install_requires=[
         "cryptography",
         "paramiko",
@@ -103,9 +107,14 @@ setup(
         "sqlalchemy",
         "pyyaml",
         "psutil",
+        "twisted",
+        "service_identity",
+        "pyOpenSSL",
     ],
     include_package_data=True,
     entry_points={
-        "console_scripts": ["anwdlserver = anwdlserver.cli:MainAnweddolServerCLI"],
+        "console_scripts": [
+            "anwdlserver = anwdlserver.cli:MainAnweddolServerCLI",
+        ],
     },
 )

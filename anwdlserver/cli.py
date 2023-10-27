@@ -13,7 +13,6 @@ import argparse
 import hashlib
 import daemon
 import signal
-import shutil
 import time
 import json
 import pwd
@@ -22,12 +21,12 @@ import os
 
 # Intern importation
 from .core.crypto import RSAWrapper, DEFAULT_RSA_KEY_SIZE
-from .core.utilities import isPortBindable
+from .core.utilities import isPortBindable, isInterfaceExists, isUserExists
 from .tools.access_token import AccessTokenManager
 
-from .utilities import createFileRecursively, checkServerEnvironment, Colors
+from .utilities import createFileRecursively, Colors
 from .config import loadConfigurationFileContent
-from .process import launchServerProcess
+from .process import launchServerProcess, SERVER_TYPE_CLASSIC, SERVER_TYPE_WEB
 from .__init__ import __version__
 
 # Constants definition
@@ -52,7 +51,6 @@ class MainAnweddolServerCLI:
 server lifecycle commands:
   start       start the server
   stop        stop the server
-  restart     restart the server
 
 server management commands:
   access-tk   manage access tokens
@@ -71,20 +69,20 @@ please report it by opening an issue on the repository :
 
         try:
             if not os.path.exists(CONFIG_FILE_PATH):
-                shutil.copy(
-                    f"{os.path.dirname(__file__)}/resources/config.yaml",
-                    CONFIG_FILE_PATH,
+                raise FileNotFoundError(
+                    f"The configuration file {CONFIG_FILE_PATH} was not found"
                 )
 
-            self.config_content = loadConfigurationFileContent(CONFIG_FILE_PATH)
-
-            if not self.config_content[0]:
+            is_config_content_valid, config_document = loadConfigurationFileContent(
+                CONFIG_FILE_PATH
+            )
+            if not is_config_content_valid:
                 raise ValueError(
-                    f"Configuration file is invalid : \n{json.dumps(self.config_content[1], indent=4)}"
+                    f"Configuration file is invalid : \n{json.dumps(config_document, indent=4)}"
                 )
                 exit(-1)
 
-            self.config_content = self.config_content[1]
+            self.config_content = config_document
 
             exit(getattr(self, args.command.replace("-", "_"))())
 
@@ -107,15 +105,54 @@ please report it by opening an issue on the repository :
 
             exit(-1)
 
-    def _log(self, message, bypass=False, color=None, end="\n", error=False):
-        if not bypass:
-            print(
-                f"{color}{message}\033[0;0m" if color else message,
-                end=end,
-                file=sys.stderr if error else sys.stdout,
+    def _check_server_environment(
+        self, server_type=SERVER_TYPE_CLASSIC, server_config_key_name="server"
+    ):
+        container_iso_file_path = self.config_content["container"].get(
+            "container_iso_file_path"
+        )
+        nat_interface_name = self.config_content["container"].get("nat_interface_name")
+        listen_port = self.config_content[server_config_key_name].get("listen_port")
+        user = self.config_content[server_config_key_name].get("user")
+        errors_list = []
+
+        if not isPortBindable(listen_port):
+            errors_list.append(f"Port {listen_port} is not bindable")
+
+        if not isInterfaceExists(nat_interface_name):
+            errors_list.append(
+                f"Interface '{nat_interface_name}' does not exists on system"
             )
 
-    def _log_json(self, status, message, data={}, error=False):
+        if not isUserExists(user):
+            errors_list.append(f"User '{user}' does not exists on system")
+
+        if not os.path.exists(container_iso_file_path):
+            errors_list.append(f"{container_iso_file_path} was not found on system")
+
+        if server_type == SERVER_TYPE_WEB and self.config_content["web_server"].get(
+            "enable_ssl"
+        ):
+            for path in [
+                self.config_content["web_server"].get("ssl_pem_private_key_file_path"),
+                self.config_content["web_server"].get("ssl_pem_certificate_file_path"),
+            ]:
+                if not os.path.exists(path):
+                    errors_list.append(f"{path} was not found on system")
+
+        return errors_list
+
+    def _log(self, message, bypass=False, color=None, end="\n", error=False):
+        if bypass:
+            return
+
+        print(
+            f"{color}{message}\033[0;0m" if color else message,
+            end=end,
+            file=sys.stderr if error else sys.stdout,
+        )
+
+    def _log_json(self, status, message, bypass=False, data={}, error=False):
         print(
             json.dumps({"status": status, "message": message, "data": data}),
             file=sys.stderr if error else sys.stdout,
@@ -139,7 +176,7 @@ please report it by opening an issue on the repository :
         )
         parser.add_argument(
             "--classic",
-            help="run the classic server (the default option)",
+            help="run the classic version of the server (the default option)",
             action="store_true",
         )
         parser.add_argument(
@@ -153,16 +190,18 @@ please report it by opening an issue on the repository :
         )
         parser.add_argument(
             "--enable-stdout-log",
-            help="display logs in stdout",
+            help="display logs in stdout during server run time",
             action="store_true",
         )
         parser.add_argument(
             "--enable-traceback-log",
-            help="enable full tracebacks display in logs (for debug)",
+            help="display full tracebacks display in logs during server run time (for debug)",
             action="store_true",
         )
         parser.add_argument(
-            "--skip-check", help="skip environment validity check", action="store_true"
+            "--skip-check",
+            help="skip server environment validity check",
+            action="store_true",
         )
         parser.add_argument(
             "--json", help="print output in JSON format", action="store_true"
@@ -171,8 +210,23 @@ please report it by opening an issue on the repository :
 
         self.json = args.json
 
+        start_timestamp = 0
+        elapsed_time = 0
+        server_type = (
+            SERVER_TYPE_CLASSIC if args.classic or not args.web else SERVER_TYPE_WEB
+        )
+        server_config_key_name = (
+            "server" if server_type == SERVER_TYPE_CLASSIC else "web_server"
+        )
+        server_user = self.config_content[server_config_key_name].get("user")
+        server_pid_file_path = self.config_content[server_config_key_name].get(
+            "pid_file_path"
+        )
+
         if not args.skip_check:
-            check_result_list = checkServerEnvironment(self.config_content)
+            check_result_list = self._check_server_environment(
+                server_type=server_type, server_config_key_name=server_config_key_name
+            )
 
             if args.c:
                 if args.json:
@@ -211,8 +265,6 @@ please report it by opening an issue on the repository :
                         error=True,
                     )
 
-                    return -1
-
                 else:
                     self._log(
                         "Server environment is invalid : ", color=Colors.RED, error=True
@@ -221,17 +273,15 @@ please report it by opening an issue on the repository :
                     for error in check_result_list:
                         self._log(f"- {error}", error=True)
 
-                    self._log("", error=True)
+                return -1
 
-                    raise EnvironmentError(
-                        f"{len(check_result_list)} error(s) detected on server environment"
-                    )
+                # raise EnvironmentError(
+                #     f"{len(check_result_list)} error(s) detected on server environment"
+                # )
 
-        pid_file_path = self.config_content["server"].get("pid_file_path")
-
-        if os.path.exists(pid_file_path):
+        if os.path.exists(server_pid_file_path):
             self._log(
-                f"A PID file already exists on {pid_file_path}",
+                f"The PID file {server_pid_file_path} already exists",
                 bypass=args.json,
                 color=Colors.YELLOW,
             )
@@ -242,32 +292,37 @@ please report it by opening an issue on the repository :
             )
 
             if choice == "y":
-                with open(pid_file_path, "r") as fd:
-                    os.kill(int(fd.read()), signal.SIGTERM)
+                with open(server_pid_file_path, "r") as fd:
+                    try:
+                        os.kill(int(fd.read()), signal.SIGTERM)
 
+                    except ProcessLookupError:
+                        pass
+
+                # Check if the previous server process is correctly stopped by
+                # checking the availability of the listen port.
                 while 1:
-                    if isPortBindable(self.config_content["server"].get("listen_port")):
+                    if isPortBindable(
+                        self.config_content[server_config_key_name].get("listen_port")
+                    ):
                         break
 
                     time.sleep(1)
 
-            self._log("", bypass=args.json)
-
         if args.d:
             if args.json:
-                if args.enable_stdout_log:
-                    self._log_json(
-                        LOG_JSON_STATUS_SUCCESS,
-                        "Direct execution mode enabled, use CTRL+C to stop the server.",
-                    )
+                self._log_json(
+                    LOG_JSON_STATUS_SUCCESS,
+                    "Server is starting (direct mode enabled)",
+                )
 
             else:
-                if args.enable_stdout_log:
-                    self._log(
-                        "Direct execution mode enabled, use CTRL+C to stop the server.\n",
-                    )
+                self._log("Starting server (direct mode enabled) ...")
+
+            start_timestamp = int(time.time())
 
             launchServerProcess(
+                server_type,
                 self.config_content,
                 enable_stdout_log=args.enable_stdout_log,
                 enable_traceback_on_log=args.enable_traceback_log,
@@ -281,15 +336,30 @@ please report it by opening an issue on the repository :
                 )
 
             else:
-                self._log("Server is starting")
+                self._log("Starting server ...")
+
+            start_timestamp = int(time.time())
 
             # https://pypi.org/project/python-daemon/
             with daemon.DaemonContext(
-                uid=pwd.getpwnam(self.config_content["server"].get("user")).pw_uid,
-                gid=pwd.getpwnam(self.config_content["server"].get("user")).pw_gid,
-                pidfile=daemon.pidfile.PIDLockFile(pid_file_path),
+                uid=pwd.getpwnam(server_user).pw_uid,
+                gid=pwd.getpwnam(server_user).pw_gid,
+                pidfile=daemon.pidfile.PIDLockFile(server_pid_file_path),
             ):
-                launchServerProcess(self.config_content)
+                launchServerProcess(server_type, self.config_content)
+
+        elapsed_time = int(time.time()) - start_timestamp
+
+        if args.json:
+            self._log_json(
+                LOG_JSON_STATUS_SUCCESS,
+                "Server process ended",
+                data={"elapsed_time": elapsed_time},
+            )
+
+        else:
+            self._log("Server process ended", color=Colors.GREEN)
+            self._log(f"  Elapsed time : {elapsed_time} seconds")
 
         return 0
 
@@ -305,66 +375,51 @@ please report it by opening an issue on the repository :
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
-        pid_file_path = self.config_content["server"].get("pid_file_path")
 
-        if not os.path.exists(pid_file_path):
+        old_server_process_pid = None
+
+        for pid_file_path in [
+            self.config_content["server"].get("pid_file_path"),
+            self.config_content["web_server"].get("pid_file_path"),
+        ]:
+            if not os.path.exists(pid_file_path):
+                continue
+
+            with open(pid_file_path, "r") as fd:
+                old_server_process_pid = int(fd.read())
+
+            try:
+                os.kill(old_server_process_pid, signal.SIGTERM)
+
+            except ProcessLookupError:
+                pass
+
+            # Stop the loop at the first PID file found
+            break
+
+        if not old_server_process_pid:
             if args.json:
-                self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
+                self._log_json(
+                    LOG_JSON_STATUS_ERROR, "No PID file were found", error=True
+                )
 
             else:
-                self._log("Server is already stopped", color=Colors.RED)
+                self._log("No PID file were found", error=True, color=Colors.RED)
 
-            return 0
-
-        with open(pid_file_path, "r") as fd:
-            os.kill(int(fd.read()), signal.SIGTERM)
+            return -1
 
         if args.json:
-            self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is stopped")
+            self._log_json(
+                LOG_JSON_STATUS_SUCCESS,
+                "Server was stopped",
+                data={"old_server_process_pid": old_server_process_pid},
+            )
 
-        return 0
-
-    def restart(self):
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            description="| Restart the server",
-            usage=f"{sys.argv[0]} restart [OPT]",
-        )
-        parser.add_argument(
-            "--json", help="print output in JSON format", action="store_true"
-        )
-        args = parser.parse_args(sys.argv[2:])
-
-        self.json = args.json
-        pid_file_path = self.config_content["server"].get("pid_file_path")
-
-        if not os.path.exists(pid_file_path):
-            if args.json:
-                self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is already stopped")
-
-            else:
-                self._log("Server is already stopped")
-
-            return 0
-
-        with open(pid_file_path, "r") as fd:
-            os.kill(int(fd.read()), signal.SIGTERM)
-
-            while 1:
-                if isPortBindable(self.config_content["server"].get("listen_port")):
-                    break
-
-                time.sleep(1)
-
-        if args.json:
-            self._log_json(LOG_JSON_STATUS_SUCCESS, "Server is started")
-
-        with daemon.DaemonContext(
-            uid=pwd.getpwnam(self.config_content["server"].get("user")).pw_uid,
-            gid=pwd.getpwnam(self.config_content["server"].get("user")).pw_gid,
-            pidfile=daemon.pidfile.PIDLockFile(pid_file_path),
-        ):
-            launchServerProcess(self.config_content)
+        else:
+            self._log(
+                f"Process with PID {old_server_process_pid} was stopped",
+                color=Colors.GREEN,
+            )
 
         return 0
 
@@ -418,7 +473,7 @@ please report it by opening an issue on the repository :
         access_token_manager = AccessTokenManager(access_token_database_file_path)
 
         if args.a:
-            new_entry_tuple = access_token_manager.addEntry(
+            entry_id, _, access_token = access_token_manager.addEntry(
                 disable=True if args.disabled else False
             )
 
@@ -427,15 +482,15 @@ please report it by opening an issue on the repository :
                     LOG_JSON_STATUS_SUCCESS,
                     "New access token created",
                     data={
-                        "entry_id": new_entry_tuple[0],
-                        "access_token": new_entry_tuple[2],
+                        "entry_id": access_token,
+                        "access_token": access_token,
                     },
                 )
 
             else:
                 self._log("New access token created", color=Colors.GREEN)
-                self._log(f"Entry ID : {new_entry_tuple[0]}")
-                self._log(f"Token : {new_entry_tuple[2]}")
+                self._log(f"Entry ID : {access_token}")
+                self._log(f"Token : {access_token}")
 
         elif args.l:
             if args.json:
@@ -498,13 +553,11 @@ please report it by opening an issue on the repository :
                             color=Colors.RED,
                         )
 
-                    return 0
+                else:
+                    access_token_manager.enableEntry(args.enable_entry)
 
-                access_token_manager.enableEntry(args.enable_entry)
-
-                if args.json:
-                    self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
-                    return 0
+                    if args.json:
+                        self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
 
             else:
                 if args.disable_entry:
@@ -523,15 +576,16 @@ please report it by opening an issue on the repository :
                                 color=Colors.RED,
                             )
 
-                        return 0
+                    else:
+                        access_token_manager.disableEntry(args.disable_entry)
 
-                    access_token_manager.disableEntry(args.disable_entry)
-
-                    if args.json:
-                        self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled")
-                        return 0
+                        if args.json:
+                            self._log_json(
+                                LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled"
+                            )
 
         access_token_manager.closeDatabase()
+
         return 0
 
     def regen_rsa(self):

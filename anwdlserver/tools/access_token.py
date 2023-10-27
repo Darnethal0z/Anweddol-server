@@ -75,26 +75,18 @@ class AccessTokenManager:
         return query_cursor.fetchone()
 
     def addEntry(self, disable: bool = DEFAULT_DISABLE_TOKEN) -> tuple:
-        # Now i know why
-        # "The text is Base64 encoded, so on average each byte results in approximately 1.3 characters"
-        # (https://docs.python.org/3/library/secrets.html#secrets.token_urlsafe)
+        # Generate 124 url-safe characters token
         new_auth_token = secrets.token_urlsafe(93)
         new_entry_creation_timestamp = int(time.time())
 
-        try:
-            self.database_cursor.execute(
-                "INSERT INTO AnweddolServerAccessTokenTable (CreationTimestamp, AccessToken, Enabled) VALUES (?, ?, ?)",
-                (
-                    new_entry_creation_timestamp,
-                    hashlib.sha256(new_auth_token.encode()).hexdigest(),
-                    1 if not disable else 0,
-                ),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "INSERT INTO AnweddolServerAccessTokenTable (CreationTimestamp, AccessToken, Enabled) VALUES (?, ?, ?)",
+            (
+                new_entry_creation_timestamp,
+                hashlib.sha256(new_auth_token.encode()).hexdigest(),
+                1 if not disable else 0,
+            ),
+        )
 
         return (
             self.database_cursor.lastrowid,
@@ -102,54 +94,40 @@ class AccessTokenManager:
             new_auth_token,
         )
 
+    def executeQuery(self, text_query: str, parameters: tuple = ()) -> sqlite3.Cursor:
+        return self.database_cursor.execute(text_query, parameters)
+
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, Enabled from AnweddolServerAccessTokenTable",
+            "SELECT EntryID, CreationTimestamp, Eqnabled from AnweddolServerAccessTokenTable",
         )
 
         return query_cursor.fetchall()
 
     def enableEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "UPDATE AnweddolServerAccessTokenTable SET Enabled=1 WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "UPDATE AnweddolServerAccessTokenTable SET Enabled=1 WHERE EntryID=?",
+            (entry_id,),
+        )
 
     def disableEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "UPDATE AnweddolServerAccessTokenTable SET Enabled=0 WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "UPDATE AnweddolServerAccessTokenTable SET Enabled=0 WHERE EntryID=?",
+            (entry_id,),
+        )
 
     def deleteEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "DELETE from AnweddolServerAccessTokenTable WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "DELETE from AnweddolServerAccessTokenTable WHERE EntryID=?",
+            (entry_id,),
+        )
 
     def closeDatabase(self) -> None:
         try:
             self.database_cursor.close()
             self.database_connection.close()
-            self.is_closed = True
 
         except sqlite3.ProgrammingError:
             pass
+
+        self.is_closed = True

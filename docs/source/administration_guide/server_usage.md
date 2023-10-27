@@ -52,6 +52,16 @@ Instead, you can start it with the terminal just by adding the `--web` flag to t
 $ sudo anwdlserver start --web
 ```
 
+```{tip}
+If you need a private key and a certificate to use, you can generate them with `openssl` :
+
+`$ openssl req -newkey rsa:4096 -nodes -keyout private_key.pem -x509 -days 365 -out certificate.pem`
+
+This command generates a 4096-bit private key and a self-signed certificate. Answer the questions and set the `ssl_pem_private_key_file_path` configuration file key with the `private_key.pem` file path, and the `ssl_pem_certificate_file_path` configuration file key with the `certificate.pem` file path.
+
+([source](https://www.digitalocean.com/community/tutorials/openssl-essentials-working-with-ssl-certificates-private-keys-and-csrs))
+```
+
 ## Stop the server
 
 Stop the server via the systemd daemon : 

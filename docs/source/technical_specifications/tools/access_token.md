@@ -18,7 +18,9 @@ This feature is using a SQLite file to store data.
 
 ### Table representation
 
-Here is a representation of the used SQL table :
+The table used for databse instance is `AnweddolServerAccessTokenTable`.
+
+Here is its representation :
 
 | EntryID                        | CreationTimestamp   | AccessToken     | Enabled            |
 |------------------------------- | ------------------- | --------------- | ------------------ |

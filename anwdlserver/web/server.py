@@ -30,6 +30,7 @@ from ..core.server import (
     EVENT_REQUEST,
     EVENT_UNHANDLED_VERB,
     EVENT_MALFORMED_REQUEST,
+    EVENT_CONTAINER_DOMAIN_STOPPED,
     CONTEXT_NORMAL_PROCESS,
     CONTEXT_ERROR,
     REQUEST_VERB_CREATE,
@@ -80,7 +81,6 @@ class WebServerInterface(ServerInterface, resource.Resource):
         self.ssl_pem_private_key_file_path = ssl_pem_private_key_file_path
         self.ssl_pem_certificate_file_path = ssl_pem_certificate_file_path
 
-        # request_handler_dict redefinition from ServerInterface
         self.request_handler_dict = {
             "": self._handle_home_from_http,  # If no verb is specified, return home data
             REQUEST_VERB_CREATE: self._handle_create_request_from_http,
@@ -99,15 +99,19 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
     def _handle_error(
         self,
-        error=None,
+        exception_object=None,
         event=EVENT_RUNTIME_ERROR,
         message=RESPONSE_MSG_INTERNAL_ERROR,
         data={},
     ):
-        result_data = {"traceback": error} if error else {}
-        result_data.update(data)
-
-        result = self._execute_event_handler(event, CONTEXT_ERROR, data=result_data)
+        traceback = (
+            self._format_traceback(exception_object) if exception_object else message
+        )
+        result = self._execute_event_handler(
+            event,
+            CONTEXT_ERROR,
+            data={"exception_object": exception_object, "traceback": traceback} | data,
+        )
 
         if not result:
             result = makeResponse(False, message)[1]
@@ -117,7 +121,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
     def _handle_home_from_http(self, request):
         return makeResponse(
             True,
-            "Hello and welcome to this Anweddol server REST API. This server provides temporary, SSH-controllable virtual machines to enhance anonymity online.",
+            "Hello and welcome to this Anweddol server HTTP REST API. This server provides temporary, SSH-controllable virtual machines to enhance anonymity online.",
             data={
                 "links": [
                     "https://the-anweddol-project.github.io/",
@@ -129,16 +133,14 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
     def _handle_stat_request_from_http(self, request):
         try:
-            return self._handle_stat_request(passive_execution=True)
+            return self._handle_stat_request(passive_execution=True, request=request)
 
         except Exception as E:
-            return self._handle_error(
-                self._format_traceback(E), data={"request": request}
-            )
+            return self._handle_error(E, data={"request": request})
 
     def _handle_create_request_from_http(self, request):
         # Errors are already handled inside _handle_create_request
-        return self._handle_create_request(passive_execution=True)
+        return self._handle_create_request(passive_execution=True, request=request)
 
     def _handle_destroy_request_from_http(self, request):
         try:
@@ -151,23 +153,24 @@ class WebServerInterface(ServerInterface, resource.Resource):
                     event=EVENT_MALFORMED_REQUEST, message=RESPONSE_MSG_BAD_REQ
                 )
 
-            # Authentication errors are already handled inside _handle_destroy_request
+            # Authentication related errors are handled inside _handle_destroy_request
             return self._handle_destroy_request(
                 passive_execution=True,
                 credentials_dict={
                     "container_uuid": container_uuid,
                     "client_token": client_token,
                 },
+                request=request,
             )
 
         except Exception as E:
-            return self._handle_error(
-                self._format_traceback(E), data={"request": request}
-            )
+            return self._handle_error(E, data={"request": request})
 
     def _handle_http_request(self, request):
+        verb = None
+
         try:
-            # Extract and transform the verb into upper case
+            # Extract and transform the request verb into upper case
             verb = request.postpath[-1].decode().upper()
             result = self._execute_event_handler(
                 EVENT_REQUEST,
@@ -182,26 +185,62 @@ class WebServerInterface(ServerInterface, resource.Resource):
             # would be allowed on the server.
             if len(request.postpath) > 1:
                 return self._handle_error(
-                    event=EVENT_MALFORMED_REQUEST, message=RESPONSE_MSG_BAD_REQ
+                    event=EVENT_MALFORMED_REQUEST,
+                    message=RESPONSE_MSG_BAD_REQ,
+                    data={"verb": verb, "request": request},
                 )
 
             if not self.request_handler_dict.get(verb):
                 return self._handle_error(
-                    event=EVENT_UNHANDLED_VERB, message=RESPONSE_MSG_BAD_REQ
+                    event=EVENT_UNHANDLED_VERB,
+                    message=RESPONSE_MSG_BAD_REQ,
+                    data={"verb": verb, "request": request},
                 )
 
-            return self.request_handler_dict[verb](request)
+            return self.request_handler_dict[verb](request=request)
 
         except Exception as E:
-            return self._handle_error(self._format_traceback(E))
+            return self._handle_error(E, data={"verb": verb, "request": request})
 
-    def _pre_handle_http_request(self, request):
+    def _create_deferred_http_request_handle(self, request):
         def end(result, request):
-            request.write(json.dumps(result).encode("utf8"))
-            request.finish()
+            try:
+                request.write(json.dumps(result).encode("utf8"))
+                request.finish()
+
+            except Exception as E:
+                container_uuid = result["data"].get("container_uuid")
+
+                if container_uuid:
+                    container_instance = (
+                        self.virtualization_interface.getStoredContainer(container_uuid)
+                    )
+
+                    if container_instance.isDomainRunning():
+                        container_instance.stopDomain()
+
+                        if (
+                            self._execute_event_handler(
+                                EVENT_CONTAINER_DOMAIN_STOPPED,
+                                CONTEXT_ERROR,
+                                data={
+                                    "verb": REQUEST_VERB_CREATE,
+                                    "request": request,
+                                    "container_instance": container_instance,
+                                },
+                            )
+                            == -1
+                        ):
+                            return
+
+                    self._delete_container(container_instance)
+
+                self._handle_error(
+                    E, data={"verb": REQUEST_VERB_CREATE, "request": request}
+                )
 
         def err(failure):
-            self._handle_error(data={"failure": failure})
+            return self._handle_error(data={"failure": failure})
             # return failure
 
         request.setHeader(b"content-type", b"application/json")
@@ -215,7 +254,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
     def _start_server(self):
         def process(reactor, *args):
             try:
-                reactor.addSystemEventTrigger("before", "shutdown", self._stop_server)
+                # reactor.addSystemEventTrigger("before", "shutdown", self._stop_server)
 
                 if self.enable_ssl:
                     reactor.listenSSL(
@@ -243,13 +282,13 @@ class WebServerInterface(ServerInterface, resource.Resource):
                 )
 
             except Exception as E:
-                self._handle_error(self._format_traceback(E))
+                raise E
 
             return defer.Deferred()
 
         task.react(process)
 
-    def _stop_server(self, raise_errors=False, die_on_error=False):
+    def _stop_server(self, die_on_error=False):
         try:
             self._delete_all_containers()
             self.database_interface.closeDatabase()
@@ -268,19 +307,16 @@ class WebServerInterface(ServerInterface, resource.Resource):
             self._execute_event_handler(EVENT_SERVER_STOPPED, CONTEXT_NORMAL_PROCESS)
 
         except Exception as E:
-            if raise_errors:
-                raise E
-
-            self._handle_error(self._format_traceback(E))
-
             if die_on_error:
                 exit(0xDEAD)
 
+            raise E
+
     def render_POST(self, request):
-        return self._pre_handle_http_request(request)
+        return self._create_deferred_http_request_handle(request)
 
     def render_GET(self, request):
-        return self._pre_handle_http_request(request)
+        return self._create_deferred_http_request_handle(request)
 
     def executeRequestHandler(
         self,
@@ -290,4 +326,4 @@ class WebServerInterface(ServerInterface, resource.Resource):
         if not self.request_handler_dict.get(verb):
             raise RuntimeError(f"The verb '{verb}' is not handled")
 
-        return self.request_handler_dict[verb](request)
+        return self.request_handler_dict[verb](request=request)

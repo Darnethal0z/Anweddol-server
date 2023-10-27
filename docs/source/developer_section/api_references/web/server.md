@@ -141,6 +141,10 @@ This method is a redefinition of the `ServerInterface` `executeRequestHandler` m
 
 Since the client system changes for this class, some of the initials event decorators behaviours from `ServerInterface` was modified.
 
+```{warning}
+Note that every others event handlers passing `ClientInstance` objects in the `data` parameter will be set to `None`. In addition to this, the [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html) object and the request verb will be passed instead, as `request` and `verb` parameters respectively.
+```
+
 #### Modified decorators references
 
 ```{note}
@@ -227,3 +231,18 @@ There decorators below will not be used during `RESTWebServerInterface` run time
 - `@ServerInterface.on_client_initialized`
 - `@ServerInterface.on_client_closed`
 - `@ServerInterface.on_connection_accepted`
+
+### Undocumented methods
+
+- `_extract_post_request_args_values(request_args)`
+- `_handle_error(exception_object=None, event=EVENT_RUNTIME_ERROR, message=RESPONSE_MSG_INTERNAL_ERROR, data={})`
+- `_handle_home_from_http(request)`
+- `_handle_stat_request_from_http(request)`
+- `_handle_create_request_from_http(request)`
+- `_handle_destroy_request_from_http(request)`
+- `_handle_http_request(request)`
+- `_create_deferred_http_request_handle(request)`
+- `_start_server()`
+- `_stop_server(die_on_error=False)`
+- `render_POST(request)`
+- `render_GET(request)`

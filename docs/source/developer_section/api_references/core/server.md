@@ -15,6 +15,7 @@ Constant name                   | Value   | Definition
 *DEFAULT_CLIENT_TIMEOUT*        | 10      | The default client timeout.
 *DEFAULT_DIE_ON_ERROR*          | `False` | Exit with the `0xDEAD` code if an error occured or not.
 *DEFAULT_PASSIVE_MODE*          | `False` | Initialize the server in passive mode or not.
+*DEFAULT_ASYNCHRONOUS*          | `False` | Handle the client asynchronoursly or not.
 
 ### Request constants
 
@@ -524,7 +525,28 @@ This method is automatically called within the `__del__` method, but it is progr
 
 ### Manual handler execution
 
-```{classmethod} executeRequestHandler(verb, client_instance, data)
+```{classmethod} handleClient(client_instance, asynchronous)
+```
+
+Handle a client.
+
+**Parameters** :
+
+> ```{attribute} client_instance
+> Type : `ClientInstance`
+> 
+> The `ClientInstance` object representing the client to handle.
+> ```
+
+> ```{attribute} passive_mode
+> Type : bool
+> 
+> Initialize the server as passive or not (see below).
+> ```
+
+---
+
+```{classmethod} executeRequestHandler(verb, client_instance, data, **kwargs)
 ```
 
 Execute a request handler.
@@ -561,6 +583,11 @@ Execute a request handler.
 > The data dictionary to pass to handlers. Default is an empty dict.
 > ```
 
+> ```{attribute} **kwargs
+> 
+> A dictionary for keywords arguments to pass in the request handler function.
+> ```
+
 **Return value** : 
 
 > Type : dict
@@ -569,6 +596,8 @@ Execute a request handler.
 
 ```{note}
 The parameter `data` must be set with appropriate credentials for `DESTROY` requests.
+
+If the `**kwargs` dictionary is set, its content will be available in every relevant event handlers parameter, in the `data` parameter.
 ```
 
 ```{tip}
@@ -1236,9 +1265,9 @@ Called when the server has received a request containing an unhandled verb.
 - `_delete_container_on_domain_shutdown_routine()`
 - `_delete_all_containers()`
 - `_start_server()`
-- `_stop_server(raise_errors=False, die_on_error=False)`
-- `_handle_create_request(client_instance=None, passive_execution=False, **void_kwargs)`
-- `_handle_destroy_request(client_instance=None, passive_execution=False, credentials_dict={}, **void_kwargs)`
-- `_handle_stat_request(client_instance=None, passive_execution=False, **void_kwargs)`
+- `_stop_server(die_on_error=False)`
+- `_handle_create_request(client_instance=None, passive_execution=False, **kwargs)`
+- `_handle_destroy_request(client_instance=None, passive_execution=False, credentials_dict={}, **kwargs)`
+- `_handle_stat_request(client_instance=None, passive_execution=False, **kwargs)`
 - `_handle_new_client(client_instance)`
 - `_main_server_loop_routine()`

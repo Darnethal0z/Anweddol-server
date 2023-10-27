@@ -178,7 +178,7 @@ maxdepth: 3
 includehidden:
 ---
 
-api_references/tools/accesstk
+api_references/tools/access_token
 ```
 
 ### Web features

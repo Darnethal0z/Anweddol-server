@@ -16,7 +16,7 @@ Provides an [SQLAlchemy](../../../technical_specifications/core/database.md) mem
 > None.
 
 ```{note}
-The database and its engine will be closed with the `closeDatabase()` method on `__del__` method. Also, queries implying modifications on the database are automatically committed, and rollbacks are called if an error occured.
+The database and its engine will be closed with the `closeDatabase` method on `__del__` method. Also, queries implying modifications on the database are automatically committed, and rollbacks are called if an error occured (except for `executeQuery`).
 ```
 
 ### General usage
@@ -94,20 +94,20 @@ This method is automatically called within the `__del__` method.
 ```{classmethod} getEntryID(container_uuid, client_token)
 ```
 
-Get the credentials pair entry ID (see Additional note).
+Get the credentials pair entry ID (see the note).
 
 **Parameters** :
 
 > ```{attribute} container_uuid
 > Type : str
 > 
-> The clear [container UUID](../../../technical_specifications/core/client_authentication.md).
+> The clear [container UUID](../../../technical_specifications/core/client_authentication.md) to search for.
 > ```
 
 > ```{attribute} client_token
 > Type : str
 > 
-> The clear [client token](../../../technical_specifications/core/client_authentication.md).
+> The clear [client token](../../../technical_specifications/core/client_authentication.md) to search for.
 > ```
 
 **Return value** : 
@@ -132,7 +132,7 @@ Get the entry ID of a specific container UUID.
 > ```{attribute} container_uuid
 > Type : str
 > 
-> The container UUID to search for. It can be a [container UUID](../../../technical_specifications/core/client_authentication.md) or a [client token](../../../technical_specifications/core/client_authentication.md).
+> The [container UUID](../../../technical_specifications/core/client_authentication.md) to search for.
 > ```
 
 **Return value** : 
@@ -350,3 +350,44 @@ Delete an entry.
 **Return value** : 
 
 > `None`.
+
+---
+
+```{classmethod} executeQuery(text_query, bind_parameters, columns_parameters)
+```
+
+Execute a custom SQL query on the database instance.
+
+**Parameters** :
+
+> ```{attribute} text_query
+> Type : str
+> 
+> The custom SQL query to execute.
+> ```
+
+> ```{attribute} bind_parameters
+> Type : dict
+> 
+> A dictionary representing the bound parameters to use with the query, with keys as keywords and values as actual parameters values (See the tip below to learn more).
+> ```
+
+> ```{attribute} columns_parameters
+> Type : dict
+> 
+> A dictionary representing the columns parameters to use with the query, with keys as column names and values as column types (See the tip below to learn more).
+> ```
+
+**Return value** : 
+
+> The [`sqlalchemy.engine.CursorResult`](https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.CursorResult) object representing the SQL query result.
+
+```{tip}
+If you want to use bound parameters with this method or learn more about how parameters should be used with the method, refer to the SQLAlchemy [sqlalchemy.sql.expression.text](https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.text) documentation.
+
+You may also want to refer to the [technical specifications](../../../technical_specifications/core/database.md) to learn about table and columns name.
+```
+
+```{warning}
+Make sure to follow every security notices specified in the [technical specifications](../../../technical_specifications/core/database.md) before using this method. Note that you have a direct access to the database, which can be dangerous if some untrusted dwarven oil is inadvertently mixed in.
+```

@@ -10,7 +10,9 @@ See the [SQLAlchemy website](https://www.sqlalchemy.org/) to learn more.
 
 ## Table representation
 
-Here is a representation of the SQL table used during the server run time :
+The table used for databse instance is `AnweddolServerSessionCredentialsTable`.
+
+Here is its representation :
 
 | EntryID               | CreationTimestamp | ContainerUUID | ClientToken   |
 | --------------------- | ----------------- | ------------- | ------------- |

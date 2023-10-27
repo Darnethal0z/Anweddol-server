@@ -34,8 +34,12 @@ This class provides [RSA encryption](https://en.wikipedia.org/wiki/RSA_(cryptosy
 > `True` to generate RSA key pair on initialization, `False` otherwise. Default is `True`.
 > ```
 
+```{tip}
+Since RSA key pair generation can be a time consuming operation, you have the possibility to ignore it at class initialization, and generate them later with the `generateKeyPair` method below.
+```
+
 ```{note}
-When the parameter `generate_key_pair` is set to `True`, a key pair will be generated with the default parameters (see `generateKeyPair()` method definition below).
+When the parameter `generate_key_pair` is set to `True`, a key pair will be generated with the default parameters (see `generateKeyPair` method definition below).
 ```
 
 ### General usage

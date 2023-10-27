@@ -68,7 +68,7 @@ server:
 web_server:
 
   # Web server log file path.
-  log_file_path: /var/log/anweddol/web.txt
+  log_file_path: /var/log/anweddol/web_server.txt
 
   # PID file path for server daemon process.
   pid_file_path: /etc/anweddol/web_server_daemon.pid

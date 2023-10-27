@@ -9,8 +9,16 @@ used for run time credentials storage only.
 
 """
 
-from sqlalchemy import select, create_engine, MetaData, Table, Column
-from sqlalchemy import Integer, String
+from sqlalchemy import (
+    select,
+    create_engine,
+    text,
+    MetaData,
+    Table,
+    Column,
+    Integer,
+    String,
+)
 from typing import Union
 import sqlalchemy
 import secrets
@@ -108,25 +116,28 @@ class DatabaseInterface:
         # that somewhat manages to generate 255 url-safe characters token
         new_client_token = secrets.token_urlsafe(191)
 
-        try:
-            query = self.table.insert().values(
-                CreationTimestamp=new_entry_creation_timestamp,
-                ContainerUUID=hashlib.sha256(container_uuid.encode()).hexdigest(),
-                ClientToken=hashlib.sha256(new_client_token.encode()).hexdigest(),
-            )
+        query = self.table.insert().values(
+            CreationTimestamp=new_entry_creation_timestamp,
+            ContainerUUID=hashlib.sha256(container_uuid.encode()).hexdigest(),
+            ClientToken=hashlib.sha256(new_client_token.encode()).hexdigest(),
+        )
 
-            result = self.connection.execute(query)
-            self.connection.commit()
+        result = self.connection.execute(query)
 
-            return (
-                result.inserted_primary_key[0],
-                new_entry_creation_timestamp,
-                new_client_token,
-            )
+        return (
+            result.inserted_primary_key[0],
+            new_entry_creation_timestamp,
+            new_client_token,
+        )
 
-        except Exception as E:
-            self.connection.rollback()
-            raise E
+    def executeQuery(
+        self, text_query: str, bind_parameters: dict = {}, columns_parameters: dict = {}
+    ) -> sqlalchemy.engine.CursorResult:
+        query = (
+            text(text_query).bindparams(**bind_parameters).columns(**columns_parameters)
+        )
+
+        return self.connection.execute(query)
 
     def listEntries(self) -> list:
         query = select(self.table.c.EntryID, self.table.c.CreationTimestamp)
@@ -136,33 +147,21 @@ class DatabaseInterface:
     def updateEntry(
         self, entry_id: int, container_uuid: str, client_token: str
     ) -> None:
-        try:
-            query = (
-                self.table.update()
-                .where(self.table.c.EntryID == entry_id)
-                .values(
-                    ContainerUUID=hashlib.sha256(container_uuid.encode()).hexdigest(),
-                    ClientToken=hashlib.sha256(client_token.encode()).hexdigest(),
-                )
+        query = (
+            self.table.update()
+            .where(self.table.c.EntryID == entry_id)
+            .values(
+                ContainerUUID=hashlib.sha256(container_uuid.encode()).hexdigest(),
+                ClientToken=hashlib.sha256(client_token.encode()).hexdigest(),
             )
+        )
 
-            self.connection.execute(query)
-            self.connection.commit()
-
-        except Exception as E:
-            self.connection.rollback()
-            raise E
+        self.connection.execute(query)
 
     def deleteEntry(self, entry_id: int) -> None:
-        try:
-            query = self.table.delete().where(self.table.c.EntryID == entry_id)
+        query = self.table.delete().where(self.table.c.EntryID == entry_id)
 
-            self.connection.execute(query)
-            self.connection.commit()
-
-        except Exception as E:
-            self.connection.rollback()
-            raise E
+        self.connection.execute(query)
 
     def closeDatabase(self) -> None:
         if self.isClosed():
