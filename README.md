@@ -1,9 +1,5 @@
 # Anweddol-server
 
-[![made-with-python](https://img.shields.io/badge/Made%20with-Python-important)](https://www.python.org/)
-[![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://shields.io/)
-[![chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://anweddol.zulipchat.com)
-
 ---
 
 ## Introduction

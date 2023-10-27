@@ -83,7 +83,7 @@ setup(
     long_description=getReadmeContent(),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
         "Programming Language :: Python :: 3",
