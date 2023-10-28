@@ -175,11 +175,6 @@ please report it by opening an issue on the repository :
             action="store_true",
         )
         parser.add_argument(
-            "--classic",
-            help="run the classic version of the server (the default option)",
-            action="store_true",
-        )
-        parser.add_argument(
             "--web", help="run the web version of the server", action="store_true"
         )
         parser.add_argument(
@@ -212,9 +207,7 @@ please report it by opening an issue on the repository :
 
         start_timestamp = 0
         elapsed_time = 0
-        server_type = (
-            SERVER_TYPE_CLASSIC if args.classic or not args.web else SERVER_TYPE_WEB
-        )
+        server_type = SERVER_TYPE_CLASSIC if not args.web else SERVER_TYPE_WEB
         server_config_key_name = (
             "server" if server_type == SERVER_TYPE_CLASSIC else "web_server"
         )
@@ -247,9 +240,7 @@ please report it by opening an issue on the repository :
                     )
 
                     for error in check_result_list:
-                        self._log(f"- {error}")
-
-                    self._log("")
+                        self._log(f"  - {error}")
 
                 return 0
 
@@ -271,7 +262,7 @@ please report it by opening an issue on the repository :
                     )
 
                     for error in check_result_list:
-                        self._log(f"- {error}", error=True)
+                        self._log(f"  - {error}", error=True)
 
                 return -1
 
@@ -432,21 +423,21 @@ please report it by opening an issue on the repository :
         parser.add_argument("-a", help="add a new token entry", action="store_true")
         parser.add_argument("-l", help="list token entries", action="store_true")
         parser.add_argument(
-            "-r",
+            "-d",
             help="delete a token",
             dest="delete_entry",
             metavar="ENTRY_ID",
             type=int,
         )
         parser.add_argument(
-            "-e",
+            "--enable",
             help="enable a token",
             dest="enable_entry",
             metavar="ENTRY_ID",
             type=int,
         )
         parser.add_argument(
-            "-d",
+            "--disable",
             help="disable a token",
             dest="disable_entry",
             metavar="ENTRY_ID",
@@ -463,6 +454,7 @@ please report it by opening an issue on the repository :
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
+
         access_token_database_file_path = self.config_content["access_token"].get(
             "access_token_database_file_path"
         )
@@ -482,15 +474,15 @@ please report it by opening an issue on the repository :
                     LOG_JSON_STATUS_SUCCESS,
                     "New access token created",
                     data={
-                        "entry_id": access_token,
+                        "entry_id": entry_id,
                         "access_token": access_token,
                     },
                 )
 
             else:
                 self._log("New access token created", color=Colors.GREEN)
-                self._log(f"Entry ID : {access_token}")
-                self._log(f"Token : {access_token}")
+                self._log(f"  Entry ID : {entry_id}")
+                self._log(f"  Token : {access_token}")
 
         elif args.l:
             if args.json:
@@ -508,81 +500,77 @@ please report it by opening an issue on the repository :
                     creation_timestamp,
                     enabled,
                 ) in access_token_manager.listEntries():
-                    self._log(f"== Entry ID {entry_id} ==")
+                    self._log(f"- Entry ID {entry_id}")
                     self._log(
                         f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
                     )
                     self._log(f"  Enabled : {bool(enabled)}\n")
 
-        else:
-            if args.delete_entry:
-                if not access_token_manager.getEntry(args.delete_entry):
-                    if args.json:
-                        self._log_json(
-                            LOG_JSON_STATUS_ERROR,
-                            f"Entry ID {args.delete_entry} does not exists on database",
-                            error=True,
-                        )
-
-                    else:
-                        self._log(
-                            f"Entry ID {args.delete_entry} does not exists on database",
-                            error=True,
-                            color=Colors.RED,
-                        )
+        elif args.delete_entry:
+            if not access_token_manager.getEntry(args.delete_entry):
+                if args.json:
+                    self._log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        f"Entry ID {args.delete_entry} does not exists on database",
+                        error=True,
+                    )
 
                 else:
-                    access_token_manager.deleteEntry(args.delete_entry)
-
-                    if args.json:
-                        self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
-
-            elif args.enable_entry:
-                if not access_token_manager.getEntry(args.enable_entry):
-                    if args.json:
-                        self._log_json(
-                            LOG_JSON_STATUS_ERROR,
-                            f"Entry ID {args.enable_entry} does not exists on database",
-                            error=True,
-                        )
-
-                    else:
-                        self._log(
-                            f"Entry ID {args.enable_entry} does not exists on database",
-                            error=True,
-                            color=Colors.RED,
-                        )
-
-                else:
-                    access_token_manager.enableEntry(args.enable_entry)
-
-                    if args.json:
-                        self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
+                    self._log(
+                        f"Entry ID {args.delete_entry} does not exists on database",
+                        error=True,
+                        color=Colors.RED,
+                    )
 
             else:
-                if args.disable_entry:
-                    if not access_token_manager.getEntry(args.disable_entry):
-                        if args.json:
-                            self._log_json(
-                                LOG_JSON_STATUS_ERROR,
-                                f"Entry ID {args.disable_entry} does not exists on database",
-                                error=True,
-                            )
+                access_token_manager.deleteEntry(args.delete_entry)
 
-                        else:
-                            self._log(
-                                f"Entry ID {args.disable_entry} does not exists on database",
-                                error=True,
-                                color=Colors.RED,
-                            )
+                if args.json:
+                    self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
 
-                    else:
-                        access_token_manager.disableEntry(args.disable_entry)
+        elif args.enable_entry:
+            if not access_token_manager.getEntry(args.enable_entry):
+                if args.json:
+                    self._log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        f"Entry ID {args.enable_entry} does not exists on database",
+                        error=True,
+                    )
 
-                        if args.json:
-                            self._log_json(
-                                LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled"
-                            )
+                else:
+                    self._log(
+                        f"Entry ID {args.enable_entry} does not exists on database",
+                        error=True,
+                        color=Colors.RED,
+                    )
+
+            else:
+                access_token_manager.enableEntry(args.enable_entry)
+
+                if args.json:
+                    self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was enabled")
+
+        elif args.disable_entry:
+            if not access_token_manager.getEntry(args.disable_entry):
+                if args.json:
+                    self._log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        f"Entry ID {args.disable_entry} does not exists on database",
+                        error=True,
+                    )
+
+                else:
+                    self._log(
+                        f"Entry ID {args.disable_entry} does not exists on database",
+                        error=True,
+                        color=Colors.RED,
+                    )
+
+            else:
+                access_token_manager.disableEntry(args.disable_entry)
+
+                if args.json:
+                    self._log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was disabled")
 
         access_token_manager.closeDatabase()
 
@@ -641,7 +629,7 @@ please report it by opening an issue on the repository :
         else:
             self._log("RSA keys re-generated", color=Colors.GREEN)
             self._log(
-                f"Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}"
+                f"  Fingerprint : {hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()}"
             )
 
         return 0

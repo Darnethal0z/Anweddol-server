@@ -65,11 +65,11 @@ Constant name                    | Value                           | Definition
 
 Constant name                 | Value   | Definition
 ----------------------------- | ------- | ----------
-*CONTEXT_NORMAL_PROCESS*      | 20      | The event handler is called in a normal context.
-*CONTEXT_AUTOMATIC_ACTION*    | 21      | The event handler is called during an intern routine.
-*CONTEXT_DEFERRED_CALL*       | 22      | The event handler is called from an external source.
-*CONTEXT_HANDLE_END*          | 23      | The event handler is called during an handle termination.
-*CONTEXT_ERROR*               | 24      | The event handler is called in an error context.
+*CONTEXT_NORMAL_PROCESS*      | 20      | Indicates that an event handler or a routine is called in a normal context.
+*CONTEXT_AUTOMATIC_ACTION*    | 21      | Indicates that an event handler or a routine is called during an intern routine.
+*CONTEXT_DEFERRED_CALL*       | 22      | Indicates that an event handler or a routine is called from an external source.
+*CONTEXT_HANDLE_END*          | 23      | Indicates that an event handler or a routine is called during an handle termination.
+*CONTEXT_ERROR*               | 24      | Indicates that an event handler or a routine is called in an error context.
 
 ## class *ServerInterface*
 
@@ -440,7 +440,7 @@ Set the runtime `PortForwardingInterface` object.
 
 > `None`.
 
-### Request handling
+### Request / client handling
 
 ```{classmethod} setRequestHandler(verb, routine)
 ```
@@ -480,6 +480,31 @@ Set a request handler.
 ```{note}
 When the `routine` object is called, the `ClientInstance` object of the session will be passed in a `client_instance` parameter.
 ```
+
+---
+
+```{classmethod} handleClient(client_instance, asynchronous)
+```
+
+Handle a client.
+
+**Parameters** :
+
+> ```{attribute} client_instance
+> Type : `ClientInstance`
+> 
+> The `ClientInstance` object representing the client to handle. It must be an active client.
+> ```
+
+> ```{attribute} asynchronous
+> Type : bool
+> 
+> `True` to handle the client asynchronously, `False` to handle it synchronously. Default is `False`
+> ```
+
+**Return value** :
+
+> `None`.
 
 ### Server lifecycle control
 
@@ -525,27 +550,6 @@ This method is automatically called within the `__del__` method, but it is progr
 
 ### Manual handler execution
 
-```{classmethod} handleClient(client_instance, asynchronous)
-```
-
-Handle a client.
-
-**Parameters** :
-
-> ```{attribute} client_instance
-> Type : `ClientInstance`
-> 
-> The `ClientInstance` object representing the client to handle.
-> ```
-
-> ```{attribute} passive_mode
-> Type : bool
-> 
-> Initialize the server as passive or not (see below).
-> ```
-
----
-
 ```{classmethod} executeRequestHandler(verb, client_instance, data, **kwargs)
 ```
 
@@ -590,9 +594,9 @@ Execute a request handler.
 
 **Return value** : 
 
-> Type : dict
+> Type : dict | `NoneType`
 >
-> A response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
+> A response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md) if the `ServerInterface` instance was initialized with the `passive_mode` parameter set to `True` or `client_instance` is set to `None`, `None` otherwise.
 
 ```{note}
 The parameter `data` must be set with appropriate credentials for `DESTROY` requests.
@@ -616,19 +620,55 @@ Execute an event handler.
 > ```{attribute} event
 > Type : str
 > 
-> The `ClientInstance` object representing the client to handle. Default is `None`.
+> The event to trigger.
 > ```
 
 > ```{attribute} context
 > Type : int
 > 
-> The `ClientInstance` object representing the client to handle. Default is `None`.
+> The context in which the event is triggered. It can be 5 possible values : 
 > ```
 
+>> ```{attribute} CONTEXT_NORMAL_PROCESS
+>> Indicates that the event is triggered in a normal process execution.
+>> ```
+
+>> ```{attribute} CONTEXT_HANDLE_END
+>> Indicates that the event is triggered after the end of a client handling, there is no future operations after the call.
+>> ```
+
+>> ```{attribute} CONTEXT_AUTOMATIC_ACTION
+>> Indicates that the event is triggered in a subroutine.
+>> ```
+
+>> ```{attribute} CONTEXT_DEFERRED_CALL
+>> Indicates that the event is triggered from an external process.
+>> ```
+
+>> ```{attribute} CONTEXT_ERROR
+>> Indicates that the event is triggered because an error occured in the normal process.
+>> ```
+
 > ```{attribute} data
-> Type : data
+> Type : str
 > 
-> The `ClientInstance` object representing the client to handle. Default is `None`.
+> The dictionary containing additional values related to the context.
+> ```
+
+**Return value** : 
+
+> Type : Any
+>
+> If the `passive_mode` parameter is set to `True` during `ServerInterface` initialization, this method returns whatever the handler routine bound to this event returns: the default handler routines returns a response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md). 
+>
+> Otherwise it returns `-1` if a client instance is specified in the `data` parameters and that this client is closed, else `None`.
+
+**Possible raise classes** :
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the specified event does not exists.
 > ```
 
 ```{warning}
@@ -660,10 +700,14 @@ Set an event handler. This is the method alternative of event decorators (see be
 > A callable object that will be called when the `event` event is triggered.
 > ```
 
+**Return value** : 
+
+> `None`.
+
 ```{tip}
 You can directly pass the event constant value in the `event` parameter rather than importing the constant.
 
-For instance, if you want to use the `EVENT_CONTAINER_DOMAIN_STARTED` constant, just put the `"on_container_domain_started"` string.
+For example, if you want to use the `EVENT_CONTAINER_DOMAIN_STARTED` constant, just put the `"on_container_domain_started"` string.
 
 See the constants definitions at the top of the page to know every constants and their values.
 ```
@@ -683,19 +727,27 @@ The server will execute the given routine function passing 2 parameters :
 > ```{attribute} context
 > Type : str
 > 
-> The context in which the routine is called. It can be 4 possible values : 
+> The context in which the routine is called. It can be 5 possible values : 
 > ```
 
 >> ```{attribute} CONTEXT_NORMAL_PROCESS
->> The routine have been called in a normal process execution.
+>> Indicates that the routine is called in a normal process execution.
 >> ```
 
 >> ```{attribute} CONTEXT_HANDLE_END
->> The routine have been called after the end of a client handling, there is no future operations after the call.
+>> Indicates that the routine is called after the end of a client handling, there is no future operations after the call.
+>> ```
+
+>> ```{attribute} CONTEXT_AUTOMATIC_ACTION
+>> Indicates that the routine is called in a subroutine.
+>> ```
+
+>> ```{attribute} CONTEXT_DEFERRED_CALL
+>> Indicates that the routine is called from an external process.
 >> ```
 
 >> ```{attribute} CONTEXT_ERROR
->> The routine have been called because an error occured in the normal process.
+>> Indicates that the routine is called because an error occured in the normal process.
 >> ```
 
 > ```{attribute} data
@@ -1216,6 +1268,7 @@ Called when the server received a malformed request.
 ```
 {
 	"client_instance": CLIENT_INSTANCE,
+	"errors_dict": ERRORS_DICT,
 }
 ```
 
@@ -1224,6 +1277,12 @@ Called when the server received a malformed request.
   Type : `ClientInstance`
 
   The `ClientInstance` object representing the handled client.
+
+- *ERRORS_DICT*
+
+  Type : dict
+
+  A dictionary depicting the errors in the received request, according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
 ---
 

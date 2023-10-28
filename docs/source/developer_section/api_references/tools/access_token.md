@@ -11,6 +11,7 @@ In the module `anwdlserver.tools.access_token` :
 Constant name                  | Value   | Definition
 ------------------------------ | ------- | ----------
 *DEFAULT_DISABLE_TOKEN*        | `False` | Disable the created token entry by default or not. 
+*DEFAULT_COMMIT*               | `False` | Commit the potential modifications brought by the custom SQL query by default or not.
 
 ## class *AccessTokenManager*
 
@@ -265,6 +266,41 @@ Create an entry.
 
 ```{warning}
 Since tokens are hashed with SHA256 in the database (see the technical specifications [Access token](../../../technical_specifications/tools/access_token.md) section to learn more), there's no way to see them again in plain text : Store this clear created token somewhere safe in order to use it for further operations.
+```
+
+---
+
+```{classmethod} executeQuery(text_query, parameters, commit)
+```
+
+Execute a custom SQL query on the database instance.
+
+**Parameters** :
+
+> ```{attribute} text_query
+> Type : str
+> 
+> The custom SQL query to execute.
+> ```
+
+> ```{attribute} parameters
+> Type : tuple
+> 
+> A tuple representing the qmarks [placeholder parameters](https://docs.python.org/3/library/sqlite3.html#sqlite3-placeholders) values to use with the query. Default is an empty tuple.
+> ```
+
+> ```{attribute} commit
+> Type : bool
+> 
+> `True` to commit the potential modifications brought by the custom SQL query, `False` to ignore. Default is `False`.
+> ```
+
+**Return value** : 
+
+> The [`sqlite3.Cursor`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor) object representing the SQL query result.
+
+```{tip}
+Refer to the [technical specifications](../../../technical_specifications/core/database.md) to learn about table and columns name.
 ```
 
 ---

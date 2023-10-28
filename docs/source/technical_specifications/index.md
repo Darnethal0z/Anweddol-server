@@ -63,7 +63,7 @@ includehidden:
 tools/access_token
 ```
 
-### Web features
+## Web features
 
 ```{toctree}
 ---

@@ -9,16 +9,6 @@ used for run time credentials storage only.
 
 """
 
-from sqlalchemy import (
-    select,
-    create_engine,
-    text,
-    MetaData,
-    Table,
-    Column,
-    Integer,
-    String,
-)
 from typing import Union
 import sqlalchemy
 import secrets
@@ -28,21 +18,21 @@ import time
 
 class DatabaseInterface:
     def __init__(self):
-        # Connect to an sqlalchemy memory database instance
-        self.engine = create_engine(
+        # Connect to an SQL memory database instance
+        self.engine = sqlalchemy.create_engine(
             "sqlite+pysqlite:///:memory:", connect_args={"check_same_thread": False}
         )
         self.connection = self.engine.connect()
 
         try:
-            meta = MetaData()
-            self.table = Table(
+            meta = sqlalchemy.MetaData()
+            self.table = sqlalchemy.Table(
                 "AnweddolServerSessionCredentialsTable",
                 meta,
-                Column("EntryID", Integer, primary_key=True),
-                Column("CreationTimestamp", Integer),
-                Column("ContainerUUID", String),
-                Column("ClientToken", String),
+                sqlalchemy.Column("EntryID", sqlalchemy.Integer, primary_key=True),
+                sqlalchemy.Column("CreationTimestamp", sqlalchemy.Integer),
+                sqlalchemy.Column("ContainerUUID", sqlalchemy.String),
+                sqlalchemy.Column("ClientToken", sqlalchemy.String),
             )
 
             meta.create_all(self.engine)
@@ -72,7 +62,9 @@ class DatabaseInterface:
         container_uuid: str,
         client_token: str,
     ) -> Union[None, int]:
-        query = select(self.table.c.EntryID, self.table.c.CreationTimestamp).where(
+        query = sqlalchemy.select(
+            self.table.c.EntryID, self.table.c.CreationTimestamp
+        ).where(
             (
                 self.table.c.ContainerUUID
                 == hashlib.sha256(container_uuid.encode()).hexdigest()
@@ -88,7 +80,7 @@ class DatabaseInterface:
         return result[0] if result else None
 
     def getContainerUUIDEntryID(self, container_uuid: str) -> Union[None, int]:
-        query = select(self.table.c.EntryID).where(
+        query = sqlalchemy.select(self.table.c.EntryID).where(
             self.table.c.ContainerUUID
             == hashlib.sha256(container_uuid.encode()).hexdigest()
         )
@@ -98,12 +90,12 @@ class DatabaseInterface:
         return result[0] if result else None
 
     def getEntry(self, entry_id: int) -> tuple:
-        query = self.table.select().where(self.table.c.EntryID == entry_id)
+        query = self.table.sqlalchemy.select().where(self.table.c.EntryID == entry_id)
 
         return self.connection.execute(query).fetchone()
 
     def addEntry(self, container_uuid: str) -> tuple:
-        check_query = select(self.table.c.EntryID).where(
+        check_query = sqlalchemy.select(self.table.c.EntryID).where(
             self.table.c.ContainerUUID
             == hashlib.sha256(container_uuid.encode()).hexdigest()
         )
@@ -134,13 +126,15 @@ class DatabaseInterface:
         self, text_query: str, bind_parameters: dict = {}, columns_parameters: dict = {}
     ) -> sqlalchemy.engine.CursorResult:
         query = (
-            text(text_query).bindparams(**bind_parameters).columns(**columns_parameters)
+            sqlalchemy.text(text_query)
+            .bindparams(**bind_parameters)
+            .columns(**columns_parameters)
         )
 
         return self.connection.execute(query)
 
     def listEntries(self) -> list:
-        query = select(self.table.c.EntryID, self.table.c.CreationTimestamp)
+        query = sqlalchemy.select(self.table.c.EntryID, self.table.c.CreationTimestamp)
 
         return self.connection.execute(query).fetchall()
 

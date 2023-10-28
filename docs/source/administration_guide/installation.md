@@ -2,8 +2,6 @@
 
 ----
 
-This section provides Anweddol server installation guidance.
-
 ## Nessessary packages
 
 1. Install every needed dependancies with your package manager : 
@@ -37,9 +35,13 @@ This section provides Anweddol server installation guidance.
 
 > The nessessary files and users will be created during the installation.
 
->```{warning}
->If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the full setup will be skipped.
->```
+> ```{warning}
+> If the pip installation is launched with non-root permissions, only the `anwdlserver` package will be installed : the full environment setup will be skipped.
+> ```
+
+> ```{note}
+> If a previous configuration file is found during environment setup, it will be automatically renamed as `config.yaml.old` to preserve potential old modifications.
+> ```
 
 ## Setup and configuration
 

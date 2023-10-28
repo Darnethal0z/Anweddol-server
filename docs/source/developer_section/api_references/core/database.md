@@ -16,7 +16,7 @@ Provides an [SQLAlchemy](../../../technical_specifications/core/database.md) mem
 > None.
 
 ```{note}
-The database and its engine will be closed with the `closeDatabase` method on `__del__` method. Also, queries implying modifications on the database are automatically committed, and rollbacks are called if an error occured (except for `executeQuery`).
+The database and its engine will be closed with the `closeDatabase` method on `__del__` method. Also the database is opened in auto-commit mode, meaning that `Connection.commit` and `Connection.rollback` methods have no effects on the database objects.
 ```
 
 ### General usage
@@ -369,13 +369,13 @@ Execute a custom SQL query on the database instance.
 > ```{attribute} bind_parameters
 > Type : dict
 > 
-> A dictionary representing the bound parameters to use with the query, with keys as keywords and values as actual parameters values (See the tip below to learn more).
+> A dictionary representing the bound parameters to use with the query, with keys as keywords and values as actual parameters values (See the tip below to learn more). Default is an empty dictionary.
 > ```
 
 > ```{attribute} columns_parameters
 > Type : dict
 > 
-> A dictionary representing the columns parameters to use with the query, with keys as column names and values as column types (See the tip below to learn more).
+> A dictionary representing the columns parameters to use with the query, with keys as column names and values as column types (See the tip below to learn more). Default is an empty dictionary.
 > ```
 
 **Return value** : 

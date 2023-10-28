@@ -692,16 +692,19 @@ class ServerInterface:
     def _handle_new_client(self, client_instance):
         try:
             (
-                is_recv_request_conform,
+                is_recv_request_valid,
                 recv_request_content,
-                _,
+                recv_request_errors,
             ) = client_instance.recvRequest()
 
-            if not is_recv_request_conform:
+            if not is_recv_request_valid:
                 self._execute_event_handler(
                     EVENT_MALFORMED_REQUEST,
                     CONTEXT_ERROR,
-                    data={"client_instance": client_instance},
+                    data={
+                        "client_instance": client_instance,
+                        "errors_dict": recv_request_errors,
+                    },
                 )
 
                 if not client_instance.isClosed():
@@ -1107,7 +1110,7 @@ class ServerInterface:
         client_instance: ClientInstance = None,
         data: dict = {},
         **kwargs,
-    ) -> dict:
+    ) -> Union[None, dict]:
         if not self.request_handler_dict.get(verb):
             raise RuntimeError(f"The verb '{verb}' is not handled")
 

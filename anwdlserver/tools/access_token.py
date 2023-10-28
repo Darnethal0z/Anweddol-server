@@ -19,12 +19,14 @@ import time
 
 # Default parameters
 DEFAULT_DISABLE_TOKEN = False
+DEFAULT_COMMIT = False
 
 
 class AccessTokenManager:
     def __init__(self, access_token_db_path: str):
         self.database_connection = sqlite3.connect(
-            access_token_db_path, check_same_thread=False
+            access_token_db_path,
+            check_same_thread=False,
         )
         self.database_cursor = self.database_connection.cursor()
         self.is_closed = False
@@ -87,6 +89,7 @@ class AccessTokenManager:
                 1 if not disable else 0,
             ),
         )
+        self.database_connection.commit()
 
         return (
             self.database_cursor.lastrowid,
@@ -94,12 +97,19 @@ class AccessTokenManager:
             new_auth_token,
         )
 
-    def executeQuery(self, text_query: str, parameters: tuple = ()) -> sqlite3.Cursor:
-        return self.database_cursor.execute(text_query, parameters)
+    def executeQuery(
+        self, text_query: str, parameters: tuple = (), commit: bool = DEFAULT_COMMIT
+    ) -> sqlite3.Cursor:
+        result = self.database_cursor.execute(text_query, parameters)
+
+        if commit:
+            self.database_connection.commit()
+
+        return result
 
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, Eqnabled from AnweddolServerAccessTokenTable",
+            "SELECT EntryID, CreationTimestamp, Enabled from AnweddolServerAccessTokenTable",
         )
 
         return query_cursor.fetchall()
@@ -109,18 +119,21 @@ class AccessTokenManager:
             "UPDATE AnweddolServerAccessTokenTable SET Enabled=1 WHERE EntryID=?",
             (entry_id,),
         )
+        self.database_connection.commit()
 
     def disableEntry(self, entry_id: int) -> None:
         self.database_cursor.execute(
             "UPDATE AnweddolServerAccessTokenTable SET Enabled=0 WHERE EntryID=?",
             (entry_id,),
         )
+        self.database_connection.commit()
 
     def deleteEntry(self, entry_id: int) -> None:
         self.database_cursor.execute(
             "DELETE from AnweddolServerAccessTokenTable WHERE EntryID=?",
             (entry_id,),
         )
+        self.database_connection.commit()
 
     def closeDatabase(self) -> None:
         try:

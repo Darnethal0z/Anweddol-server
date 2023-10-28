@@ -44,6 +44,7 @@ from ..core.virtualization import VirtualizationInterface
 from ..core.database import DatabaseInterface
 from ..core.port_forwarding import PortForwardingInterface
 from ..core.sanitization import makeResponse
+from ..core.sanitize import verifyRequestContent
 
 DEFAULT_RESTWEBSERVER_LISTEN_PORT = 8080
 DEFAULT_ENABLE_SSL = False
@@ -170,37 +171,58 @@ class WebServerInterface(ServerInterface, resource.Resource):
         verb = None
 
         try:
-            # Extract and transform the request verb into upper case
-            verb = request.postpath[-1].decode().upper()
-            result = self._execute_event_handler(
-                EVENT_REQUEST,
-                CONTEXT_NORMAL_PROCESS,
-                data={"verb": verb, "request": request},
-            )
-
-            if result:
-                return result
-
             # Without this condition, URLs like http://<host>@<port>/foo/bar/stat
             # would be allowed on the server.
             if len(request.postpath) > 1:
                 return self._handle_error(
                     event=EVENT_MALFORMED_REQUEST,
                     message=RESPONSE_MSG_BAD_REQ,
-                    data={"verb": verb, "request": request},
+                    data={"verb": verb, "request_object": request},
                 )
+
+            http_method = request.method.decode()
+            request_dict = {
+                "verb": request.postpath[-1]
+                .decode()
+                .upper(),  # Extract and transform the request verb into upper case
+                "parameters": self._extract_post_request_args_values(request.args)
+                if http_method == "POST"
+                else {},
+            }
+
+            is_request_valid, request_content, request_errors = verifyRequestContent(
+                request_dict
+            )
+
+            if not is_request_valid:
+                return self._handle_error(
+                    event=EVENT_MALFORMED_REQUEST,
+                    message=RESPONSE_MSG_BAD_REQ,
+                    data={"request_object": request, "request_dict": request_dict},
+                )
+
+            result = self._execute_event_handler(
+                EVENT_REQUEST,
+                CONTEXT_NORMAL_PROCESS,
+                data={"request_object": request, "request_dict": request_dict},
+            )
+
+            if result:
+                return result
 
             if not self.request_handler_dict.get(verb):
                 return self._handle_error(
                     event=EVENT_UNHANDLED_VERB,
                     message=RESPONSE_MSG_BAD_REQ,
-                    data={"verb": verb, "request": request},
+                    data={"request_object": request, "request_dict": request_dict},
                 )
 
             return self.request_handler_dict[verb](request=request)
 
         except Exception as E:
-            return self._handle_error(E, data={"verb": verb, "request": request})
+            return self._handle_error(
+                E, data={"request_object": request, "request_dict": request_dict}
+            )
 
     def _create_deferred_http_request_handle(self, request):
         def end(result, request):

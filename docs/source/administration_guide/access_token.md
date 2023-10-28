@@ -38,6 +38,14 @@ Then restart the server.
 If this feature is enabled but no tokens are in the database, nobody will be able to use the server. 
 ```
 
+## List existing tokens
+
+To list existing tokens on the database, execute : 
+
+```
+$ anwdlserver access-tk -l
+```
+
 ## Add / delete a token
 
 To add a token to the database, execute : 
@@ -58,7 +66,7 @@ Since the access tokens are hashed in the database (see the technical specificat
 If you want to delete a token, execute : 
 
 ```
-$ anwdlserver access-tk -r <entry_id>
+$ anwdlserver access-tk -d <entry_id>
 ```
 
 ## Enable / Disable a token
@@ -68,11 +76,11 @@ You have the possibility to enable or disable recorded tokens to temporarily dis
 To disable a token, execute : 
 
 ```
-$ anwdlserver access-tk -d <entry_id>
+$ anwdlserver access-tk --disable <entry_id>
 ```
 
 And to re-enable it : 
 
 ```
-$ anwdlserver access-tk -e <entry_id>
+$ anwdlserver access-tk --enable <entry_id>
 ```

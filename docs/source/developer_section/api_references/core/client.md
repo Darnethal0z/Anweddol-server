@@ -504,9 +504,35 @@ Receive a request from the client.
 
 **Return value** :
 
-> Type : dict
+> Type : tuple
 >
-> The received request as a normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary
+> A tuple representing the return value of the `verifyRequestContent` function :
+> 
+> ```
+> (
+> 	is_request_format_valid,
+> 	sanitized_request_dictionary,
+>   errors_dictionary,
+> )
+> ```
+>
+> - *is_request_format_valid*
+>
+>	Type : bool
+> 
+>   `True` if the request dictionary format is valid, `False` otherwise.
+>
+> - *sanitized_request_dictionary*
+>
+>	Type : dict
+> 
+>   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
+> 
+> - *errors_dictionary*
+>
+>	Type : dict
+> 
+>   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
 
 **Possible raise classes** :
 

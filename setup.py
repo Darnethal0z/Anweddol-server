@@ -89,9 +89,8 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: POSIX",
         "Topic :: Internet",
-        "Topic :: System :: Emulators",
     ],
-    license="GPL v3",
+    license="MIT",
     packages=[
         "anwdlserver",  # Includes every CLI modules at the root of 'anwdlserver'
         "anwdlserver.core",
