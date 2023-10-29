@@ -39,13 +39,12 @@ from ..core.server import (
     RESPONSE_MSG_BAD_REQ,
     RESPONSE_MSG_INTERNAL_ERROR,
 )
-
 from ..core.virtualization import VirtualizationInterface
 from ..core.database import DatabaseInterface
 from ..core.port_forwarding import PortForwardingInterface
-from ..core.sanitization import makeResponse
-from ..core.sanitize import verifyRequestContent
+from ..core.sanitization import makeResponse, verifyRequestContent
 
+# Default values
 DEFAULT_RESTWEBSERVER_LISTEN_PORT = 8080
 DEFAULT_ENABLE_SSL = False
 
@@ -90,8 +89,16 @@ class WebServerInterface(ServerInterface, resource.Resource):
         }
 
     def _extract_post_request_args_values(self, request_args):
-        container_uuid, _ = request_args.get(b"container_uuid")
-        client_token, _ = request_args.get(b"client_token")
+        container_uuid = (
+            request_args.get(b"container_uuid")[0]
+            if request_args.get(b"container_uuid")
+            else None
+        )
+        client_token = (
+            request_args.get(b"client_token")[0]
+            if request_args.get(b"client_token")
+            else None
+        )
 
         return (
             container_uuid.decode() if container_uuid else None,
@@ -106,12 +113,17 @@ class WebServerInterface(ServerInterface, resource.Resource):
         data={},
     ):
         traceback = (
-            self._format_traceback(exception_object) if exception_object else message
+            self._format_traceback(exception_object) if exception_object else None
         )
         result = self._execute_event_handler(
             event,
             CONTEXT_ERROR,
-            data={"exception_object": exception_object, "traceback": traceback} | data,
+            data={
+                "exception_object": exception_object,
+                "traceback": traceback,
+                "message": message,
+            }
+            | data,
         )
 
         if not result:
@@ -134,14 +146,18 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
     def _handle_stat_request_from_http(self, request):
         try:
-            return self._handle_stat_request(passive_execution=True, request=request)
+            return self._handle_stat_request(
+                passive_execution=True, request_object=request
+            )
 
         except Exception as E:
-            return self._handle_error(E, data={"request": request})
+            return self._handle_error(E, data={"request_object": request})
 
     def _handle_create_request_from_http(self, request):
         # Errors are already handled inside _handle_create_request
-        return self._handle_create_request(passive_execution=True, request=request)
+        return self._handle_create_request(
+            passive_execution=True, request_object=request
+        )
 
     def _handle_destroy_request_from_http(self, request):
         try:
@@ -151,7 +167,9 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
             if not container_uuid or not client_token:
                 return self._handle_error(
-                    event=EVENT_MALFORMED_REQUEST, message=RESPONSE_MSG_BAD_REQ
+                    event=EVENT_MALFORMED_REQUEST,
+                    message=RESPONSE_MSG_BAD_REQ,
+                    data={"request_object": request},
                 )
 
             # Authentication related errors are handled inside _handle_destroy_request
@@ -161,11 +179,11 @@ class WebServerInterface(ServerInterface, resource.Resource):
                     "container_uuid": container_uuid,
                     "client_token": client_token,
                 },
-                request=request,
+                request_object=request,
             )
 
         except Exception as E:
-            return self._handle_error(E, data={"request": request})
+            return self._handle_error(E, data={"request_object": request})
 
     def _handle_http_request(self, request):
         verb = None
@@ -177,14 +195,15 @@ class WebServerInterface(ServerInterface, resource.Resource):
                 return self._handle_error(
                     event=EVENT_MALFORMED_REQUEST,
                     message=RESPONSE_MSG_BAD_REQ,
-                    data={"verb": verb, "request_object": request},
+                    data={"request_object": request},
                 )
+
+            # Extract and transform the request verb into upper case
+            verb = request.postpath[-1].decode().upper()
 
             http_method = request.method.decode()
             request_dict = {
-                "verb": request.postpath[-1]
-                .decode()
-                .upper(),  # Extract and transform the request verb into upper case
+                "verb": verb,
                 "parameters": self._extract_post_request_args_values(request.args)
                 if http_method == "POST"
                 else {},
@@ -247,7 +266,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
                                 CONTEXT_ERROR,
                                 data={
                                     "verb": REQUEST_VERB_CREATE,
-                                    "request": request,
+                                    "request_object": request,
                                     "container_instance": container_instance,
                                 },
                             )
@@ -258,11 +277,13 @@ class WebServerInterface(ServerInterface, resource.Resource):
                     self._delete_container(container_instance)
 
                 self._handle_error(
-                    E, data={"verb": REQUEST_VERB_CREATE, "request": request}
+                    E, data={"verb": REQUEST_VERB_CREATE, "request_object": request}
                 )
 
         def err(failure):
-            return self._handle_error(data={"failure": failure})
+            return self._handle_error(
+                data={"failure": failure, "request_object": request}
+            )
             # return failure
 
         request.setHeader(b"content-type", b"application/json")

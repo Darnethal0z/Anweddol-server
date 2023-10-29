@@ -221,8 +221,7 @@ class AnweddolServerCLIServerProcess:
                 self._log(LOG_INFO, f"(client ID {client_id}) Connection closed")
 
             else:
-                request = kwargs.get("request")
-                client_id = self._make_client_id(request.getClientIP())
+                client_id = self._make_client_id(kwargs.get("request").getClientIP())
 
                 return makeResponse(
                     True,
@@ -284,7 +283,7 @@ class AnweddolServerCLIServerProcess:
             client_id = (
                 data.get("client_instance").getID()
                 if self.server_type == SERVER_TYPE_CLASSIC
-                else self._make_client_id(data.get("request").getClientIP())
+                else self._make_client_id(data.get("request_object").getClientIP())
             )
             max_allowed_running_container_domains = self.config_content[
                 "container"
@@ -322,9 +321,12 @@ class AnweddolServerCLIServerProcess:
                 request_verb = client_instance.getStoredRequest().get("verb")
 
             else:
-                request_verb = data.get("verb")
-                client_request = data.get("request")
-                client_id = self._make_client_id(client_request.getClientIP())
+                client_request = data.get("request_dict")
+                request_verb = client_request.get("verb")
+
+                client_id = self._make_client_id(
+                    data.get("request_object").getClientIP()
+                )
 
             if self.server_type == SERVER_TYPE_WEB and self.config_content[
                 "ip_filter"
@@ -466,7 +468,7 @@ class AnweddolServerCLIServerProcess:
             client_id = (
                 data.get("client_instance").getID()
                 if self.server_type == SERVER_TYPE_CLASSIC
-                else self._make_client_id(data.get("request").getClientIP())
+                else self._make_client_id(data.get("request_object").getClientIP())
             )
             endpoint_shell_instance = data.get("endpoint_shell_instance")
 
@@ -483,7 +485,7 @@ class AnweddolServerCLIServerProcess:
             client_id = (
                 data.get("client_instance").getID()
                 if self.server_type == SERVER_TYPE_CLASSIC
-                else self._make_client_id(data.get("request").getClientIP())
+                else self._make_client_id(data.get("request_object").getClientIP())
             )
 
             self._log(LOG_WARN, f"(client ID {client_id}) Received malformed request")
@@ -497,12 +499,14 @@ class AnweddolServerCLIServerProcess:
                 client_id = client_instance.getID()
 
             else:
-                verb = data.get("verb")
-                client_id = self._make_client_id(data.get("request").getClientIP())
+                verb = data.get("request_dict").get("verb")
+                client_id = self._make_client_id(
+                    data.get("request_object").getClientIP()
+                )
 
             self._log(
                 LOG_WARN,
-                f"(client ID {client_id}) Received unhandled verb : '{verb}'",
+                f"(client ID {client_id}) Unhandled verb : '{verb}'",
             )
 
         @self.server_interface.on_container_domain_started
@@ -510,11 +514,15 @@ class AnweddolServerCLIServerProcess:
             container_uuid = data.get("container_instance").getUUID()
             container_ip = data.get("container_instance").getIP()
 
-            client_id = (
-                data.get("client_instance").getID()
-                if self.server_type == SERVER_TYPE_CLASSIC
-                else self._make_client_id(data.get("request").getClientIP())
-            )
+            if self.server_type == SERVER_TYPE_CLASSIC:
+                client_id = data.get("client_instance").getID()
+
+            else:
+                client_id = (
+                    self._make_client_id(data.get("request_object").getClientIP())
+                    if data.get("request_object")
+                    else "unspec"
+                )
 
             self.actual_running_container_domains_counter += 1
 
@@ -540,8 +548,8 @@ class AnweddolServerCLIServerProcess:
 
             else:
                 client_id = (
-                    self._make_client_id(data.get("request").getClientIP())
-                    if data.get("request")
+                    self._make_client_id(data.get("request_object").getClientIP())
+                    if data.get("request_object")
                     else "unspec"
                 )
 
@@ -558,18 +566,33 @@ class AnweddolServerCLIServerProcess:
             client_id = (
                 data.get("client_instance").getID()
                 if self.server_type == SERVER_TYPE_CLASSIC
-                else self._make_client_id(data.get("request").getClientIP())
+                else self._make_client_id(data.get("request_object").getClientIP())
             )
 
             self._log(LOG_INFO, f"(client ID {client_id}) Endpoint shell was closed")
 
         @self.server_interface.on_runtime_error
         def notify_runtime_error(context, data):
-            client_id = (
-                data.get("client_instance").getID()
-                if data.get("client_instance")
-                else "unspec"
-            )
+            if self.server_type == SERVER_TYPE_CLASSIC:
+                client_id = (
+                    data.get("client_instance").getID()
+                    if data.get("client_instance")
+                    else "unspec"
+                )
+
+            else:
+                client_id = (
+                    (
+                        data.get("client_instance").getID()
+                        if self.server_type == SERVER_TYPE_CLASSIC
+                        else self._make_client_id(
+                            data.get("request_object").getClientIP()
+                        )
+                    )
+                    if data.get("request_object")
+                    else "unspec"
+                )
+
             exception_object = data.get("exception_object")
             exception_object_type = (
                 type(exception_object) if exception_object else "Unspecified error type"
@@ -590,7 +613,7 @@ class AnweddolServerCLIServerProcess:
             client_id = (
                 data.get("client_instance").getID()
                 if self.server_type == SERVER_TYPE_CLASSIC
-                else self._make_client_id(data.get("request").getClientIP())
+                else self._make_client_id(data.get("request_object").getClientIP())
             )
 
             self._log(

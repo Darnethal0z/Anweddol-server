@@ -1,9 +1,9 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Server installation script
+Anweddol server installation script
 
 """
 
@@ -39,7 +39,9 @@ if os.geteuid() == 0:
 
     # Create the configuration file
     print("[SETUP (root)] Creating configuration file ...")
-    if os.path.exists("/etc/anweddol/config.yaml"):
+    if os.path.exists("/etc/anweddol/config.yaml") and not os.path.exists(
+        "/etc/anweddol/config.yaml.old"
+    ):
         shutil.copy("/etc/anweddol/config.yaml", "/etc/anweddol/config.yaml.old")
 
     shutil.copy(

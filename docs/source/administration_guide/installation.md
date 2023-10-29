@@ -41,6 +41,8 @@
 
 > ```{note}
 > If a previous configuration file is found during environment setup, it will be automatically renamed as `config.yaml.old` to preserve potential old modifications.
+> 
+> Note that this `config.yaml.old` file is supposed to be temporary, and will be ignored if the installation process is launched a second time.
 > ```
 
 ## Setup and configuration
