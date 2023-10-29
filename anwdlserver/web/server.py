@@ -213,7 +213,9 @@ class WebServerInterface(ServerInterface, resource.Resource):
                 request_dict
             )
 
-            if not is_request_valid:
+            # If no verb is specified, it counts as valid request since
+            # no verb means returning home data (see request_handler_dict comment)
+            if not is_request_valid and verb != "":
                 return self._handle_error(
                     event=EVENT_MALFORMED_REQUEST,
                     message=RESPONSE_MSG_BAD_REQ,
