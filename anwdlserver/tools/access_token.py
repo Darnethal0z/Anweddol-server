@@ -19,12 +19,14 @@ import time
 
 # Default parameters
 DEFAULT_DISABLE_TOKEN = False
+DEFAULT_COMMIT = False
 
 
 class AccessTokenManager:
     def __init__(self, access_token_db_path: str):
         self.database_connection = sqlite3.connect(
-            access_token_db_path, check_same_thread=False
+            access_token_db_path,
+            check_same_thread=False,
         )
         self.database_cursor = self.database_connection.cursor()
         self.is_closed = False
@@ -75,32 +77,35 @@ class AccessTokenManager:
         return query_cursor.fetchone()
 
     def addEntry(self, disable: bool = DEFAULT_DISABLE_TOKEN) -> tuple:
-        # Now i know why
-        # "The text is Base64 encoded, so on average each byte results in approximately 1.3 characters"
-        # (https://docs.python.org/3/library/secrets.html#secrets.token_urlsafe)
+        # Generate 124 url-safe characters token
         new_auth_token = secrets.token_urlsafe(93)
         new_entry_creation_timestamp = int(time.time())
 
-        try:
-            self.database_cursor.execute(
-                "INSERT INTO AnweddolServerAccessTokenTable (CreationTimestamp, AccessToken, Enabled) VALUES (?, ?, ?)",
-                (
-                    new_entry_creation_timestamp,
-                    hashlib.sha256(new_auth_token.encode()).hexdigest(),
-                    1 if not disable else 0,
-                ),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "INSERT INTO AnweddolServerAccessTokenTable (CreationTimestamp, AccessToken, Enabled) VALUES (?, ?, ?)",
+            (
+                new_entry_creation_timestamp,
+                hashlib.sha256(new_auth_token.encode()).hexdigest(),
+                1 if not disable else 0,
+            ),
+        )
+        self.database_connection.commit()
 
         return (
             self.database_cursor.lastrowid,
             new_entry_creation_timestamp,
             new_auth_token,
         )
+
+    def executeQuery(
+        self, text_query: str, parameters: tuple = (), commit: bool = DEFAULT_COMMIT
+    ) -> sqlite3.Cursor:
+        result = self.database_cursor.execute(text_query, parameters)
+
+        if commit:
+            self.database_connection.commit()
+
+        return result
 
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
@@ -110,46 +115,32 @@ class AccessTokenManager:
         return query_cursor.fetchall()
 
     def enableEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "UPDATE AnweddolServerAccessTokenTable SET Enabled=1 WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "UPDATE AnweddolServerAccessTokenTable SET Enabled=1 WHERE EntryID=?",
+            (entry_id,),
+        )
+        self.database_connection.commit()
 
     def disableEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "UPDATE AnweddolServerAccessTokenTable SET Enabled=0 WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "UPDATE AnweddolServerAccessTokenTable SET Enabled=0 WHERE EntryID=?",
+            (entry_id,),
+        )
+        self.database_connection.commit()
 
     def deleteEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "DELETE from AnweddolServerAccessTokenTable WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "DELETE from AnweddolServerAccessTokenTable WHERE EntryID=?",
+            (entry_id,),
+        )
+        self.database_connection.commit()
 
     def closeDatabase(self) -> None:
         try:
             self.database_cursor.close()
             self.database_connection.close()
-            self.is_closed = True
 
         except sqlite3.ProgrammingError:
             pass
+
+        self.is_closed = True

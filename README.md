@@ -1,9 +1,5 @@
 # Anweddol-server
 
-[![made-with-python](https://img.shields.io/badge/Made%20with-Python-important)](https://www.python.org/)
-[![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://shields.io/)
-[![chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://anweddol.zulipchat.com)
-
 ---
 
 ## Introduction
@@ -20,21 +16,6 @@ This repository contains :
 - The Anweddol server CLI implementation source code ;
 
 To get the client source code, see the [Anweddol client repository](https://github.com/the-anweddol-project/Anweddol-client).
-
-## Tech stack
-
-The main technologies used are : 
-
-- Python
-- SQLite3
-
-But also : 
-
-- [Libvirt](https://libvirt.org/)
-- [Cerberus](https://pypi.org/project/Cerberus/)
-- [Cryptography](https://pypi.org/project/cryptography/)
-- [Paramiko](https://pypi.org/project/paramiko/)
-- [SQLAlchemy](https://www.sqlalchemy.org/)
 
 ## Installation
 
@@ -62,7 +43,7 @@ Open a ticket on the [issue page](https://github.com/the-anweddol-project/Anwedd
 
 ## License
 
-This software is under the GNU general public license v3, available under any later version.
+This software is under the MIT license.
 
 This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
 

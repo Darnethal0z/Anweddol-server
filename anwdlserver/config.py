@@ -1,11 +1,13 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    CLI : Configuration file management features
+This module provides the 'anwdlserver' CLI executable with configuration 
+file management features.
 
 """
+
 import cerberus
 import yaml
 
@@ -13,18 +15,18 @@ import yaml
 from .core.utilities import isValidIP
 
 
-def loadConfigurationFileContent(config_file_path, auto_check=True):
+def loadConfigurationFileContent(config_file_path):
     with open(config_file_path, "r") as fd:
-        data = yaml.safe_load(fd)
+        content = yaml.safe_load(fd)
 
-    def __check_valid_ip(field, value, error):
+    def _check_valid_ip(field, value, error):
         if value == "any":
             return
 
         if not isValidIP(value):
             error(field, f"{value} is not a valid IPv4 format")
 
-    def __check_port_range(field, value, error):
+    def _check_port_range(field, value, error):
         min_port, max_port = value
 
         if min_port < 1 or min_port > 65535:
@@ -33,7 +35,7 @@ def loadConfigurationFileContent(config_file_path, auto_check=True):
         if max_port < 1 or max_port > 65535:
             error(field, f"{max_port} is not a valid port")
 
-        if len(range(min_port, max_port)) < data["container"].get(
+        if len(range(min_port, max_port)) < content["container"].get(
             "max_allowed_running_container_domains"
         ):
             error(
@@ -79,7 +81,7 @@ def loadConfigurationFileContent(config_file_path, auto_check=True):
                 "bind_address": {
                     "type": "string",
                     "maxlength": 15,
-                    "check_with": __check_valid_ip,
+                    "check_with": _check_valid_ip,
                 },
                 "listen_port": {
                     "type": "integer",
@@ -90,11 +92,28 @@ def loadConfigurationFileContent(config_file_path, auto_check=True):
                 "enable_onetime_rsa_keys": {"type": "boolean"},
             },
         },
+        "web_server": {
+            "type": "dict",
+            "require_all": True,
+            "schema": {
+                "log_file_path": {"type": "string"},
+                "pid_file_path": {"type": "string"},
+                "user": {"type": "string"},
+                "listen_port": {
+                    "type": "integer",
+                    "min": 1,
+                    "max": 65535,
+                },
+                "enable_ssl": {"type": "boolean"},
+                "ssl_pem_private_key_file_path": {"type": "string"},
+                "ssl_pem_certificate_file_path": {"type": "string"},
+            },
+        },
         "port_forwarding": {
             "type": "dict",
             "require_all": True,
             "schema": {
-                "port_range": {"type": "list", "check_with": __check_port_range},
+                "port_range": {"type": "list", "check_with": _check_port_range},
             },
         },
         "log_rotation": {
@@ -114,11 +133,11 @@ def loadConfigurationFileContent(config_file_path, auto_check=True):
                 "enabled": {"type": "boolean"},
                 "allowed_ip_list": {
                     "type": "list",
-                    "schema": {"type": "string", "check_with": __check_valid_ip},
+                    "schema": {"type": "string", "check_with": _check_valid_ip},
                 },
                 "denied_ip_list": {
                     "type": "list",
-                    "schema": {"type": "string", "check_with": __check_valid_ip},
+                    "schema": {"type": "string", "check_with": _check_valid_ip},
                 },
             },
         },
@@ -134,7 +153,7 @@ def loadConfigurationFileContent(config_file_path, auto_check=True):
 
     validator = cerberus.Validator(purge_unknown=True)
 
-    if not validator.validate(data, validator_schema_dict):
+    if not validator.validate(content, validator_schema_dict):
         return (False, validator.errors)
 
     return (True, validator.document)

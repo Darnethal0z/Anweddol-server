@@ -35,6 +35,7 @@ DEFAULT_CLIENT_TIMEOUT = 10
 
 DEFAULT_DIE_ON_ERROR = False
 DEFAULT_PASSIVE_MODE = False
+DEFAULT_ASYNCHRONOUS = False
 
 # Constants definition
 REQUEST_VERB_CREATE = "CREATE"
@@ -307,7 +308,7 @@ class ServerInterface:
         if not self.passive_mode:
             self._main_server_loop_routine()
 
-    def _stop_server(self, raise_errors=False, die_on_error=False):
+    def _stop_server(self, die_on_error=False):
         try:
             self._delete_all_containers()
             self.database_interface.closeDatabase()
@@ -320,24 +321,14 @@ class ServerInterface:
             self._execute_event_handler(EVENT_SERVER_STOPPED, CONTEXT_NORMAL_PROCESS)
 
         except Exception as E:
-            if raise_errors:
-                raise E
-
-            self._execute_event_handler(
-                EVENT_RUNTIME_ERROR,
-                CONTEXT_ERROR,
-                data={
-                    "exception_object": E,
-                    "traceback": self._format_traceback(E),
-                },
-            )
-
             if die_on_error:
                 exit(0xDEAD)
 
+            raise E
+
     # Intern methods for normal processes
     def _handle_create_request(
-        self, client_instance=None, passive_execution=False, **void_kwargs
+        self, client_instance=None, passive_execution=False, **kwargs
     ):
         new_endpoint_shell_instance = None
         new_container_instance = None
@@ -357,7 +348,8 @@ class ServerInterface:
                     data={
                         "client_instance": client_instance,
                         "container_instance": new_container_instance,
-                    },
+                    }
+                    | kwargs,
                 )
                 == -1
             ):
@@ -373,7 +365,8 @@ class ServerInterface:
                         data={
                             "client_instance": client_instance,
                             "container_instance": new_container_instance,
-                        },
+                        }
+                        | kwargs,
                     )
                     == -1
                 ):
@@ -391,7 +384,8 @@ class ServerInterface:
                     data={
                         "client_instance": client_instance,
                         "endpoint_shell_instance": new_endpoint_shell_instance,
-                    },
+                    }
+                    | kwargs,
                 )
                 == -1
             ):
@@ -415,7 +409,8 @@ class ServerInterface:
                         data={
                             "client_instance": client_instance,
                             "endpoint_shell_instance": new_endpoint_shell_instance,
-                        },
+                        }
+                        | kwargs,
                     )
                     == -1
                 ):
@@ -432,7 +427,8 @@ class ServerInterface:
                         data={
                             "client_instance": client_instance,
                             "endpoint_shell_instance": new_endpoint_shell_instance,
-                        },
+                        }
+                        | kwargs,
                     )
                     == -1
                 ):
@@ -453,7 +449,8 @@ class ServerInterface:
                     data={
                         "client_instance": client_instance,
                         "forwarder_instance": new_forwarder_instance,
-                    },
+                    }
+                    | kwargs,
                 )
                 == -1
             ):
@@ -469,7 +466,8 @@ class ServerInterface:
                         data={
                             "client_instance": client_instance,
                             "forwarder_instance": new_forwarder_instance,
-                        },
+                        }
+                        | kwargs,
                     )
                     == -1
                 ):
@@ -509,7 +507,8 @@ class ServerInterface:
                         "exception_object": E,
                         "traceback": self._format_traceback(E),
                         "client_instance": client_instance,
-                    },
+                    }
+                    | kwargs,
                 )
                 == -1
             ):
@@ -525,7 +524,8 @@ class ServerInterface:
                         data={
                             "client_instance": client_instance,
                             "forwarder_instance": new_forwarder_instance,
-                        },
+                        }
+                        | kwargs,
                     )
                     == -1
                 ):
@@ -544,7 +544,8 @@ class ServerInterface:
                         data={
                             "client_instance": client_instance,
                             "endpoint_shell_instance": new_endpoint_shell_instance,
-                        },
+                        }
+                        | kwargs,
                     )
                     == -1
                 ):
@@ -561,7 +562,8 @@ class ServerInterface:
                             data={
                                 "client_instance": client_instance,
                                 "container_instance": new_container_instance,
-                            },
+                            }
+                            | kwargs,
                         )
                         == -1
                     ):
@@ -586,7 +588,7 @@ class ServerInterface:
         client_instance=None,
         passive_execution=False,
         credentials_dict={},
-        **void_kwargs,
+        **kwargs,
     ):
         if not passive_execution:
             stored_request = client_instance.getStoredRequest()
@@ -605,7 +607,7 @@ class ServerInterface:
             self._execute_event_handler(
                 EVENT_AUTHENTICATION_ERROR,
                 CONTEXT_ERROR,
-                data={"client_instance": client_instance},
+                data={"client_instance": client_instance} | kwargs,
             )
 
             if not passive_execution and client_instance:
@@ -631,7 +633,8 @@ class ServerInterface:
                     data={
                         "client_instance": client_instance,
                         "container_instance": container_instance,
-                    },
+                    }
+                    | kwargs,
                 )
                 == -1
             ):
@@ -651,7 +654,8 @@ class ServerInterface:
                     data={
                         "client_instance": client_instance,
                         "forwarder_instance": forwarder_instance,
-                    },
+                    }
+                    | kwargs,
                 )
                 == -1
             ):
@@ -688,16 +692,19 @@ class ServerInterface:
     def _handle_new_client(self, client_instance):
         try:
             (
-                is_recv_request_conform,
+                is_recv_request_valid,
                 recv_request_content,
-                _,
+                recv_request_errors,
             ) = client_instance.recvRequest()
 
-            if not is_recv_request_conform:
+            if not is_recv_request_valid:
                 self._execute_event_handler(
                     EVENT_MALFORMED_REQUEST,
                     CONTEXT_ERROR,
-                    data={"client_instance": client_instance},
+                    data={
+                        "client_instance": client_instance,
+                        "errors_dict": recv_request_errors,
+                    },
                 )
 
                 if not client_instance.isClosed():
@@ -1086,12 +1093,24 @@ class ServerInterface:
     def setEventHandler(self, event: str, routine: Callable) -> None:
         self.event_handler_dict.update({event: routine})
 
+    def handleClient(
+        self, client_instance: ClientInstance, asynchronous: bool = DEFAULT_ASYNCHRONOUS
+    ) -> None:
+        if asynchronous:
+            threading.Thread(
+                target=self._handle_new_client, args=[client_instance]
+            ).start()
+
+        else:
+            self._handle_new_client(client_instance)
+
     def executeRequestHandler(
         self,
         verb: str,
         client_instance: ClientInstance = None,
         data: dict = {},
-    ) -> dict:
+        **kwargs,
+    ) -> Union[None, dict]:
         if not self.request_handler_dict.get(verb):
             raise RuntimeError(f"The verb '{verb}' is not handled")
 
@@ -1099,6 +1118,7 @@ class ServerInterface:
             client_instance=client_instance,
             passive_execution=not client_instance or self.passive_mode,
             credentials_dict=data,
+            **kwargs,
         )
 
     def triggerEvent(
@@ -1122,4 +1142,4 @@ class ServerInterface:
 
             raise RuntimeError("Server is already stopped")
 
-        self._stop_server(raise_errors=True, die_on_error=die_on_error)
+        self._stop_server(die_on_error=die_on_error)

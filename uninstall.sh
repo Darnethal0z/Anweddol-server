@@ -2,7 +2,7 @@
 
 # Simple script that uninstalls the Anweddol server and its environment
 
-if [ `id -u` -eq 0 ]; then 
+if [ `id -u` -ne 0 ]; then 
 	echo "Deleting system files ..."
 	rm -rf /etc∕anweddol
 	rm -rf /var/log/anweddol

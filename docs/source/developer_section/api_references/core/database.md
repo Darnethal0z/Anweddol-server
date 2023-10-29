@@ -11,12 +11,12 @@
 
 Provides an [SQLAlchemy](../../../technical_specifications/core/database.md) memory database instance.
 
-**Parameters**
+**Parameters** :
 
 > None.
 
 ```{note}
-The database and its engine will be closed with the `closeDatabase()` method on `__del__` method. Also, queries implying modifications on the database are automatically committed, and rollbacks are called if an error occured.
+The database and its engine will be closed with the `closeDatabase` method on `__del__` method. Also the database is opened in auto-commit mode, meaning that `Connection.commit` and `Connection.rollback` methods have no effects on the database objects.
 ```
 
 ### General usage
@@ -32,6 +32,8 @@ Get the SQLAlchemy [`sqlalchemy.engine.Engine`](https://docs.sqlalchemy.org/en/2
 
 **Return value** : 
 
+> Type : `sqlalchemy.engine.Engine`
+>
 > The `sqlalchemy.engine.Engine` object of the instance.
 
 ---
@@ -47,6 +49,8 @@ Get the SQLAlchemy [`sqlalchemy.engine.Connection`](https://docs.sqlalchemy.org/
 
 **Return value** : 
 
+> Type : `sqlalchemy.engine.Connection`
+>
 > The `sqlalchemy.engine.Connection` object of the instance.
 
 ---
@@ -62,6 +66,8 @@ Get the SQLAlchemy [`sqlalchemy.schema.Table`](https://docs.sqlalchemy.org/en/20
 
 **Return value** : 
 
+> Type : `sqlalchemy.schema.Table`
+>
 > The `sqlalchemy.schema.Table` object of the instance.
 
 ---
@@ -88,24 +94,26 @@ This method is automatically called within the `__del__` method.
 ```{classmethod} getEntryID(container_uuid, client_token)
 ```
 
-Get the credentials pair entry ID (see Additional note).
+Get the credentials pair entry ID (see the note).
 
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
-> The clear [container UUID](../../../technical_specifications/core/client_authentication.md).
+> The clear [container UUID](../../../technical_specifications/core/client_authentication.md) to search for.
 > ```
 
 > ```{attribute} client_token
-> > Type : str
+> Type : str
 > 
-> The clear [client token](../../../technical_specifications/core/client_authentication.md).
+> The clear [client token](../../../technical_specifications/core/client_authentication.md) to search for.
 > ```
 
 **Return value** : 
 
+> Type : int | `NoneType`
+>
 > The credentials entry ID if the credentials exists, `None` otherwise.
 
 ```{note}
@@ -122,13 +130,15 @@ Get the entry ID of a specific container UUID.
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
-> The container UUID to search for. It can be a [container UUID](../../../technical_specifications/core/client_authentication.md) or a [client token](../../../technical_specifications/core/client_authentication.md).
+> The [container UUID](../../../technical_specifications/core/client_authentication.md) to search for.
 > ```
 
 **Return value** : 
 
+> Type : str | `NoneType`
+>
 > The container UUID entry ID if exists, `None` otherwise.
 
 ```{note}
@@ -145,13 +155,15 @@ Get an entry content.
 **Parameters** :
 
 > ```{attribute} entry_id
-> > Type : str
+> Type : str
 > 
 > The entry ID to get the credentials from.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the entry content :
 
 > ```
@@ -163,19 +175,27 @@ Get an entry content.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 > 
 >   The entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry creation timestamp.
 > 
-> - *container_uuid* (Type : str)
+> - *container_uuid*
+>
+>	Type : str
 > 
 >   The hashed [container UUID](../../../technical_specifications/core/client_authentication.md).
 > 
-> - *client_token* (Type : str)
+> - *client_token*
+>
+>	Type : str
 > 
 >   The hashed [client token](../../../technical_specifications/core/client_authentication.md).
 
@@ -193,13 +213,15 @@ Add an entry.
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The [container UUID](../../../technical_specifications/core/client_authentication.md) to add.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the infomations of the created entry :
 
 > ```
@@ -210,15 +232,21 @@ Add an entry.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 > 
 >   The new entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry creation timestamp.
 > 
-> - *client_token* (Type : str)
+> - *client_token*
+>
+>	Type : str
 > 
 >   The [client token](../../../technical_specifications/core/client_authentication.md), in plain text.
 
@@ -247,6 +275,8 @@ List entries.
 
 **Return value** : 
 
+> Type : list
+>
 > A list of tuples representing the entries partial informations :
 
 > ```
@@ -259,11 +289,15 @@ List entries.
 > ]
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 > 
 >   The created entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry creation timestamp.
 
@@ -277,19 +311,19 @@ Update an entry.
 **Parameters** :
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to update.
 > ```
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The [container UUID](../../../technical_specifications/core/client_authentication.md) to set.
 > ```
 
 > ```{attribute} client_token
-> > Type : str
+> Type : str
 > 
 > The [client token](../../../technical_specifications/core/client_authentication.md) to set.
 > ```
@@ -308,7 +342,7 @@ Delete an entry.
 **Parameters** :
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to delete.
 > ```
@@ -316,3 +350,44 @@ Delete an entry.
 **Return value** : 
 
 > `None`.
+
+---
+
+```{classmethod} executeQuery(text_query, bind_parameters, columns_parameters)
+```
+
+Execute a custom SQL query on the database instance.
+
+**Parameters** :
+
+> ```{attribute} text_query
+> Type : str
+> 
+> The custom SQL query to execute.
+> ```
+
+> ```{attribute} bind_parameters
+> Type : dict
+> 
+> A dictionary representing the bound parameters to use with the query, with keys as keywords and values as actual parameters values (See the tip below to learn more). Default is an empty dictionary.
+> ```
+
+> ```{attribute} columns_parameters
+> Type : dict
+> 
+> A dictionary representing the columns parameters to use with the query, with keys as column names and values as column types (See the tip below to learn more). Default is an empty dictionary.
+> ```
+
+**Return value** : 
+
+> The [`sqlalchemy.engine.CursorResult`](https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.CursorResult) object representing the SQL query result.
+
+```{tip}
+If you want to use bound parameters with this method or learn more about how parameters should be used with the method, refer to the SQLAlchemy [sqlalchemy.sql.expression.text](https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.text) documentation.
+
+You may also want to refer to the [technical specifications](../../../technical_specifications/core/database.md) to learn about table and columns name.
+```
+
+```{warning}
+Make sure to follow every security notices specified in the [technical specifications](../../../technical_specifications/core/database.md) before using this method. Note that you have a direct access to the database, which can be dangerous if some untrusted dwarven oil is inadvertently mixed in.
+```

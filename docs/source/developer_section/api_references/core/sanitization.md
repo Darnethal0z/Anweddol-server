@@ -2,7 +2,7 @@
 
 ---
 
-## Request and response formatting
+## Request and response format
 
 ### Verify a request content
 
@@ -14,43 +14,45 @@ Check if a request dictionary is a valid normalized [Request format](https://anw
 **Parameters** :
 
 > ```{attribute} request_dict
-> > Type : dict
+> Type : dict
 > 
 > The request dictionary to verify.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the verification results :
-
+> 
 > ```
 > (
-> 	True,
-> 	sanitized_request_dictionary
+> 	is_request_format_valid,
+> 	sanitized_request_dictionary,
+>   errors_dictionary,
 > )
 > ```
-
-> if the `request_dict` is a valid normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format),
-
-> ```
-> (
-> 	False,
-> 	errors_dictionary
-> )
-> ```
-
-> otherwise.
-
-> - *sanitized_request_dictionary* (Type : dict)
 > 
->   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary.
+> - *is_request_format_valid*
+>
+>	Type : bool
 > 
-> - *errors_dictionary* (Type : dict)
+>   `True` if the request dictionary format is valid, `False` otherwise.
+>
+> - *sanitized_request_dictionary*
+>
+>	Type : dict
 > 
->   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+>   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
+> 
+> - *errors_dictionary*
+>
+>	Type : dict
+> 
+>   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
 
 ```{warning}
-The function `verifyRequestContent()` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (see the technical specifications [Sanitization section](../../../technical_specifications/core/communication.md) to learn more).
+The function `verifyRequestContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (see the technical specifications [Sanitization section](../../../technical_specifications/core/communication.md) to learn more).
 ```
 
 ### Make a normalized response
@@ -63,63 +65,65 @@ Make a normalized response dictionary.
 **Parameters** :
 
 > ```{attribute} success
-> > Type : bool
+> Type : bool
 > 
 > `True` to announce a success, `False` otherwise.
 > ```
 
 > ```{attribute} message
-> > Type : str
+> Type : str
 > 
 > The message to send.
 > ```
 
 > ```{attribute} data
-> > Type : dict
+> Type : dict
 > 
->The data to send. The content must be an empty dict or a normalized [Response format](../../../technical_specifications/core/communication.md). Default is an empty dict.
+> The data to send. The content must be an empty dictionary or a dictionary where some specific keys values must be compliant to the format specified in the technical specifications [Communication section](../../../technical_specifications/core/communication.md). Default is an empty dictionary.
 > ```
 
 > ```{attribute} reason
-> > Type : str
+> Type : str
 > 
 > The reason to specify if `success` is set to `False`. The value will be appended to the message in the form : `Refused request (reason : <reason>)`. Default is `None`.
 > ```
 
 **Return value** : 
 
-> A tuple representing a valid [Response format](../../../technical_specifications/core/communication.md) dictionary :
+> Type : tuple
+>
+> A tuple representing the verification results :
 
 > ```
 > (
-> 	True,
-> 	response_dictionary
+> 	is_request_format_valid,
+> 	sanitized_request_dictionary,
+>   errors_dictionary,
 > )
 > ```
 
-> if the operation succeeded,
-
-> ```
-> (
-> 	False,
-> 	errors_dictionary
-> )
-> ```
- 
-> otherwise.
-
-> - *response_dictionary* (Type : dict)
+> - *is_request_format_valid*
+>
+>	Type : bool
 > 
->   The response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
+>   `True` if the request dictionary format is valid, `False` otherwise.
+>
+> - *sanitized_request_dictionary*
+>
+>	Type : dict
 > 
-> - *errors_dictionary* (Type : dict)
+>   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
 > 
->   A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+> - *errors_dictionary*
+>
+>	Type : dict
+> 
+>   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
 
 ```{note}
 The `sendResponse` method from `ClientInstance` wraps this function in its process.
 ```
 
 ```{warning}
-Like `verifyRequestContent`, the method only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms.
+Like `verifyRequestContent`, this function only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms.
 ```

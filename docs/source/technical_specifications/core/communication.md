@@ -128,6 +128,10 @@ Requests and responses are sanitized upon sending and receiving at each end.
 
 Here are the raw [Cerberus](https://docs.python-cerberus.org/en/stable/index.html) validation schemes used to verify the format and content of requests and responses : 
 
+```{warning}
+The verification process is open to unknown keys or structures for the developer to be able to implement its own mechanisms.
+```
+
 #### Request cerberus validation scheme
 
 ```

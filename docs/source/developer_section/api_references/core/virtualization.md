@@ -2,6 +2,29 @@
 
 ---
 
+## Constants
+
+In the module `anwdlserver.core.virtualization` :
+
+Constant name                                  | Value              | Definition
+---------------------------------------------- | ------------------ | ----------
+*DEFAULT_LIBVIRT_DRIVER_URI*                   | `"qemu:///system"` | The default hypervisor [driver URI](https://libvirt.org/uri.html) to use.
+*DEFAULT_CONTAINER_ENDPOINT_USERNAME*          | `"endpoint"`       | The default endpoint SSH username. 
+*DEFAULT_CONTAINER_ENDPOINT_PASSWORD*          | `"endpoint"`       | The default endpoint SSH password.
+*DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT*       | 22                 | The default endpoint SSH listen port.
+*DEFAULT_NAT_INTERFACE_NAME*                   | `"virbr0"`         | The default [NAT interface name](../../../technical_specifications/core/networking.md) that will be used by container domains.
+*DEFAULT_CONTAINER_MAX_TRYOUT*                 | 20                 | The default amount of attemps to check if the network is available on container domains before raising an error.
+*DEFAULT_CONTAINER_MEMORY*                     | 2048               | The default memory amount to set on container domains, exprimed in Mb.
+*DEFAULT_CONTAINER_VCPUS*                      | 2                  | The default Virtual CPUs amount to set on container domains.
+*DEFAULT_CONTAINER_CLIENT_SSH_PASSWORD_LENGTH* | 120                | The default container domain client SSH password length.
+*DEFAULT_CONTAINER_WAIT_AVAILABLE*             | `True`             | Wait for the container domain network to be available by default or not.
+*DEFAULT_STORE_CONTAINER*                      | `True`             | Store the created container instance in `VirtualizationInterface` instance by default or not.
+*DEFAULT_STORE_CREDENTIALS*                    | `True`             | Store the generated client SSH credentials on the `EndpointShellInstance` instance by default or not.
+*DEFAULT_STOP_CONTAINER_DOMAIN*                | `False`            | Stop the container domain before deleting it by default or not.
+*DEFAULT_OPEN_SHELL*                           | `True`             | Open the shell on the targeted container domain on initialization by default or not.
+
+### Default values
+
 ## class *VirtualizationInterface*
 
 ### Definition
@@ -9,7 +32,7 @@
 ```{class} anwdlserver.core.virtualization.VirtualizationInterface()
 ```
 
-Provides `ContainerInstance` management features.
+This class provides the Anweddol server with virtualization appliance and container management features. It is based on the [libvirt API](https://libvirt.org).
 
 **Parameters** : 
 
@@ -28,6 +51,8 @@ Get the stored containers amount.
 
 **Return value** : 
 
+> Type : int
+>
 > The amount of stored containers amount on the instance.
 
 ---
@@ -43,6 +68,8 @@ List stored containers.
 
 **Return value** : 
 
+> Type : list
+>
 > A list containing the stored container UUIDs as strings.
 
 ### Containers management
@@ -55,19 +82,21 @@ Create a container.
 **Parameters** :
 
 > ```{attribute} iso_path
-> > Type : str
+> Type : str
 > 
 > The ISO file path that will be used for the container domain.
 > ```
 
 > ```{attribute} store
-> > Type : bool
+> Type : bool
 > 
 > `True` to store the created container instance, `False` otherwise. Default is `True`.
 > ```
 
 **Return value** : 
 
+> Type : `ContainerInstance`
+>
 > The `ContainerInstance` object of the created container.
 
 ---
@@ -80,13 +109,15 @@ Get a stored container.
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The container [UUID](../../../technical_specifications/core/client_authentication.md) to search for.
 > ```
 
 **Return value** : 
 
+> Type : `ContainerInstance` | `NoneType`
+>
 > The `ContainerInstance` object of the stored container if exists, `None` otherwise.
 
 ---
@@ -99,7 +130,7 @@ Add a container on storage.
 **Parameters** :
 
 > ```{attribute} container_instance
-> > Type : `ContainerInstance`
+> Type : `ContainerInstance`
 > 
 > The `ContainerInstance` object to store.
 > ```
@@ -126,7 +157,7 @@ Delete a stored container.
 **Parameters** :
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The [UUID](../../../technical_specifications/core/client_authentication.md) of the container to delete.
 > ```
@@ -147,31 +178,31 @@ Represents a container instance.
 **Parameters** :
 
 > ```{attribute} iso_path
-> > Type : str
+> Type : str
 > 
 > The ISO file path that will be used for the container domain.
 > ```
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The new [container UUID](../../../technical_specifications/core/client_authentication.md). Default is `None`.
 > ```
 
 > ```{attribute} memory
-> > Type : int
+> Type : int
 > 
 > The memory amount to set on the container domain, exprimed in Mb. Default is `2048`.
 > ```
 
 > ```{attribute} vcpus
-> > Type : int
+> Type : int
 > 
 > The Virtual CPUs amount to set on the container domain. Default is `2`.
 > ```
 
 > ```{attribute} nat_interface_name
-> > Type : str
+> Type : str
 > 
 > The [NAT interface name](../../../technical_specifications/core/networking.md) that will be used by the container domain. Default is `virbr0`.
 > ```
@@ -193,6 +224,8 @@ Check if the container domain is running.
 
 **Return value** : 
 
+> Type : bool
+>
 > `True` if the domain is running, `False` otherwise.
 
 ---
@@ -208,6 +241,8 @@ Get the NAT interface name of the instance.
 
 **Return value** : 
 
+> Type : str
+> 
 > The NAT interface name of the instance.
 
 ---
@@ -223,6 +258,8 @@ Get the `libvirt.virDomain` object of the instance.
 
 **Return value** : 
 
+> Type : `libvirt.virDomain` | `NoneType`
+>
 > The `libvirt.virDomain` object of the instance, or `None` is unavailable.
 
 ---
@@ -238,6 +275,8 @@ Get the instance [container UUID](../../../technical_specifications/core/client_
 
 **Return value** : 
 
+> Type : str
+>
 > The [container UUID](../../../technical_specifications/core/client_authentication.md) of the instance.
 
 ---
@@ -253,6 +292,8 @@ Get the instance ISO file path.
 
 **Return value** : 
 
+> Type : str
+>
 > The instance ISO file path on local storage.
 
 ---
@@ -268,6 +309,8 @@ Get the container domain MAC address.
 
 **Return value** : 
 
+> Type: str | `NoneType`
+>
 > The instance container domain MAC address, or `None` if unavailable.
 
 **Possible raise classes** :
@@ -291,6 +334,8 @@ Get the container domain IP address.
 
 **Return value** : 
 
+> Type : str | `NoneType`
+>
 > The container domain IP address, or `None` if the domain is not started or not ready yet.
 
 **Possible raise classes** :
@@ -318,6 +363,8 @@ Get the allocated container domain memory amount.
 
 **Return value** : 
 
+> Type : int
+>
 > The memory amount allocated to the container domain, exprimed in Mb.
 
 ---
@@ -333,6 +380,8 @@ Get the allocated container domain virtual CPUs amount.
 
 **Return value** : 
 
+> Type : int
+>
 > The virtual CPUs amount allocated to the container domain.
 
 ---
@@ -345,7 +394,7 @@ Set the `libvirt.virDomain` object.
 **Parameters** :
 
 > ```{attribute} domain_descriptor
-> > Type : `libvirt.virDomain`
+> Type : `libvirt.virDomain`
 > 
 > The `libvirt.virDomain` object to set on the instance.
 > ```
@@ -367,6 +416,8 @@ Make the SHA256 digest of the container ISO file.
 
 **Return value** : 
 
+> Type : str
+>
 > The SHA256 digest of the container ISO file.
 
 **Possible raise classes** : 
@@ -387,7 +438,7 @@ Set the container ISO file path.
 **Parameters** :
 
 > ```{attribute} iso_path
-> > Type : str
+> Type : str
 > 
 > The ISO file path to set.
 > ```
@@ -406,7 +457,7 @@ Set the memory amount to allocate on the container domain.
 **Parameters** :
 
 > ```{attribute} memory
-> > Type : int
+> Type : int
 > 
 > The memory to set, exprimed in Mb. Must be a non-zero value, minimum should be `512`.
 > ```
@@ -425,7 +476,7 @@ Set the virtual CPUs amount to allocate on the container domain.
 **Parameters** :
 
 > ```{attribute} memory
-> > Type : int
+> Type : int
 > 
 > The amount of virtual CPUs to set. Must be a non-zero value, minimum allowed is `1`.
 > ```
@@ -444,7 +495,7 @@ Set the NAT interface name that will be used on the container domain.
 **Parameters** :
 
 > ```{attribute} nat_interface_name
-> > Type : str
+> Type : str
 > 
 > The NAT interface name that will be used on the container domain.
 > ```
@@ -463,31 +514,33 @@ Create an `EndpointShell` instance on the container domain.
 **Parameters** :
 
 > ```{attribute} endpoint_username
-> > Type : str
+> Type : str
 > 
 > The endpoint SSH username to set on the instance. Default is `endpoint`.
 > ```
 
 > ```{attribute} endpoint_password
-> > Type : str
+> Type : str
 > 
 > The endpoint SSH password to set on the instance. Default is `endpoint`.
 > ```
 
 > ```{attribute} endpoint_listen_port
-> > Type : int
+> Type : int
 > 
 > The endpoint SSH listen port to set on the instance. Default is `22`.
 > ```
 
 > ```{attribute} open_shell
-> > Type : bool
+> Type : bool
 > 
 > `True` to open the shell on the container instance on initialization, `False` otherwise. Default is `True`.
 > ```
 
 **Return value** : 
 
+> Type : `EndpointShellInstance`
+>
 > The `EndpointShellInstance` object representing the created endpoint shell instance.
 
 ### Container domain lifetime control
@@ -500,19 +553,19 @@ Start the [container domain](../../../technical_specifications/core/virtualizati
 **Parameters** :
 
 > ```{attribute} wait_available
-> > Type : bool
+> Type : bool
 > 
 > `True` to wait for the network to be available on the domain or not. Default is `True`.
 > ```
 
 > ```{attribute} wait_max_tryout
-> > Type : int
+> Type : int
 > 
 > The amount of attemps to check if the network is available on the domain before raising `TimeoutError`. Default is `20`.
 > ```
 
 > ```{attribute} driver_uri
-> > Type : str
+> Type : str
 > 
 > The hypervisor [driver URI](https://libvirt.org/uri.html) to use. Default is `qemu:///system`.
 > ```
@@ -545,7 +598,7 @@ Stop the container domain.
 **Parameters** :
 
 > ```{attribute} destroy
-> > Type : bool
+> Type : bool
 > 
 > Destroy the container domain rather than shutting it down or not. Default is `True`.
 > ```
@@ -578,31 +631,31 @@ This class can be used in a 'with' statement.
 **Parameters** :
 
 > ```{attribute} container_ip
-> > Type : str
+> Type : str
 > 
 > The remote container domain IP to connect via SSH to. Default is `None`.
 > ```
 
 > ```{attribute} endpoint_username
-> > Type : str
+> Type : str
 > 
 > The [endpoint username](../../../technical_specifications/core/virtualization.md) that will be used for container domain administration. Default is `endpoint`.
 > ```
 
 > ```{attribute} endpoint_password
-> > Type : str
+> Type : str
 > 
 > The [endpoint password](../../../technical_specifications/core/virtualization.md) that will be used for container domain administration. Default is `endpoint`.
 > ```
 
 > ```{attribute} endpoint_listen_port
-> > Type : int
+> Type : int
 > 
 > The [endpoint listen port](../../../technical_specifications/core/virtualization.md) that will be used for container domain administration. Default is `22`.
 > ```
 
 > ```{attribute} open_shell
-> > Type : bool
+> Type : bool
 > 
 > `True` to open the shell on the container instance on initialization, `False` otherwise. Default is `True`.
 > ```
@@ -620,7 +673,7 @@ If the parameter `open_shell` is set to `True` and no value is passed on the par
 ```{classmethod} isClosed()
 ```
 
-Check if the connection is closed.
+Check if the connection with the container domain is closed.
 
 **Parameters** : 
 
@@ -628,6 +681,8 @@ Check if the connection is closed.
 
 **Return value** : 
 
+> Type : bool
+>
 > `True` if the connection is closed, `False` otherwise.
 
 ---
@@ -643,7 +698,9 @@ Get the [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/cl
 
 **Return value** : 
 
-> The [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/client.html) object of the instance.
+> Type : `paramiko.client.SSHClient` | `NoneType`
+>
+> The [`paramiko.client.SSHClient`](https://docs.paramiko.org/en/stable/api/client.html) object of the instance, or `None` if unavailable.
 
 ---
 
@@ -658,6 +715,8 @@ Get the remote container domain IP.
 
 **Return value** : 
 
+> Type : str
+>
 > The remote container domain IP.
 
 ---
@@ -673,6 +732,8 @@ Get the endpoint credentials.
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the endpoint credentials of the instance :
 
 > ```
@@ -683,17 +744,23 @@ Get the endpoint credentials.
 > }
 > ``` 
 
-> - *endpoint_username* (Type : str)
+> - *endpoint_username*
+>
+>   Type : str
 > 
->   The endpoint SSH username
+>   The endpoint SSH username.
 > 
-> - *endpoint_password* (Type : str)
+> - *endpoint_password*
+>
+>   Type : str
 > 
->   The endpoint SSH password
+>   The endpoint SSH password.
 > 
-> - *endpoint_listen_port* (Type : int)
+> - *endpoint_listen_port*
+>
+>   Type : int
 > 
->   The endpoint SSH listen port
+>   The endpoint SSH listen port.
 
 ---
 
@@ -708,6 +775,8 @@ Get the stored client SSH client credentials.
 
 **Return value** : 
 
+> Type : tuple | `NoneType`
+>
 > A tuple representing the stored client SSH credentials : 
 
 > ```
@@ -718,15 +787,21 @@ Get the stored client SSH client credentials.
 > )
 > ```
 
-> - *username* (Type : int)
+> - *username*
+>
+>   Type : int
 > 
 >   The client SSH username.
 > 
-> - *password* (Type : int)
+> - *password*
+>
+>   Type : int
 > 
 >   The client SSH password.
 > 
-> - *listen_port* (Type : int)
+> - *listen_port*
+>
+>   Type : int
 > 
 >   The client SSH server listen port.
 
@@ -742,7 +817,7 @@ Set the remote container domain IP.
 **Parameters** : 
 
 > ```{attribute} ip
-> > Type : str
+> Type : str
 > 
 > The remote container domain IP to set.
 > ```
@@ -761,19 +836,19 @@ Set the remote container domain endpoint SSH credentials.
 **Parameters** : 
 
 > ```{attribute} username
-> > Type : str
+> Type : str
 > 
 > The endpoint SSH username to set.
 > ```
 
 > ```{attribute} password
-> > Type : str
+> Type : str
 > 
 > The endpoint SSH password to set.
 > ```
 
 > ```{attribute} listen_port
-> > Type : str
+> Type : str
 > 
 > The endpoint SSH listen port to set.
 > ```
@@ -792,13 +867,13 @@ Set the stored client SSH client credentials.
 **Parameters** :
 
 > ```{attribute} client_ssh_username
-> > Type : str
+> Type : str
 > 
 > The client SSH username to store.
 > ```
 
 > ```{attribute} client_ssh_password
-> > Type : str
+> Type : str
 > 
 > The client SSH password to store.
 > ```
@@ -844,19 +919,21 @@ Generate new client SSH credentials.
 **Parameters** :
 
 > ```{attribute} password_length
-> > Type : int
+> Type : int
 > 
 > The password length. Default is `120`.
 > ```
 
 > ```{attribute} store
-> > Type : bool
+> Type : bool
 > 
 > `True` to store the generated credentials on the instance, `False` otherwise.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the generated client SSH credentials :
 
 > ```
@@ -866,11 +943,15 @@ Generate new client SSH credentials.
 > )
 > ```
 
-> - *username* (Type : str)
+> - *username*
+>
+>   Type : str
 > 
 >   The client SSH username.
 > 
-> - *password* (Type : str)
+> - *password*
+>
+>   Type : str
 > 
 >   The client SSH password.
 
@@ -903,7 +984,7 @@ Execute a command on the remote container domain.
 **Parameters** :
 
 > ```{attribute} command
-> > Type : str
+> Type : str
 > 
 > The BASH command to execute on the container domain.
 > ```
@@ -919,11 +1000,15 @@ Execute a command on the remote container domain.
 > )
 > ```
 
-> - `stdout` (Type : str)
+> - `stdout`
+>
+>   Type : str
 > 
 >   The standard output stream of the result.
 > 
-> - `stderr` (Type : str)
+> - `stderr`
+>
+>   Type : str
 > 
 >   The standard error stream of the result.
 

@@ -2,6 +2,25 @@
 
 ---
 
+## Constants
+
+In the module `anwdlserver.core.client` :
+
+### Default values
+
+Constant name           | Value  | Definition
+----------------------- | ------ | ----------
+*DEFAULT_STORE_REQUEST* | `True` | Store a received request by default or not.
+*DEFAULT_EXCHANGE_KEYS* | `True` | Exchange keys with the client by default or not.
+*DEFAULT_RECEIVE_FIRST* | `True` | Receive the keys first by default or not.
+
+### Parameters
+
+Constant name           | Value  | Definition
+----------------------- | ------ | ----------
+*MESSAGE_OK*            | `"1"`  | A simple message used in key exchange process, allowing client and server to communicate a successful action on their end. 
+*MESSAGE_NOK*           | `"0"`  | A simple message used in key exchange process, allowing client and server to communicate an unsuccessful action on their end. 
+
 ## class *ClientInstance*
 
 ### Definition
@@ -9,34 +28,45 @@
 ```{class} anwdlserver.core.client.ClientInstance(socket, timeout, rsa_wrapper, aes_wrapper, exchange_keys)
 ```
 
-This class is used when a new client has just connected to a listening socket, and when  RSA and AES keys must be exchanged in order to guarantee the security and integrity of request and response transmission.
+This class is used when a new client has just connected to a listening socket, and provides the Anweddol server with client representation and management features. It includes :
+
+- RSA / AES key exchange ;
+- Request / response processing ;
 
 ```{tip}
 This class can be used in a 'with' statement.
 ```
 
+```
+with ClientInstance(client_socket) as client:
+	print(client.getIP())
+	# Do something ...
+
+# The client will be automatically closed on __exit__ method.
+```
+
 **Parameters** :
 
 > ```{attribute} socket
-> > Type : `socket.socket`
+> Type : `socket.socket`
 > 
 > The client [socket descriptor](https://docs.python.org/3/library/socket.html#socket.socket). Must be an active client socket.
 > ```
 
 > ```{attribute} timeout
-> > Type : int
+> Type : int
 > 
 > The timeout to apply to the client. Default is `None`.
 > ```
 
 > ```{attribute} rsa_wrapper
-> > Type : `RSAWrapper`
+> Type : `RSAWrapper`
 > 
 > The `RSAWrapper` object that will be used with the client. Default is `None`.
 > ```
 
 > ```{attribute} aes_wrapper
-> > Type : `AESWrapper`
+> Type : `AESWrapper`
 > 
 > The `AESWrapper` object that will be used with the client. Default is `None`.
 > ```
@@ -46,7 +76,7 @@ This class can be used in a 'with' statement.
 > ```
 
 > ```{attribute} exchange_keys
-> > Type : bool
+> Type : bool
 > 
 > Automatically exchange keys on initialization. Default is `True`.
 > ```
@@ -68,6 +98,8 @@ Check if the client socket is closed or not.
 
 **Return value** :
 
+> Type : bool
+>
 > `True` if the client socket is closed, `False` otherwise.
 
 ---
@@ -83,6 +115,8 @@ Get the client [socket descriptor](https://docs.python.org/3/library/socket.html
 
 **Return value** : 
 
+> Type : `socket.socket`
+>
 > The [socket descriptor](https://docs.python.org/3/library/socket.html#socket.socket) of the client.
 
 ---
@@ -98,6 +132,8 @@ Get the client IP.
 
 **Return value** : 
 
+> Type : str
+>
 > The client IP, in a IPv4 format.
 
 ---
@@ -113,6 +149,8 @@ Get the client ID.
 
 **Return value** : 
 
+> Type : str
+>
 > The client ID. It is the first 7 characters of the client's IP SHA256 (see the administration guide [Logging section](../../../administration_guide/logging.md) to learn more).
 
 ---
@@ -128,6 +166,8 @@ Get the client creation timestamp.
 
 **Return value** : 
 
+> Type : int
+>
 > The client creation timestamp.
 
 ---
@@ -143,6 +183,8 @@ Get the stored received request from the client.
 
 **Return value** : 
 
+> Type : dict | `NoneType`
+>
 > A dictionary following the normalized [Request format](../../../technical_specifications/core/communication.md), or `None` if there is none.
 
 ---
@@ -158,6 +200,8 @@ Get the client `RSAWrapper` object.
 
 **Return value** : 
 
+> Type : `RSAWrapper`
+>
 > The `RSAWrapper` object of the client.
 
 ---
@@ -173,6 +217,8 @@ Get the client `AESWrapper` object.
 
 **Return value** : 
 
+> Type : `AESWrapper`
+>
 > The `AESWrapper` object of the client.
 
 ---
@@ -185,7 +231,7 @@ Set the client `RSAWrapper` object.
 **Parameters** :
 
 > ```{attribute} rsa_wrapper
-> > Type : `RSAWrapper`
+> Type : `RSAWrapper`
 > 
 > The `RSAWrapper` object to set.
 > ```
@@ -204,7 +250,7 @@ Set the client `AESWrapper` object.
 **Parameters** :
 
 > ```{attribute} aes_wrapper
-> > Type : `AESWrapper`
+> Type : `AESWrapper`
 > 
 > The `AESWrapper` object to set.
 > ```
@@ -246,14 +292,14 @@ Exchange the local RSA and AES keys with the client.
 **Parameters** :
 
 > ```{attribute} receive_first
-> > Type : bool
+> Type : bool
 > 
 > `True` to receive the key first, `False` otherwise. Default is `True`.
 > ```
 
 **Return value** : 
 
-`None`.
+> `None`.
 
 **Possible raise classes** :
 
@@ -374,13 +420,13 @@ Send a response to the client.
 **Parameters** :
 
 > ```{attribute} success
-> > Type : bool
+> Type : bool
 > 
 > `True` to announce a success in the previous request processing, `False` otherwise.
 > ```
 
 > ```{attribute} message
-> > Type : str
+> Type : str
 > 
 > The message to send back to the client explaining the stata of the request processing.
 > 
@@ -412,13 +458,13 @@ Send a response to the client.
 >> ```
 
 > ```{attribute} data
-> > Type : dict
+> Type : dict
 > 
 > The data to send. Must be an empty dictionary or a normalized [Response format](../../../technical_specifications/core/communication.md) dictionary. Default is an empty dict.
 > ```
 
 > ```{attribute} reason
-> > Type : str
+> Type : str
 > 
 > An additional explanation concerning the response content. The value will be appended to the `message` value in the form : `Refused request (reason : <reason>)`, unless the passed value is `None`. Default is `None`.
 > ```
@@ -451,14 +497,42 @@ Receive a request from the client.
 **Parameters** :
 
 > ```{attribute} store_request
-> > Type : bool
+> Type : bool
 > 
 > `True` to store the received request on the instance, `False` otherwise. Default is `True`.
 > ```
 
 **Return value** :
 
-> The received request as a normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary
+> Type : tuple
+>
+> A tuple representing the return value of the `verifyRequestContent` function :
+> 
+> ```
+> (
+> 	is_request_format_valid,
+> 	sanitized_request_dictionary,
+>   errors_dictionary,
+> )
+> ```
+>
+> - *is_request_format_valid*
+>
+>	Type : bool
+> 
+>   `True` if the request dictionary format is valid, `False` otherwise.
+>
+> - *sanitized_request_dictionary*
+>
+>	Type : dict
+> 
+>   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
+> 
+> - *errors_dictionary*
+>
+>	Type : dict
+> 
+>   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
 
 **Possible raise classes** :
 
@@ -473,3 +547,9 @@ Receive a request from the client.
 > 
 > Raised in this method if the client is closed.
 > ```
+
+### Undocumented methods
+
+- `__del__()`
+- `__enter__()`
+- `__exit__(type, value, traceback)`

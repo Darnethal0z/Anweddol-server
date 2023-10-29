@@ -21,6 +21,15 @@ maxdepth: 3
 includehidden:
 ---
 
+uninstallation
+```
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
 server_usage
 ```
 

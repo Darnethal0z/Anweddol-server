@@ -15,23 +15,19 @@ There is one token for one client, since a client cannot store 2 tokens for one 
 
 This feature can be enabled or disabled.
 
-Being disabled by default, you can enable it by changing the `enabled` field value for `True` : 
+Being disabled by default, you can enable it in the configuration file `/etc/anweddol/config.yaml` by changing the affiliated `enabled` field value for `True` : 
 
 ```
 [...]
-  # List of allowed / denied IPs
-  # Specify any IPs with 'any'
-  allowed_ip_list:
-    - any
-  denied_ip_list: []
-
 # ---
-# Access token parameters
-token_authentication:
+# Access token parameters.
+access_token:
 
-  # Enable this feature or not
-  # If this value is set to 'false', all parameters below will be ignored 
-  enabled: True # <----- Here
+  # Enable this feature or not.
+  enabled: False <----- here
+
+  # Access token database file path.
+  access_token_database_file_path: /etc/anweddol/credentials/access_token.db
 
 [...]
 ```
@@ -39,7 +35,15 @@ token_authentication:
 Then restart the server.
 
 ```{warning} 
-If this feature is enabled but no tokens are added, no clients will be able to use the server. 
+If this feature is enabled but no tokens are in the database, nobody will be able to use the server. 
+```
+
+## List existing tokens
+
+To list existing tokens on the database, execute : 
+
+```
+$ anwdlserver access-tk -l
 ```
 
 ## Add / delete a token
@@ -62,7 +66,7 @@ Since the access tokens are hashed in the database (see the technical specificat
 If you want to delete a token, execute : 
 
 ```
-$ anwdlserver access-tk -r <entry_id>
+$ anwdlserver access-tk -d <entry_id>
 ```
 
 ## Enable / Disable a token
@@ -72,11 +76,11 @@ You have the possibility to enable or disable recorded tokens to temporarily dis
 To disable a token, execute : 
 
 ```
-$ anwdlserver access-tk -d <entry_id>
+$ anwdlserver access-tk --disable <entry_id>
 ```
 
 And to re-enable it : 
 
 ```
-$ anwdlserver access-tk -e <entry_id>
+$ anwdlserver access-tk --enable <entry_id>
 ```

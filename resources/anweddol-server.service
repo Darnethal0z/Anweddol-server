@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 ExecStart=/usr/local/bin/anwdlserver start --json -y
-ExecReload=/usr/local/bin/anwdlserver restart --json
+ExecReload=/usr/local/bin/anwdlserver stop --json && /usr/local/bin/anwdlserver start -y --json
 ExecStop=/usr/local/bin/anwdlserver stop --json
 Restart=no
 User=anweddol
