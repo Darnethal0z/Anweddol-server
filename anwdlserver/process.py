@@ -221,7 +221,9 @@ class AnweddolServerCLIServerProcess:
                 self._log(LOG_INFO, f"(client ID {client_id}) Connection closed")
 
             else:
-                client_id = self._make_client_id(kwargs.get("request").getClientIP())
+                client_id = self._make_client_id(
+                    kwargs.get("request_object").getClientIP()
+                )
 
                 return makeResponse(
                     True,
@@ -322,16 +324,16 @@ class AnweddolServerCLIServerProcess:
 
             else:
                 client_request = data.get("request_dict")
+                request_object = data.get("request_object")
                 request_verb = client_request.get("verb")
 
-                client_id = self._make_client_id(
-                    data.get("request_object").getClientIP()
-                )
+                client_id = self._make_client_id(request_object.getClientIP())
 
             if self.server_type == SERVER_TYPE_WEB and self.config_content[
                 "ip_filter"
             ].get("enabled"):
-                client_ip = client_request.getClientIP()
+                client_ip = request_object.getClientIP()
+
                 ip_filter_result = self._handle_ip_filter(client_ip)
 
                 if ip_filter_result == IP_FILTER_NOT_ALLOWED:

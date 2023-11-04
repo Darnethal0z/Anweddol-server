@@ -101,31 +101,31 @@ This class is the main Anweddol server process. It connects every other core mod
 > ```
 
 > ```{attribute} client_timeout
-> Type : int
+> Type : int | NoneType
 > 
 > The timeout that will be applied to clients, exprimed in seconds. Default is `10`.
 > ```
 
 > ```{attribute} runtime_virtualization_interface
-> Type : `VirtualizationInterface`
+> Type : `VirtualizationInterface` | NoneType
 > 
 > The `VirtualizationInterface` object that will be used by the server, or `None` to let the server generate one. Default is `None`.
 > ```
 
 > ```{attribute} runtime_database_interface
-> Type : `DatabaseInterface`
+> Type : `DatabaseInterface` | NoneType
 > 
 > The `DatabaseInterface` object that will be used by the server, or `None` to let the server generate one. Default is `None`.
 > ```
 
 > ```{attribute} runtime_port_forwarding_interface
-> Type : `PortForwardingInterface`
+> Type : `PortForwardingInterface` | NoneType
 > 
 > The `PortForwardingInterface` object that will be used by the server, or `None` to let the server generate one. Default is `None`.
 > ```
 
 > ```{attribute} runtime_rsa_wrapper
-> Type : `RSAWrapper`
+> Type : `RSAWrapper` | NoneType
 > 
 > The `RSAWrapper` object that will be used by the server, or `None` to let the server generate one. Default is `None`.
 > ```
@@ -940,6 +940,34 @@ Called when a forwarder process was started.
 
 Called when a forwarder process was stopped.
 
+**Provided values**:
+
+```
+{
+	"forwarder_instance": FORWARDER_INSTANCE,
+}
+```
+
+- *FORWARDER_INSTANCE*
+
+  Type : `ForwarderInstance`
+
+  The `ForwarderInstance` object representing the forwarder.
+
+Note that more keys can be provided :
+
+```
+{
+	"client_instance": CLIENT_INSTANCE,
+}
+```
+
+- *CLIENT_INSTANCE*
+
+  Type : `ClientInstance`
+
+  The `ClientInstance` object representing the handled client.
+
 **Affiliated event constant** : 
 
 `EVENT_FORWARDER_STOPPED`
@@ -1318,7 +1346,6 @@ Called when the server has received a request containing an unhandled verb.
 - `_format_traceback(exception)`
 - `_initialize_listen_interface()`
 - `_terminate_listen_interface()`
-- `_execute_event_handler(event, context, data={})`
 - `_store_container(container_instance, forwarder_instance)`
 - `_delete_container(container_instance)`
 - `_delete_container_on_domain_shutdown_routine()`

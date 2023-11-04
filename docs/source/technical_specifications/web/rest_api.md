@@ -30,5 +30,4 @@ If the REST API is enabled or used on an Anweddol server, administrators shall m
 	- The certificate integrity is verifiable (checksums, GPG, ...) ;
 
 Clients can always ignore the certificate authenticity check, but it's preferable to provide something to properly interact with the server.
-
 ```

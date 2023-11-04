@@ -41,13 +41,13 @@ Check if a request dictionary is a valid normalized [Request format](https://anw
 >
 > - *sanitized_request_dictionary*
 >
->	Type : dict
+>	Type : dict | `NoneType`
 > 
 >   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
 > 
 > - *errors_dictionary*
 >
->	Type : dict
+>	Type : dict | `NoneType`
 > 
 >   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
 
@@ -83,7 +83,7 @@ Make a normalized response dictionary.
 > ```
 
 > ```{attribute} reason
-> Type : str
+> Type : str | `NoneType`
 > 
 > The reason to specify if `success` is set to `False`. The value will be appended to the message in the form : `Refused request (reason : <reason>)`. Default is `None`.
 > ```
@@ -96,29 +96,29 @@ Make a normalized response dictionary.
 
 > ```
 > (
-> 	is_request_format_valid,
-> 	sanitized_request_dictionary,
+> 	is_response_format_valid,
+> 	sanitized_response_dictionary,
 >   errors_dictionary,
 > )
 > ```
 
-> - *is_request_format_valid*
+> - *is_response_format_valid*
 >
 >	Type : bool
 > 
->   `True` if the request dictionary format is valid, `False` otherwise.
+>   `True` if the response dictionary format is valid, `False` otherwise.
 >
-> - *sanitized_request_dictionary*
+> - *sanitized_response_dictionary*
 >
->	Type : dict
+>	Type : dict | `NoneType`
 > 
->   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
+>   The sanitized response as a normalized [Response format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_response_format_valid` is set to `False`.
 > 
 > - *errors_dictionary*
 >
->	Type : dict
+>	Type : dict | `NoneType`
 > 
->   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
+>   A dictionary depicting the errors detected in `response_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_response_format_valid` is set to `True`.
 
 ```{note}
 The `sendResponse` method from `ClientInstance` wraps this function in its process.

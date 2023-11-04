@@ -278,7 +278,7 @@ Close the client connection.
 
 > ```{exception} RuntimeError
 > An error occured due to a failed internal action.
->
+> 
 > Raised in this method if the client is already closed.
 > ```
 
@@ -532,7 +532,7 @@ Receive a request from the client.
 >
 >	Type : dict
 > 
->   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
+>   A dictionary depicting the errors detected in the received request according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
 
 **Possible raise classes** :
 
@@ -541,7 +541,7 @@ Receive a request from the client.
 > 
 > Raised in this method if an invalid packet length has been received from the client.
 > ```
-  
+
 > ```{exception} RuntimeError
 > An error occured due to a failed internal action.
 > 

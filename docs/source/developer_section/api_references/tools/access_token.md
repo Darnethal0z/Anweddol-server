@@ -17,7 +17,7 @@ Constant name                  | Value   | Definition
 
 ### Definition
 
-```{class} anwdlserver.tools.accesstk.AccessTokenManager(auth_token_db_path)
+```{class} anwdlserver.tools.access_token.AccessTokenManager(auth_token_db_path)
 ```
 
 This module provides additional features for access token storage and management. 
@@ -37,23 +37,6 @@ The database and its cursors will be automatically closed with the `closeDatabas
 ```
 
 ### General usage
-
-```{classmethod} isClosed()
-```
-
-Check if the database is closed or not.
-
-**Parameters** : 
-
-> None.
-
-**Return value** : 
-
-> Type : bool
->
-> `True` if the database is closed, `False` otherwise.
-
----
 
 ```{classmethod} getDatabaseConnection()
 ```
@@ -104,7 +87,24 @@ Close the database.
 This method is automatically called within the `__del__` method.
 ```
 
-### Entry usage restriction
+---
+
+```{classmethod} isClosed()
+```
+
+Check if the database is closed or not.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> Type : bool
+>
+> `True` if the database is closed, `False` otherwise.
+
+### Entry usage control
 
 ```{classmethod} enableEntry(entry_id)
 ```
@@ -300,7 +300,7 @@ Execute a custom SQL query on the database instance.
 > The [`sqlite3.Cursor`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor) object representing the SQL query result.
 
 ```{tip}
-Refer to the [technical specifications](../../../technical_specifications/core/database.md) to learn about table and columns name.
+Refer to the [technical specifications](../../../technical_specifications/tools/access_token.md) to learn about table and columns name.
 ```
 
 ---
@@ -316,16 +316,19 @@ List entries.
 
 **Return value** : 
 
-> Type : tuple
+> Type : list
 >
 > A list of tuples representing every entries on the database : 
 
 > ```
-> (
-> 	entry_id,
-> 	creation_timestamp,
-> 	enabled
-> )
+> [
+> 	(
+> 		entry_id,
+> 		creation_timestamp,
+> 		enabled
+> 	),
+> 	...
+> ]
 > ```
 
 > - *entry_id* 
@@ -348,7 +351,7 @@ List entries.
 
 ---
 
-```{classmethod} deleteEntry(entry_id: int)
+```{classmethod} deleteEntry(entry_id)
 ```
 
 Delete an entry.
