@@ -143,9 +143,10 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
     def _handle_destroy_request_from_http(self, request_dict, **kwargs):
         try:
-            if "container_uuid" not in request_dict.get(
-                "data"
-            ) or "client_token" not in request_dict.get("data"):
+            if (
+                "container_uuid" not in request_dict["parameters"].keys()
+                or "client_token" not in request_dict["parameters"].keys()
+            ):
                 return self._handle_error(
                     event=EVENT_MALFORMED_REQUEST,
                     message=RESPONSE_MSG_BAD_REQ,
@@ -156,8 +157,8 @@ class WebServerInterface(ServerInterface, resource.Resource):
             return self._handle_destroy_request(
                 passive_execution=True,
                 credentials_dict={
-                    "container_uuid": request_dict["data"].get("container_uuid"),
-                    "client_token": request_dict["data"].get("client_token"),
+                    "container_uuid": request_dict["parameters"].get("container_uuid"),
+                    "client_token": request_dict["parameters"].get("client_token"),
                 },
                 **kwargs,
             )
@@ -344,4 +345,26 @@ class WebServerInterface(ServerInterface, resource.Resource):
         if not self.request_handler_dict.get(verb):
             raise RuntimeError(f"The verb '{verb}' is not handled")
 
-        return self.request_handler_dict[verb](request=request)
+        request_dict = {
+            "verb": request.postpath[-1].decode().upper(),
+            "parameters": json.loads(request.content.read().decode())
+            if request.method.decode() == "POST"
+            else {},
+        }
+
+        is_request_valid, request_content, request_errors = verifyRequestContent(
+            request_dict
+        )
+
+        verb = request_dict.get("verb")
+
+        # If no verb is specified, it counts as valid request since
+        # no verb means returning home data (see request_handler_dict comment)
+        if not is_request_valid and verb != "":
+            raise RuntimeError(
+                f"Received invalid response : {json.dumps(request_errors, indent=4)}"
+            )
+
+        return self.request_handler_dict[verb](
+            request_dict=request_dict, request_object=request
+        )
