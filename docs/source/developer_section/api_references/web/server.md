@@ -139,6 +139,15 @@ Execute an HTTP request handler.
 >
 > A response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
 
+**Possible raise classes** :
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the request is not valid.
+> The errors dictionary will be displayed in the exception message.
+> ```
+
 ```{note}
 This method is a redefinition of the `ServerInterface` `executeRequestHandler` method.
 ```

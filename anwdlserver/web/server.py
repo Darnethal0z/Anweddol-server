@@ -341,7 +341,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
         self,
         verb: str,
         request: Request = None,
-    ) -> None:
+    ) -> dict:
         if not self.request_handler_dict.get(verb):
             raise RuntimeError(f"The verb '{verb}' is not handled")
 
