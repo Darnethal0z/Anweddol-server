@@ -7,7 +7,7 @@ Hello and welcome to the Anweddol server developer documentation.
 Here, you'll find every informations and documentation about the [python](https://www.python.org/) server API features.
 
 ```{note}
-At the root of `anwdlserver`, there is the CLI source code : They are not meant to be used on an external program since it's the server implementation's code itself.
+At the root of `anwdlserver`, there is the CLI source code : They are not meant to be used on an external program.
 ```
 
 ## Before getting started
@@ -183,7 +183,9 @@ api_references/tools/access_token
 
 ### Web features
 
-The `web` features consists of a REST API based on the `core` features, which provides all the features of a classic server, but in the form of a web server : 
+The `web` features consists of a REST API based on the `core` features, which provides all the features of a classic server, but in the form of a web server.
+
+These are not essential features, although they can be used in specific contexts :
 
 ```{toctree}
 ---

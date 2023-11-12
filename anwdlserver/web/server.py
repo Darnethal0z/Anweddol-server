@@ -47,6 +47,7 @@ from ..core.sanitization import makeResponse, verifyRequestContent
 # Default values
 DEFAULT_RESTWEBSERVER_LISTEN_PORT = 8080
 DEFAULT_ENABLE_SSL = False
+DEFAULT_STOP_ON_SHUTDOWN_SIGNAL = False
 
 
 class WebServerInterface(ServerInterface, resource.Resource):
@@ -62,6 +63,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
         enable_ssl: bool = DEFAULT_ENABLE_SSL,
         ssl_pem_private_key_file_path: str = None,
         ssl_pem_certificate_file_path: str = None,
+        stop_on_shutdown_signal: bool = DEFAULT_STOP_ON_SHUTDOWN_SIGNAL,
     ):
         super().__init__(
             runtime_container_iso_file_path=runtime_container_iso_file_path,
@@ -78,6 +80,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
         self.listen_port = listen_port
 
         self.enable_ssl = enable_ssl
+        self.stop_on_shutdown_signal = stop_on_shutdown_signal
         self.ssl_pem_private_key_file_path = ssl_pem_private_key_file_path
         self.ssl_pem_certificate_file_path = ssl_pem_certificate_file_path
 
@@ -87,23 +90,6 @@ class WebServerInterface(ServerInterface, resource.Resource):
             REQUEST_VERB_STAT: self._handle_stat_request_from_http,
             REQUEST_VERB_DESTROY: self._handle_destroy_request_from_http,
         }
-
-    def _extract_post_request_args_values(self, request_args):
-        container_uuid = (
-            request_args.get(b"container_uuid")[0]
-            if request_args.get(b"container_uuid")
-            else None
-        )
-        client_token = (
-            request_args.get(b"client_token")[0]
-            if request_args.get(b"client_token")
-            else None
-        )
-
-        return (
-            container_uuid.decode() if container_uuid else None,
-            client_token.decode() if client_token else None,
-        )
 
     def _handle_error(
         self,
@@ -131,7 +117,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
         return result
 
-    def _handle_home_from_http(self, request):
+    def _handle_home_from_http(self, **kwargs):
         return makeResponse(
             True,
             "Hello and welcome to this Anweddol server HTTP REST API. This server provides temporary, SSH-controllable virtual machines to enhance anonymity online.",
@@ -144,49 +130,44 @@ class WebServerInterface(ServerInterface, resource.Resource):
             },
         )[1]
 
-    def _handle_stat_request_from_http(self, request):
+    def _handle_stat_request_from_http(self, **kwargs):
         try:
-            return self._handle_stat_request(
-                passive_execution=True, request_object=request
-            )
+            return self._handle_stat_request(passive_execution=True)
 
         except Exception as E:
-            return self._handle_error(E, data={"request_object": request})
+            return self._handle_error(E, data=kwargs)
 
-    def _handle_create_request_from_http(self, request):
+    def _handle_create_request_from_http(self, **kwargs):
         # Errors are already handled inside _handle_create_request
-        return self._handle_create_request(
-            passive_execution=True, request_object=request
-        )
+        return self._handle_create_request(passive_execution=True, **kwargs)
 
-    def _handle_destroy_request_from_http(self, request):
+    def _handle_destroy_request_from_http(self, request_dict, **kwargs):
         try:
-            container_uuid, client_token = self._extract_post_request_args_values(
-                request.args
-            )
-
-            if not container_uuid or not client_token:
+            if (
+                "container_uuid" not in request_dict["parameters"].keys()
+                or "client_token" not in request_dict["parameters"].keys()
+            ):
                 return self._handle_error(
                     event=EVENT_MALFORMED_REQUEST,
                     message=RESPONSE_MSG_BAD_REQ,
-                    data={"request_object": request},
+                    data={"request_dict": request_dict} | kwargs,
                 )
 
             # Authentication related errors are handled inside _handle_destroy_request
             return self._handle_destroy_request(
                 passive_execution=True,
                 credentials_dict={
-                    "container_uuid": container_uuid,
-                    "client_token": client_token,
+                    "container_uuid": request_dict["parameters"].get("container_uuid"),
+                    "client_token": request_dict["parameters"].get("client_token"),
                 },
-                request_object=request,
+                **kwargs,
             )
 
         except Exception as E:
-            return self._handle_error(E, data={"request_object": request})
+            return self._handle_error(E, data={"request_dict": request_dict} | kwargs)
 
     def _handle_http_request(self, request):
-        verb = None
+        request_content = None
 
         try:
             # Without this condition, URLs like http://<host>@<port>/foo/bar/stat
@@ -198,14 +179,10 @@ class WebServerInterface(ServerInterface, resource.Resource):
                     data={"request_object": request},
                 )
 
-            # Extract and transform the request verb into upper case
-            verb = request.postpath[-1].decode().upper()
-
-            http_method = request.method.decode()
             request_dict = {
-                "verb": verb,
-                "parameters": self._extract_post_request_args_values(request.args)
-                if http_method == "POST"
+                "verb": request.postpath[-1].decode().upper(),
+                "parameters": json.loads(request.content.read().decode())
+                if request.method.decode() == "POST"
                 else {},
             }
 
@@ -213,19 +190,21 @@ class WebServerInterface(ServerInterface, resource.Resource):
                 request_dict
             )
 
+            verb = request_dict.get("verb")
+
             # If no verb is specified, it counts as valid request since
             # no verb means returning home data (see request_handler_dict comment)
             if not is_request_valid and verb != "":
                 return self._handle_error(
                     event=EVENT_MALFORMED_REQUEST,
                     message=RESPONSE_MSG_BAD_REQ,
-                    data={"request_object": request, "request_dict": request_dict},
+                    data={"request_object": request},
                 )
 
             result = self._execute_event_handler(
                 EVENT_REQUEST,
                 CONTEXT_NORMAL_PROCESS,
-                data={"request_object": request, "request_dict": request_dict},
+                data={"request_object": request, "request_dict": request_content},
             )
 
             if result:
@@ -235,14 +214,16 @@ class WebServerInterface(ServerInterface, resource.Resource):
                 return self._handle_error(
                     event=EVENT_UNHANDLED_VERB,
                     message=RESPONSE_MSG_BAD_REQ,
-                    data={"request_object": request, "request_dict": request_dict},
+                    data={"request_object": request, "request_dict": request_content},
                 )
 
-            return self.request_handler_dict[verb](request=request)
+            return self.request_handler_dict[verb](
+                request_dict=request_content, request_object=request
+            )
 
         except Exception as E:
             return self._handle_error(
-                E, data={"request_object": request, "request_dict": request_dict}
+                E, data={"request_dict": request_content, "request_object": request}
             )
 
     def _create_deferred_http_request_handle(self, request):
@@ -278,9 +259,7 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
                     self._delete_container(container_instance)
 
-                self._handle_error(
-                    E, data={"verb": REQUEST_VERB_CREATE, "request_object": request}
-                )
+                self._handle_error(E, data={"request_object": request})
 
         def err(failure):
             return self._handle_error(
@@ -298,36 +277,31 @@ class WebServerInterface(ServerInterface, resource.Resource):
 
     def _start_server(self):
         def process(reactor, *args):
-            try:
-                # reactor.addSystemEventTrigger("before", "shutdown", self._stop_server)
+            if self.stop_on_shutdown_signal:
+                reactor.addSystemEventTrigger("before", "shutdown", self._stop_server)
 
-                if self.enable_ssl:
-                    reactor.listenSSL(
-                        self.listen_port,
-                        server.Site(self),
-                        ssl.DefaultOpenSSLContextFactory(
-                            os.path.abspath(self.ssl_pem_private_key_file_path),
-                            os.path.abspath(self.ssl_pem_certificate_file_path),
-                        ),
-                    )
-
-                else:
-                    endpoint = endpoints.TCP4ServerEndpoint(reactor, self.listen_port)
-                    endpoint.listen(server.Site(self))
-
-                self.start_timestamp = int(time.time())
-                self.is_running = True
-
-                threading.Thread(
-                    target=self._delete_container_on_domain_shutdown_routine
-                ).start()
-
-                self._execute_event_handler(
-                    EVENT_SERVER_STARTED, CONTEXT_NORMAL_PROCESS
+            if self.enable_ssl:
+                reactor.listenSSL(
+                    self.listen_port,
+                    server.Site(self),
+                    ssl.DefaultOpenSSLContextFactory(
+                        os.path.abspath(self.ssl_pem_private_key_file_path),
+                        os.path.abspath(self.ssl_pem_certificate_file_path),
+                    ),
                 )
 
-            except Exception as E:
-                raise E
+            else:
+                endpoint = endpoints.TCP4ServerEndpoint(reactor, self.listen_port)
+                endpoint.listen(server.Site(self))
+
+            self.start_timestamp = int(time.time())
+            self.is_running = True
+
+            threading.Thread(
+                target=self._delete_container_on_domain_shutdown_routine
+            ).start()
+
+            self._execute_event_handler(EVENT_SERVER_STARTED, CONTEXT_NORMAL_PROCESS)
 
             return defer.Deferred()
 
@@ -367,8 +341,30 @@ class WebServerInterface(ServerInterface, resource.Resource):
         self,
         verb: str,
         request: Request = None,
-    ) -> None:
+    ) -> dict:
         if not self.request_handler_dict.get(verb):
             raise RuntimeError(f"The verb '{verb}' is not handled")
 
-        return self.request_handler_dict[verb](request=request)
+        request_dict = {
+            "verb": request.postpath[-1].decode().upper(),
+            "parameters": json.loads(request.content.read().decode())
+            if request.method.decode() == "POST"
+            else {},
+        }
+
+        is_request_valid, request_content, request_errors = verifyRequestContent(
+            request_dict
+        )
+
+        verb = request_dict.get("verb")
+
+        # If no verb is specified, it counts as valid request since
+        # no verb means returning home data (see request_handler_dict comment)
+        if not is_request_valid and verb != "":
+            raise RuntimeError(
+                f"Received invalid response : {json.dumps(request_errors, indent=4)}"
+            )
+
+        return self.request_handler_dict[verb](
+            request_dict=request_dict, request_object=request
+        )

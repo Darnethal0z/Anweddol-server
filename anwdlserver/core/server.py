@@ -83,11 +83,11 @@ class ServerInterface:
         runtime_container_iso_file_path: str,
         bind_address: str = DEFAULT_SERVER_BIND_ADDRESS,
         listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
-        client_timeout: Union[int, None] = DEFAULT_CLIENT_TIMEOUT,
-        runtime_virtualization_interface: VirtualizationInterface = None,
-        runtime_database_interface: DatabaseInterface = None,
-        runtime_port_forwarding_interface: PortForwardingInterface = None,
-        runtime_rsa_wrapper: RSAWrapper = None,
+        client_timeout: Union[None, int] = DEFAULT_CLIENT_TIMEOUT,
+        runtime_virtualization_interface: Union[None, VirtualizationInterface] = None,
+        runtime_database_interface: Union[None, DatabaseInterface] = None,
+        runtime_port_forwarding_interface: Union[None, PortForwardingInterface] = None,
+        runtime_rsa_wrapper: Union[None, RSAWrapper] = None,
         passive_mode: bool = DEFAULT_PASSIVE_MODE,
     ):
         self.request_handler_dict = {

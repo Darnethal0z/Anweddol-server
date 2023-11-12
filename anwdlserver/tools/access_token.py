@@ -4,10 +4,12 @@ See the LICENSE file for licensing informations
 ---
 
 This module provides additional features for access token 
-storage and management. Its primary goal is to provide an 
-authentication method that can be implemented for server usage 
-/ access restriction. If the server is in a public or multi-user 
-area, it makes a pretty easy-to-deploy solution to authenticate users.
+storage and management. 
+
+Its primary goal is to provide an authentication method that 
+can be implemented for server usage / access restriction. 
+If the server is in a public or multi-user area, it makes a 
+pretty easy-to-deploy solution to authenticate users.
 
 """
 
@@ -62,7 +64,7 @@ class AccessTokenManager:
 
     def getEntryID(self, access_token: str) -> Union[None, int]:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID from AnweddolServerAccessTokenTable WHERE AccessToken=? AND Enabled=1",
+            "SELECT EntryID FROM AnweddolServerAccessTokenTable WHERE AccessToken=? AND Enabled=1",
             (hashlib.sha256(access_token.encode()).hexdigest(),),
         )
         query_result = query_cursor.fetchone()
@@ -71,7 +73,7 @@ class AccessTokenManager:
 
     def getEntry(self, entry_id: int) -> tuple:
         query_cursor = self.database_cursor.execute(
-            "SELECT * from AnweddolServerAccessTokenTable WHERE EntryID=?", (entry_id,)
+            "SELECT * FROM AnweddolServerAccessTokenTable WHERE EntryID=?", (entry_id,)
         )
 
         return query_cursor.fetchone()
@@ -109,7 +111,7 @@ class AccessTokenManager:
 
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, Enabled from AnweddolServerAccessTokenTable",
+            "SELECT EntryID, CreationTimestamp, Enabled FROM AnweddolServerAccessTokenTable",
         )
 
         return query_cursor.fetchall()
@@ -130,7 +132,7 @@ class AccessTokenManager:
 
     def deleteEntry(self, entry_id: int) -> None:
         self.database_cursor.execute(
-            "DELETE from AnweddolServerAccessTokenTable WHERE EntryID=?",
+            "DELETE FROM AnweddolServerAccessTokenTable WHERE EntryID=?",
             (entry_id,),
         )
         self.database_connection.commit()

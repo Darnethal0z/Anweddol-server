@@ -74,6 +74,12 @@ The request / response scheme stays the same, except that they are exprimed in t
 > The SSL certificate file path, in PEM format. Default is `None`.
 > ```
 
+> ```{attribute} stop_on_shutdown_signal
+> Type : bool
+> 
+> `True` to stop the server on 'shutdown' system event, `False` otherwise. Default is `False`.
+> ```
+
 ```{tip}
 If you need a private key and a certificate, you can generate them with `openssl` :
 
@@ -133,6 +139,15 @@ Execute an HTTP request handler.
 >
 > A response dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
 
+**Possible raise classes** :
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the request is not valid.
+> The errors dictionary will be displayed in the exception message.
+> ```
+
 ```{note}
 This method is a redefinition of the `ServerInterface` `executeRequestHandler` method.
 ```
@@ -147,14 +162,15 @@ Note that every others event handlers passing `ClientInstance` objects in the `d
 
 #### Modified decorators references
 
+This section refers to the modified content of the `data` dictionary containing additional values related to the relevant event context.
+
 ```{note}
 The `RESTWebServerInterface` class initializes its inherited `ServerInterface` class with the `passive_mode` parameter set to `True`, meaning that every client instances specified in event handler `data` parameters when called will be set to `None`.
 ```
 
 ---
 
-```
-@ServerInterface.on_request
+```{function} @ServerInterface.on_request
 ```
 
 Called when a request is received.
@@ -167,27 +183,26 @@ Called when a request is received.
 
 ```
 {
-	"verb": VERB,
-	"request": REQUEST
+  "request_object": REQUEST_OBJECT,
+  "request_dict": REQUEST_DICT,
 }
 ```
 
-- *VERB*
-
-  Type : str
-
-  The request verb.
-
-- *REQUEST*
+- *REQUEST_OBJECT*
 
   Type : [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html)
 
-  The [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html) object depicting the received request.
+  The [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html) object representing the received request.
+
+- *REQUEST_DICT*
+
+  Type : dict
+
+  A dictionary representing the received request, following the normalized [Request format](../../../technical_specifications/core/communication.md).
 
 ---
 
-```
-@ServerInterface.on_runtime_error
+```{function} @ServerInterface.on_runtime_error
 ```
 
 Called when an error occured during runtime.
@@ -214,15 +229,66 @@ Note that more keys can be provided depending on the context :
 
 ```
 {
-	"request": REQUEST,
+	"request_object": REQUEST_OBJECT,
+  "request_dict": REQUEST_DICT,
+  "failure": FAILURE,
 }
 ```
 
-- *REQUEST*
+- *REQUEST_OBJECT*
 
   Type : [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html)
 
-  The [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html) object depicting the received request.
+  The [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html) object representing the received request.
+
+- *REQUEST_DICT*
+
+  Type : dict
+
+  A dictionary representing the received request, following the normalized [Request format](../../../technical_specifications/core/communication.md).
+
+- *FAILURE*
+
+  The [twisted.python.failure.Failure](https://docs.twisted.org/en/stable/api/twisted.python.failure.Failure.html) oject representing a failure that occured.
+
+---
+
+```
+@ServerInterface.on_container_created
+@ServerInterface.on_container_domain_started
+@ServerInterface.on_container_domain_stopped
+@ServerInterface.on_forwarder_created
+@ServerInterface.on_forwarder_started
+@ServerInterface.on_forwarder_stopped
+@ServerInterface.on_endpoint_shell_created
+@ServerInterface.on_endpoint_shell_opened
+@ServerInterface.on_endpoint_shell_closed
+```
+
+All of those decorators will be called with the following parameters:
+
+```
+{
+  "request_object": REQUEST_OBJECT,
+  "request_dict": REQUEST_DICT,
+}
+```
+
+- *REQUEST_OBJECT*
+
+  Type : [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html)
+
+  The [`twisted.web.http.Request`](https://docs.twisted.org/en/stable/api/twisted.web.http.Request.html) object representing the received request.
+
+- *REQUEST_DICT*
+
+  Type : dict
+
+  A dictionary representing the received request, following the normalized [Request format](../../../technical_specifications/core/communication.md).
+
+- *FAILURE*
+
+  The [twisted.python.failure.Failure](https://docs.twisted.org/en/stable/api/twisted.python.failure.Failure.html) oject representing a failure that occured.
 
 #### Unused decorators list
 
@@ -234,12 +300,12 @@ There decorators below will not be used during `RESTWebServerInterface` run time
 
 ### Undocumented methods
 
-- `_extract_post_request_args_values(request_args)`
+- `_extract_post_request_args_dict(request_args)`
 - `_handle_error(exception_object=None, event=EVENT_RUNTIME_ERROR, message=RESPONSE_MSG_INTERNAL_ERROR, data={})`
-- `_handle_home_from_http(request)`
-- `_handle_stat_request_from_http(request)`
-- `_handle_create_request_from_http(request)`
-- `_handle_destroy_request_from_http(request)`
+- `_handle_home_from_http(**kwargs)`
+- `_handle_stat_request_from_http(**kwargs)`
+- `_handle_create_request_from_http(**kwargs)`
+- `_handle_destroy_request_from_http(request_dict, **kwargs)`
 - `_handle_http_request(request)`
 - `_create_deferred_http_request_handle(request)`
 - `_start_server()`
