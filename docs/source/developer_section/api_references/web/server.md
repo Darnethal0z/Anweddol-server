@@ -12,12 +12,13 @@ Constant name                       | Value   | Definition
 ----------------------------------- | ------- | ----------
 *DEFAULT_RESTWEBSERVER_LISTEN_PORT* | 8080    | The default web server listen port.
 *DEFAULT_ENABLE_SSL*                | `False` | Enable SSL support by default or not.
+*DEFAULT_STOP_ON_SHUTDOWN_SIGNAL*   | `False` | Stop the web server on shutdown signal by default or not.
 
 ## class *RESTWebServerInterface*
 
 ### Definition
 
-```{class} anwdlserver.web.server.WebServerInterface(runtime_container_iso_file_path, listen_port, runtime_virtualization_interface, runtime_database_interface, runtime_port_forwarding_interface, enable_ssl, ssl_pem_private_key_file_path, ssl_pem_certificate_file_path)
+```{class} anwdlserver.web.server.WebServerInterface(runtime_container_iso_file_path, listen_port, runtime_virtualization_interface, runtime_database_interface, runtime_port_forwarding_interface, enable_ssl, ssl_pem_private_key_file_path, ssl_pem_certificate_file_path, stop_on_shutdown_signal)
 ```
 
 This class is the HTTP alternative to the classic `core` server. It consists of a REST API based on the `ServerInterface` class, which provides all the features of a classic server, but in the form of a web server.
@@ -285,10 +286,6 @@ All of those decorators will be called with the following parameters:
   Type : dict
 
   A dictionary representing the received request, following the normalized [Request format](../../../technical_specifications/core/communication.md).
-
-- *FAILURE*
-
-  The [twisted.python.failure.Failure](https://docs.twisted.org/en/stable/api/twisted.python.failure.Failure.html) oject representing a failure that occured.
 
 #### Unused decorators list
 
