@@ -46,6 +46,7 @@ from ..core.sanitization import makeResponse, verifyRequestContent
 
 # Default values
 DEFAULT_RESTWEBSERVER_LISTEN_PORT = 8080
+DEFAULT_RESTWEBSERVER_HTTPS_LISTEN_PORT = 4443
 DEFAULT_ENABLE_SSL = False
 DEFAULT_STOP_ON_SHUTDOWN_SIGNAL = False
 

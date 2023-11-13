@@ -8,11 +8,12 @@ In the module `anwdlserver.web.server` :
 
 ### Default values
 
-Constant name                       | Value   | Definition
------------------------------------ | ------- | ----------
-*DEFAULT_RESTWEBSERVER_LISTEN_PORT* | 8080    | The default web server listen port.
-*DEFAULT_ENABLE_SSL*                | `False` | Enable SSL support by default or not.
-*DEFAULT_STOP_ON_SHUTDOWN_SIGNAL*   | `False` | Stop the web server on shutdown signal by default or not.
+Constant name                             | Value   | Definition
+----------------------------------------- | ------- | ----------
+*DEFAULT_RESTWEBSERVER_LISTEN_PORT*       | 8080    | The default web server listen port.
+*DEFAULT_RESTWEBSERVER_HTTPS_LISTEN_PORT* | 4443    | The default web server HTTPS listen port.
+*DEFAULT_ENABLE_SSL*                      | `False` | Enable SSL support by default or not.
+*DEFAULT_STOP_ON_SHUTDOWN_SIGNAL*         | `False` | Stop the web server on shutdown signal by default or not.
 
 ## class *RESTWebServerInterface*
 
@@ -96,11 +97,9 @@ The container ISO path must point to a valid [ISO image](../../../administration
 ```
 
 ```{warning}
-This class inherits of every `ServerInterface` classes attributes.
+This class inherits of every `ServerInterface` classes attributes : Every other classes listed below this point is part of it, but can be combined with `ServerInterface` methods as well.
 
-Every other classes listed below this point is part of this class, but can be combined with `ServerInterface` methods as well.
-
-If the parameter `enable_ssl` is set to `True`, the parameters `ssl_pem_private_key_file_path` and `ssl_pem_certificate_file_path` must be set.
+If the parameter `enable_ssl` is set to `True`, the parameters `ssl_pem_private_key_file_path` and `ssl_pem_certificate_file_path` must be set. In addition to this, it is better to specify another listen port than the default `8080`. By convention you can use the port `4443` but if you want to use another one, do not forget to communicate it with other potential clients or they won't be able to connect preperly. 
 ```
 
 ### Manual handler execution
