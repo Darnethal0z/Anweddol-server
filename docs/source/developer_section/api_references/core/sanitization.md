@@ -9,7 +9,7 @@
 ```{function} anwdlserver.core.sanitize.verifyRequestContent(request_dict)
 ```
 
-Check if a request dictionary is a valid normalized [Request format](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format).
+Check if a request dictionary is a valid normalized [Request format](../../../technical_specifications/core/communication.md).
 
 **Parameters** :
 
