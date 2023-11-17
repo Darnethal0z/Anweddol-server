@@ -3,7 +3,7 @@ Copyright 2023 The Anweddol project
 See the LICENSE file for licensing informations
 ---
 
-This module contains the 'anwdlserver' executable CLI process.
+This module contains the 'anwdlserver' CLI.
 
 """
 

@@ -2,7 +2,7 @@
 
 ---
 
-This file contains the code tree mapping, with every python files and their respectives description.
+This file contains the code source files / folders mapping, with their respective descriptions.
 
 > It is made for development guiding purposes.
 
@@ -28,29 +28,47 @@ anwdlserver
     └── server.py
 ```
 
-## `anwdlserver` CLI files
+## `anwdlserver` CLI root files
 
-- `cli.py` : This file contains the main CLI source code, permits interaction with Anweddol server environment and lifecycle control.
-- `config.py` : This file provides the main CLI with configuration file loading and verification features.
-- `logging.py` : This file contains every logging features used by the Anweddol server CLI process.
-- `process.py` : This file is the main Anweddol server process provided by the CLI : It uses every `core`, `tools` and `web` features.
-- `utilities.py` : This file contains miscellaneous features used by the main Anweddol server process and the main CLI.
+- `cli.py`
 
-## `anwdlserver` `core` files (in the `core` folder)
+  This module contains the 'anwdlserver' CLI.
 
-- `client.py` : This file provides the Anweddol server with client representation and management features.
-- `crypto.py` : This file provides the Anweddol server with RSA/AES encryption features.
-- `database.py` : This file provides the Anweddol server with database features.
-- `port_forwarding.py` : This file provides the Anweddol server with port forwarding features.
-- `sanitization.py` : This file provides the Anweddol server with port forwarding features.
-- `server.py` : This file is the main Anweddol server process.
-- `utilities.py` : This file contains miscellaneous features useful for the server.
-- `virtualization.py` : This file provides the Anweddol server with virtualization appliance and container management features.
+- `config.py`
 
-## `anwdlserver` `tools` files (in the `tools` folder)
+  This module provides the 'anwdlserver' CLI with configuration file management features.
+  
+- `logging.py`
 
-- `access_token.py` : This file provides additional features for access token storage and management. 
+  This module provides the 'anwdlserver' CLI server process with logging features.
+  
+- `process.py`
 
-## `anwdlserver` `web` files (in the `web` folder)
+  This module defines the 'anwdlserver' CLI server process.
 
-- `server.py` : This file contains an HTTP alternative to the classic server.
+- `utilities.py`
+
+  This module provides some miscellaneous features that the 'anwdlserver' CLI various modules uses in their processes.
+
+## `anwdlserver` `core` folder content
+
+- `client.py` :
+- `crypto.py` : 
+- `database.py` : .
+- `port_forwarding.py` :
+- `sanitization.py` :
+- `server.py` :
+- `utilities.py` : 
+- `virtualization.py` : 
+
+## `anwdlserver` `tools` folder content
+
+- `access_token.py`
+
+  This file provides additional features for access token storage and management. 
+
+## `anwdlserver` `web` folder content
+
+- `server.py`
+
+  This file contains an HTTP alternative to the classic server.
