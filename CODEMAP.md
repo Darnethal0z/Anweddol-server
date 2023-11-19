@@ -30,7 +30,7 @@ anwdlserver
     └── server.py
 ```
 
-### `anwdlserver` CLI root files
+### `anwdlserver` root files
 
 - `cli.py`
 
