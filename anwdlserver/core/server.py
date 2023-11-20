@@ -4,7 +4,7 @@ See the LICENSE file for licensing informations
 ---
 
 This module is the main Anweddol server process.
-In connects every other core modules into a single one
+It connects every other core modules into a single one
 so that they can all be used in a single module.
 
 """

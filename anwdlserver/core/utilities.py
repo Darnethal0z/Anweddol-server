@@ -3,7 +3,7 @@ Copyright 2023 The Anweddol project
 See the LICENSE file for licensing informations
 ---
 
-Miscellaneous features
+This module contains miscellaneous features useful for the server.
 
 NOTE : Some functions be hard to debug with the several except statements, 
 please considerate this function when implementing a new experimental feature 

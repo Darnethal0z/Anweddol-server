@@ -3,7 +3,7 @@ Copyright 2023 The Anweddol project
 See the LICENSE file for licensing informations
 ---
 
-This module provides the 'anwdlserver' CLI executable with configuration 
+This module provides the 'anwdlserver' CLI with configuration 
 file management features.
 
 """

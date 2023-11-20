@@ -37,7 +37,7 @@ See also the Anweddol server API references on the server [Developer documentati
 
 ## Bugs & New ideas
 
-Anweddol is a community-driven project : You are free to bring new ideas, enhancement, report malfunctions or bugs, regardless of your competences.
+Anweddol is a community-driven project : You are free to bring new ideas, enhancement, report malfunctions or bugs.
 
 Open a ticket on the [issue page](https://github.com/the-anweddol-project/Anweddol-server/issues) to do so.
 
