@@ -6,7 +6,7 @@ Thank you for taking the time to contribute to the Anweddol project ! In this pa
 
 ## Getting started
 
-In order to be able to bring new ideas and enhancements with ease, you can read the *Technical specifications* of the Anweddol server to know how it works.
+In order to be able to bring new ideas and enhancements with ease, you can read the [Technical specifications](technical_specifications/index.md) of the Anweddol server to know how it works.
 
 ## Issues
 
