@@ -6,7 +6,7 @@ Thank you for taking the time to contribute to the Anweddol project ! In this pa
 
 ## Getting started
 
-In order to be able to bring new ideas and enhancements with ease, you can read the *Technical specifications* of the Anweddol server to know how it works.
+In order to be able to bring new ideas and enhancements with ease, you can read the [Technical specifications](technical_specifications/index.md) of the Anweddol server to know how it works.
 
 ## Issues
 
@@ -27,6 +27,12 @@ Any changes will result in a new pull request, which will be reviewed before mer
 ### Documentation
 
 If your modification proposition involves a modification of the core features or of an already documented one, you need to provide the appropriate documentation as well.
+
+### Code map
+
+At the root of the project is a file called `CODEMAP.md` : It is a file showing the overall source code file / folders structure, explaining their respective contents and purpose.
+
+This file was made to facilitate contributions by providing a map of the source code.
 
 ## Links
 
