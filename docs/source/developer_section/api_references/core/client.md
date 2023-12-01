@@ -553,7 +553,7 @@ Receive a request from the client.
 > ```
 
 ```{note}
-For security reasons, a new AES IV will be received from the server.
+For security reasons, a new AES IV will be received from the client.
 ```
 
 ### Undocumented methods

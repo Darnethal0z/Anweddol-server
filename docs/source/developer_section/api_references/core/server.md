@@ -1190,9 +1190,9 @@ Called when a request is received.
 ```
 {
 	"client_instance": CLIENT_INSTANCE,
-	"is_request_valid": IS_RECV_REQUEST_VALID,
-    "request_content": RECV_REQUEST_CONTENT,
-    "request_errors": RECV_REQUEST_ERRORS
+	"is_request_valid": IS_REQUEST_VALID,
+    "request_content": REQUEST_CONTENT,
+    "request_errors": REQUEST_ERRORS,
 }
 ```
 
@@ -1202,19 +1202,23 @@ Called when a request is received.
 
   The `ClientInstance` object representing the handled client.
 
-- *IS_RECV_REQUEST_VALID*
+- *IS_REQUEST_VALID*
 
   Type : bool
 
-  
+  `True` if the request dictionary format is valid, `False` otherwise.
 
-- *RECV_REQUEST_CONTENT*
+- *REQUEST_CONTENT*
+
+  Type : dict
+
+  The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_valid` is set to `False`.
+
+- *REQUEST_ERRORS*
 
   Type : dict
 
-- *RECV_REQUEST_ERRORS*
-
-  Type : dict
+  A dictionary depicting the errors detected in the received request according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_valid` is set to `True`.
 
 ```{note}
 At this point, the received request format and content is not verified: That's why the request can not be stored on the client instance, thus passing the verification result in the provided values.
