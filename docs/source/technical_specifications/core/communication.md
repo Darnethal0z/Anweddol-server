@@ -122,6 +122,8 @@ Here is a visual example of how the keys are exchanged with a client :
 Since the block size is limited to 512 bytes with default parameters for RSA instances, it is not suitable to send or receive data in a client/server communication context. That's why an AES cryptosystem implementation exists to fix the problem.
 ```
 
+For security matters, the peer that sends a packet will also generate a new AES IV that will be appended to the encrypted JSON request message.
+
 ### Sanitization
 
 Requests and responses are sanitized upon sending and receiving at each end.

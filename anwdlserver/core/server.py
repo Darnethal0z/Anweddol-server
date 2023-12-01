@@ -697,6 +697,24 @@ class ServerInterface:
                 recv_request_errors,
             ) = client_instance.recvRequest()
 
+            if (
+                self._execute_event_handler(
+                    EVENT_REQUEST,
+                    CONTEXT_NORMAL_PROCESS,
+                    data={
+                        "client_instance": client_instance,
+                        "is_request_valid": is_recv_request_valid,
+                        "request_content": recv_request_content,
+                        "request_errors": recv_request_errors,
+                    },
+                )
+                == -1
+            ):
+                return
+
+            if client_instance.isClosed():
+                return
+
             if not is_recv_request_valid:
                 self._execute_event_handler(
                     EVENT_MALFORMED_REQUEST,
@@ -746,19 +764,6 @@ class ServerInterface:
                         data={"client_instance": client_instance},
                     )
 
-                return
-
-            if (
-                self._execute_event_handler(
-                    EVENT_REQUEST,
-                    CONTEXT_NORMAL_PROCESS,
-                    data={"client_instance": client_instance},
-                )
-                == -1
-            ):
-                return
-
-            if client_instance.isClosed():
                 return
 
             # Request handler execution

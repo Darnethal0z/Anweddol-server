@@ -13,7 +13,7 @@ import shutil
 import os
 
 
-VERSION = "2.1.2"
+VERSION = "3.1.2"
 
 
 def getReadmeContent():

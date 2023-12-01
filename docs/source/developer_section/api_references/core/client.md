@@ -487,6 +487,10 @@ Send a response to the client.
 > Raised in this method if the client is closed, or that the client refused the sent packet or the RSA key.
 > ```
 
+```{note}
+For security reasons, a new AES IV will be generated and transmitted to the client.
+```
+
 ---
 
 ```{classmethod} recvRequest(store_request)
@@ -547,6 +551,10 @@ Receive a request from the client.
 > 
 > Raised in this method if the client is closed.
 > ```
+
+```{note}
+For security reasons, a new AES IV will be received from the client.
+```
 
 ### Undocumented methods
 
