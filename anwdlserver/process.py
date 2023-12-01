@@ -319,8 +319,12 @@ class AnweddolServerCLIServerProcess:
             if self.server_type == SERVER_TYPE_CLASSIC:
                 client_instance = data.get("client_instance")
                 client_id = client_instance.getID()
-                client_request = client_instance.getStoredRequest()
-                request_verb = client_instance.getStoredRequest().get("verb")
+
+                if not data.get("is_request_valid"):
+                    return  # A malformed request response will be sent
+
+                client_request = data.get("request_content")
+                request_verb = client_request.get("verb")
 
             else:
                 client_request = data.get("request_dict")
@@ -357,7 +361,7 @@ class AnweddolServerCLIServerProcess:
 
             self._log(
                 LOG_INFO,
-                f"(client ID {client_id}) Received {request_verb if request_verb else 'home'} request",
+                f"(client ID {client_id}) Received {request_verb if request_verb and self.server_type != SERVER_TYPE_WEB else 'home'} request",
             )
 
             if self.config_content.get("access_token").get("enabled"):

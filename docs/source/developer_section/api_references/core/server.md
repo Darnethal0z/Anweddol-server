@@ -1190,6 +1190,9 @@ Called when a request is received.
 ```
 {
 	"client_instance": CLIENT_INSTANCE,
+	"is_request_valid": IS_RECV_REQUEST_VALID,
+    "request_content": RECV_REQUEST_CONTENT,
+    "request_errors": RECV_REQUEST_ERRORS
 }
 ```
 
@@ -1198,6 +1201,24 @@ Called when a request is received.
   Type : `ClientInstance`
 
   The `ClientInstance` object representing the handled client.
+
+- *IS_RECV_REQUEST_VALID*
+
+  Type : bool
+
+  
+
+- *RECV_REQUEST_CONTENT*
+
+  Type : dict
+
+- *RECV_REQUEST_ERRORS*
+
+  Type : dict
+
+```{note}
+At this point, the received request format and content is not verified: That's why the request can not be stored on the client instance, thus passing the verification result in the provided values.
+```
 
 ---
 
