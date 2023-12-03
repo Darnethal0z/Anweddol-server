@@ -1191,8 +1191,8 @@ Called when a request is received.
 {
 	"client_instance": CLIENT_INSTANCE,
 	"is_request_valid": IS_REQUEST_VALID,
-    "request_content": REQUEST_CONTENT,
-    "request_errors": REQUEST_ERRORS,
+	"request_content": REQUEST_CONTENT,
+	"request_errors": REQUEST_ERRORS,
 }
 ```
 

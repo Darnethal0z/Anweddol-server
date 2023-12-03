@@ -6,13 +6,9 @@
 
 Requests and responses sent between the client and the server are JSON structures : A widely used data format, cross-platform and easily manipulable.
 
-Before sending anything, the size of the packet is sent in an 8 byte message, padded with `'='` characters : 
+Before sending a packet, the packet size is sent in order to correctly transmit it.
 
-| Message         | Length        | Padded message length       |
-| --------------- | ------------- | --------------------------- |
-| `"hello world"` | 11 characters | `"11======"` (8 characters) |
-
-Thus, the native theorical maximum packet size is 99 999 999 bytes.
+Since it is sent encrypted with AES, the string representation size of the packet (`len(str(packet_size))`) should be lower that 16 characters.
 
 ## Request format
 
