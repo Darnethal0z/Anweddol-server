@@ -12,7 +12,7 @@ Constant name                   | Value   | Definition
 ------------------------------- | ------- | ----------
 *DEFAULT_SERVER_BIND_ADDRESS*   | `""`    | The default server bind address.
 *DEFAULT_SERVER_LISTEN_PORT*    | 6150    | The default server listen port.
-*DEFAULT_CLIENT_TIMEOUT*        | 10      | The default client timeout.
+*DEFAULT_CLIENT_TIMEOUT*        | `None`  | The default client timeout.
 *DEFAULT_DIE_ON_ERROR*          | `False` | Exit with the `0xDEAD` code if an error occured or not.
 *DEFAULT_PASSIVE_MODE*          | `False` | Initialize the server in passive mode or not.
 *DEFAULT_ASYNCHRONOUS*          | `False` | Handle the client asynchronoursly or not.
