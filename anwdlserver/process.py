@@ -24,6 +24,7 @@ from .core.server import (
     RESPONSE_MSG_REFUSED_REQ,
     REQUEST_VERB_STAT,
     REQUEST_VERB_CREATE,
+    EVENT_CONTAINER_DOMAIN_STARTED,
 )
 from .core.sanitization import makeResponse
 from .web.server import WebServerInterface
@@ -344,7 +345,9 @@ class AnweddolServerCLIServerProcess:
                 domain_type=self.config_content["container"].get("domain_type")
             )
 
-            notify_container_domain_started(context, data)
+            self.server_interface.triggerEvent(
+                EVENT_CONTAINER_DOMAIN_STARTED, context, data
+            )
 
         @self.server_interface.on_request
         def handle_request(context, data):

@@ -55,3 +55,21 @@ $ sudo systemctl start libvirtd.service
 ```
 
 The `virbr0` interface should now exists, check with `ip a`.
+
+## *unsupported configuration: Emulator '[...]' does not support virt type '[...]'*
+
+*Description* : 
+
+Your actual environment cannot run KVM or the actual virt type.
+
+*Solution* : 
+
+By default, the domain type is `'kvm'`. To check if your CPU supports it, you can execute : 
+
+```
+$ egrep -c '(vmx|svm)' /proc/cpuinfo
+```
+
+If `0` shows up, it means that your actual CPU does not support hardware virtualization: To fix this, you can change the `domain_type` key value in the configuration file (`container` section) to another type, like `qemu`.
+
+Additionally, you can check if virtualization support is enabled in the BIOS.
