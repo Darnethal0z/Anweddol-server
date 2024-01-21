@@ -60,6 +60,7 @@ def loadConfigurationFileContent(config_file_path):
                 },
                 "container_vcpus": {"type": "integer", "min": 1},
                 "nat_interface_name": {"type": "string"},
+                "domain_type": {"type": "string"},
                 "endpoint_username": {"type": "string"},
                 "endpoint_password": {"type": "string"},
                 "endpoint_listen_port": {

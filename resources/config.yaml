@@ -29,6 +29,10 @@ container:
   # interface created by the libvirtd daemon when launched.
   nat_interface_name: virbr0
 
+  # The libvirt domain type to specify on container domains XML 
+  # description.
+  domain_type: kvm
+
   # Container endpoint username / password.
   # NOTE : The container endpoint default credentials are public and
   # normalized, that's why they are stored here unencrypted. 

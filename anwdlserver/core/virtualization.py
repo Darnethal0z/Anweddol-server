@@ -30,6 +30,7 @@ DEFAULT_CONTAINER_ENDPOINT_PASSWORD = "endpoint"
 DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT = 22
 
 DEFAULT_NAT_INTERFACE_NAME = "virbr0"
+DEFAULT_DOMAIN_TYPE = "kvm"
 
 DEFAULT_CONTAINER_MAX_TRYOUT = 20
 DEFAULT_CONTAINER_MEMORY = 2048
@@ -309,6 +310,7 @@ class ContainerInstance:
         wait_available: bool = DEFAULT_CONTAINER_WAIT_AVAILABLE,
         wait_max_tryout: int = DEFAULT_CONTAINER_MAX_TRYOUT,
         driver_uri: str = DEFAULT_LIBVIRT_DRIVER_URI,
+        domain_type: str = DEFAULT_DOMAIN_TYPE,
     ) -> None:
         if self.isDomainRunning():
             raise RuntimeError("Container domain is already running")
@@ -320,7 +322,7 @@ class ContainerInstance:
 
         try:
             new_domain_xml = f"""
-    			<domain type='kvm'>
+    			<domain type='{domain_type}'>
     				<name>{self.uuid}</name>
     				<memory unit='MiB'>{self.memory}</memory>
     				<vcpu placement='static'>{self.vcpus}</vcpu>
