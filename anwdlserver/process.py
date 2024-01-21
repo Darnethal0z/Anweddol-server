@@ -24,6 +24,7 @@ from .core.server import (
     RESPONSE_MSG_REFUSED_REQ,
     REQUEST_VERB_STAT,
     REQUEST_VERB_CREATE,
+    EVENT_CONTAINER_DOMAIN_STARTED,
 )
 from .core.sanitization import makeResponse
 from .web.server import WebServerInterface
@@ -279,6 +280,32 @@ class AnweddolServerCLIServerProcess:
 
                 self._log(LOG_INFO, f"(client ID {client_id}) Connection closed")
 
+        @self.server_interface.on_container_domain_started
+        def notify_container_domain_started(context, data):
+            container_uuid = data.get("container_instance").getUUID()
+            container_ip = data.get("container_instance").getIP()
+
+            if self.server_type == SERVER_TYPE_CLASSIC:
+                client_id = data.get("client_instance").getID()
+
+            else:
+                client_id = (
+                    self._make_client_id(data.get("request_object").getClientIP())
+                    if data.get("request_object")
+                    else "unspec"
+                )
+
+            self.actual_running_container_domains_counter += 1
+
+            self._log(
+                LOG_INFO,
+                f"(client ID {client_id}) Container {container_uuid} domain is running",
+            )
+            self._log(
+                LOG_INFO,
+                f"(client ID {client_id}) Container IP : {container_ip}",
+            )
+
         @self.server_interface.on_container_created
         def handle_container_creation(context, data):
             container_instance = data.get("container_instance")
@@ -312,6 +339,14 @@ class AnweddolServerCLIServerProcess:
             )
             container_instance.setNATInterfaceName(
                 self.config_content["container"].get("nat_interface_name")
+            )
+
+            container_instance.startDomain(
+                domain_type=self.config_content["container"].get("domain_type")
+            )
+
+            self.server_interface.triggerEvent(
+                EVENT_CONTAINER_DOMAIN_STARTED, context, data
             )
 
         @self.server_interface.on_request
@@ -513,32 +548,6 @@ class AnweddolServerCLIServerProcess:
             self._log(
                 LOG_WARN,
                 f"(client ID {client_id}) Unhandled verb : '{verb}'",
-            )
-
-        @self.server_interface.on_container_domain_started
-        def notify_container_domain_started(context, data):
-            container_uuid = data.get("container_instance").getUUID()
-            container_ip = data.get("container_instance").getIP()
-
-            if self.server_type == SERVER_TYPE_CLASSIC:
-                client_id = data.get("client_instance").getID()
-
-            else:
-                client_id = (
-                    self._make_client_id(data.get("request_object").getClientIP())
-                    if data.get("request_object")
-                    else "unspec"
-                )
-
-            self.actual_running_container_domains_counter += 1
-
-            self._log(
-                LOG_INFO,
-                f"(client ID {client_id}) Container {container_uuid} domain is running",
-            )
-            self._log(
-                LOG_INFO,
-                f"(client ID {client_id}) Container IP : {container_ip}",
             )
 
         @self.server_interface.on_container_domain_stopped
