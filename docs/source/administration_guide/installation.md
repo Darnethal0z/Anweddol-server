@@ -10,19 +10,19 @@
 > 
 > ```
 > $ sudo apt-get update
-> $ sudo apt-get install libvirt-daemon-system python-libvirt socat python-pip
+> $ sudo apt-get install libvirt-daemon-system python-libvirt socat python-pip qemu
 > ```
 
 > DNF :
 > 
 > ```
-> $ sudo dnf install libvirt python-libvirt socat python-pip
+> $ sudo dnf install libvirt python-libvirt socat python-pip qemu
 > ```
 
 > Yum :
 > 
 > ```
-> $ sudo yum install libvirt python-libvirt socat python-pip
+> $ sudo yum install libvirt python-libvirt socat python-pip qemu
 > ```
 
 2. Install the Anweddol server python package:
