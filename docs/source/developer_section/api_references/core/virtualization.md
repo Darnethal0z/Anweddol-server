@@ -13,6 +13,7 @@ Constant name                                  | Value              | Definition
 *DEFAULT_CONTAINER_ENDPOINT_PASSWORD*          | `"endpoint"`       | The default endpoint SSH password.
 *DEFAULT_CONTAINER_ENDPOINT_LISTEN_PORT*       | 22                 | The default endpoint SSH listen port.
 *DEFAULT_NAT_INTERFACE_NAME*                   | `"virbr0"`         | The default [NAT interface name](../../../technical_specifications/core/networking.md) that will be used by container domains.
+*DEFAULT_DOMAIN_TYPE*                          | `"kvm"`            | The default container [domain type](https://libvirt.org/formatdomain.html#element-and-attribute-overview).
 *DEFAULT_CONTAINER_MAX_TRYOUT*                 | 20                 | The default amount of attemps to check if the network is available on container domains before raising an error.
 *DEFAULT_CONTAINER_MEMORY*                     | 2048               | The default memory amount to set on container domains, exprimed in Mb.
 *DEFAULT_CONTAINER_VCPUS*                      | 2                  | The default Virtual CPUs amount to set on container domains.
@@ -545,7 +546,7 @@ Create an `EndpointShell` instance on the container domain.
 
 ### Container domain lifetime control
 
-```{classmethod} startDomain(wait_available: bool, wait_max_tryout: int, driver_uri: str)
+```{classmethod} startDomain(wait_available: bool, wait_max_tryout: int, driver_uri: str, domain_type: str)
 ```
 
 Start the [container domain](../../../technical_specifications/core/virtualization.md).
@@ -568,6 +569,12 @@ Start the [container domain](../../../technical_specifications/core/virtualizati
 > Type : str
 > 
 > The hypervisor [driver URI](https://libvirt.org/uri.html) to use. Default is `qemu:///system`.
+> ```
+
+> ```{attribute} domain_type
+> Type : str
+> 
+> The container [domain type](https://libvirt.org/formatdomain.html#element-and-attribute-overview). Default is `kvm`.
 > ```
 
 **Return value** : 
