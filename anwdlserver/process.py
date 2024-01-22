@@ -342,7 +342,8 @@ class AnweddolServerCLIServerProcess:
             )
 
             container_instance.startDomain(
-                domain_type=self.config_content["container"].get("domain_type")
+                domain_type=self.config_content["container"].get("domain_type"),
+                wait_max_tryout=self.config_content["container"].get("wait_max_tryout"),
             )
 
             self.server_interface.triggerEvent(

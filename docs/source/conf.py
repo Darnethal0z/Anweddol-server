@@ -9,7 +9,7 @@
 project = "The Anweddol server"
 copyright = "2023, The Anweddol project"
 author = "The Anweddol project"
-release = "4.1.3"
+release = "4.1.4"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -563,6 +563,8 @@ Start the [container domain](../../../technical_specifications/core/virtualizati
 > Type : int
 > 
 > The amount of attemps to check if the network is available on the domain before raising `TimeoutError`. Default is `20`.
+> 
+> Can be `-1`, in this case the method will indefinitely check if the network is available on the domain, without raising any errors.
 > ```
 
 > ```{attribute} driver_uri
@@ -594,6 +596,10 @@ Start the [container domain](../../../technical_specifications/core/virtualizati
 >
 > Raised in this method if the container domain is already running.
 > ```
+
+```{warning}
+Do not set the `wait_max_tryout` parameter to `-1` in a production enviroment, use it only as diagnostic purposes (see the [Troubleshooting section](../../../administration_guide/troubleshooting.md) to learn more).
+```
 
 ---
 

@@ -33,6 +33,12 @@ container:
   # description.
   domain_type: kvm
 
+  # The amount of attemps to get network informations of containers
+  # before raising an error. If you run Anweddol on a low-performance
+  # computer, you may increase this value in order to enable the container
+  # domains to start up correctly.
+  wait_max_tryout: 20
+
   # Container endpoint username / password.
   # NOTE : The container endpoint default credentials are public and
   # normalized, that's why they are stored here unencrypted. 
