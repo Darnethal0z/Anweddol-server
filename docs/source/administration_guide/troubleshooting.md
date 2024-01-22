@@ -73,3 +73,18 @@ $ egrep -c '(vmx|svm)' /proc/cpuinfo
 If `0` shows up, it means that your actual CPU does not support hardware virtualization: To fix this, you can change the `domain_type` key value in the configuration file (`container` section) to another type, like `qemu`.
 
 Additionally, you can check if virtualization support is enabled in the BIOS.
+
+## Maximum try amount was reached while trying to get container domain IP
+
+*Description* : 
+
+This problem can have 2 origins : 
+
+- The computer running the Anweddol server is not fast enough to boot the container domains on time ; 
+- The container ISO you use is non-functional or corrupted ;
+
+*Solution* : 
+
+First, you may try to set the `wait_max_tryout` key value in the configuration file (`container` section) to -1.  Manually measure the time that a container domain takes to boot, and set the new value on the key after adding 10 seconds to it.
+
+If the problem still persists, it means that the container ISO is non-functional or corrupted. If it is the case, please open an issue on the [Anweddol ISO Factory repository](https://github.com/the-anweddol-project/Anweddol-ISO-factory/issues) and describe the problem.

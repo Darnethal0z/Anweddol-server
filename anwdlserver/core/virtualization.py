@@ -378,9 +378,13 @@ class ContainerInstance:
                         break
 
                     time.sleep(1)
+
+                    if wait_max_tryout == -1:
+                        continue
+
                     tryout_counter -= 1
 
-                if tryout_counter == 0:
+                if tryout_counter == 0 and wait_max_tryout != -1:
                     raise TimeoutError(
                         "Maximum try amount was reached while trying to get container domain IP"
                     )
