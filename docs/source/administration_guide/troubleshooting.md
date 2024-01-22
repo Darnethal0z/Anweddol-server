@@ -72,7 +72,7 @@ $ egrep -c '(vmx|svm)' /proc/cpuinfo
 
 If `0` shows up, it means that your actual CPU does not support hardware virtualization: To fix this, you can change the `domain_type` key value in the configuration file (`container` section) to another type, like `qemu`.
 
-Additionally, you can check if virtualization support is enabled in the BIOS.
+Additionally you can check if virtualization support is enabled in the BIOS, and retry.
 
 ## Maximum try amount was reached while trying to get container domain IP
 
